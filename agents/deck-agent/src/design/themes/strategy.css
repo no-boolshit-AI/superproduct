@@ -1,0 +1,76 @@
+/* Strategy consulting (McKinsey-style): white, deep navy, one electric-blue accent, serif action titles. */
+:root {
+  --page-bg: #ffffff;
+  --ink: #051c2c;
+  --ink-2: #2e3d4c;
+  --muted: #677585;
+  --line: #d3d9df;
+  --line-strong: #051c2c;
+  --surface: #eef2f6;
+  --surface-2: #dfe6ee;
+  --dark: #051c2c;
+  --on-dark: #ffffff;
+  --on-dark-muted: rgba(255, 255, 255, 0.7);
+  --accent: #2251ff;
+  --accent-2: #00a9f4;
+  --pos: #0f9d74;
+  --neg: #e5484d;
+  --warn: #f2a516;
+  --c1: #051c2c; --c2: #2251ff; --c3: #00a9f4; --c4: #6e8aa6; --c5: #aab8c6; --c6: #1438b8; --c7: #59c3e8; --c8: #d6dee6;
+  --c-muted: #b4c0cc;
+  --c-axis: #8693a0;
+  --font-head: "Source Serif 4", var(--font-head-fallback);
+  --font-body: "Inter", var(--font-body-fallback);
+  --font-num: "Inter", var(--font-body-fallback);
+  --title-weight: 400;
+  --head-weight: 600;
+  --num-weight: 300;
+  --radius: 0px;
+}
+
+/* tracker: small caps label with a short accent dash */
+.page--deck .tracker::before { content: ""; width: 18px; height: 2px; background: var(--accent-text, var(--accent)); flex: none; }
+.page--deck .pg-title { --title-max: 1060px; }
+
+/* footer: hairline above sources */
+.page--deck .pg-foot { padding-top: 8px; }
+
+/* cover: navy field, white serif title, fine arcs */
+.L-cover { --cover-ink: #fff; --cover-sub: rgba(255,255,255,.72); --cover-kicker: var(--accent-2); }
+.L-cover.page { background: var(--dark); color: #fff; }
+.L-cover .decor { background:
+  radial-gradient(circle at 100% 100%, transparent 0 239px, rgba(255,255,255,.14) 240px 241px, transparent 242px),
+  radial-gradient(circle at 100% 100%, transparent 0 339px, rgba(255,255,255,.11) 340px 341px, transparent 342px),
+  radial-gradient(circle at 100% 100%, transparent 0 449px, color-mix(in srgb, var(--accent-text, var(--accent)) 90%, transparent) 450px 452px, transparent 453px),
+  radial-gradient(circle at 100% 100%, transparent 0 569px, rgba(255,255,255,.08) 570px 571px, transparent 572px),
+  radial-gradient(circle at 100% 100%, transparent 0 699px, color-mix(in srgb, var(--accent-2) 35%, transparent) 700px 701px, transparent 702px);
+}
+.page--report.L-cover .decor { background:
+  radial-gradient(circle at 100% 0%, transparent 0 299px, rgba(255,255,255,.14) 300px 301px, transparent 302px),
+  radial-gradient(circle at 100% 0%, transparent 0 419px, color-mix(in srgb, var(--accent-text, var(--accent)) 90%, transparent) 420px 422px, transparent 423px),
+  radial-gradient(circle at 100% 0%, transparent 0 559px, rgba(255,255,255,.09) 560px 561px, transparent 562px),
+  radial-gradient(circle at 100% 0%, transparent 0 719px, color-mix(in srgb, var(--accent-2) 35%, transparent) 720px 721px, transparent 722px);
+}
+.L-cover .cover-title { font-weight: 400; }
+.L-cover .cover-image { opacity: 1; }
+.L-cover.has-image .decor { right: 44%; }
+
+/* section divider: navy with accent number */
+.L-section.page, .L-closing.page, .L-back-cover.page, .L-chapter.page.inverse { background: var(--dark); }
+.L-section { --sec-num: var(--accent-2); }
+.L-section .sec-wrap { border-left: 2px solid var(--accent-text, var(--accent)); padding-left: 34px; }
+
+/* takeaway: navy bar with white text reads as the "so what" */
+.takeaway { --takeaway-bg: var(--surface); }
+
+/* charts */
+.el { --sw-radius: 0; }
+.kpi-v { --kpi-color: var(--ink); }
+.kpis--plain .kpi { border-top-width: 1.5px; }
+.card--line { border-top-width: 1.5px; }
+
+/* report */
+.page--report .rp-head { border-bottom-color: var(--ink); }
+.page--report .exhibit-label { color: var(--accent-text, var(--accent)); }
+.L-chapter .ch-num { color: var(--accent-text, var(--accent)); }
+.page--report.L-chapter.inverse { --sec-num: var(--accent-2); }

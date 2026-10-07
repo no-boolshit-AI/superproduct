@@ -1,0 +1,66 @@
+/* Executive dark: deep navy pages, light type, gold accent, thin large numbers. */
+:root {
+  --page-bg: #0b1320;
+  --ink: #f1f4f8;
+  --ink-2: #c3ccd8;
+  --muted: #8d9aab;
+  --line: rgba(255, 255, 255, 0.14);
+  --line-strong: #f1f4f8;
+  --surface: #142034;
+  --surface-2: #1b2a42;
+  --dark: #060c16;
+  --on-dark: #ffffff;
+  --on-dark-muted: rgba(255, 255, 255, 0.7);
+  --accent: #d0a85c;
+  --accent-2: #6fa8ff;
+  --on-accent: #0b1320;
+  --pos: #4cc38a;
+  --neg: #ff6b6b;
+  --warn: #f5b73b;
+  --c1: #6fa8ff; --c2: #d0a85c; --c3: #7fd1c7; --c4: #8d9aab; --c5: #4a5b75; --c6: #b48cf2; --c7: #e8e1cf; --c8: #2a3a55;
+  --c-muted: #3c4c66;
+  --c-axis: #5d6d84;
+  --font-head: "Inter Tight", var(--font-body-fallback);
+  --font-body: "Inter", var(--font-body-fallback);
+  --font-num: "Inter Tight", var(--font-body-fallback);
+  --title-weight: 300;
+  --title-tracking: -0.015em;
+  --head-weight: 500;
+  --num-weight: 200;
+  --radius: 4px;
+  --node: #26385a;
+}
+.page[data-format="deck"] { --fs-title: 30px; }
+.page--deck .tracker { color: var(--accent-text, var(--accent)); }
+.page--deck .pg-title { font-weight: 300; }
+.page b, .page strong { color: #fff; }
+.el .ch-pill { background: var(--page-bg); border-color: var(--accent-text, var(--accent)); color: var(--accent-text, var(--accent)); }
+.ann { stroke: var(--accent-text, var(--accent)); } .ann-head { fill: var(--accent-text, var(--accent)); }
+.ax--base { stroke: var(--ink-2); }
+.kpi-v { --kpi-color: #fff; font-weight: 200; }
+.kpi { --kpi-bg: var(--surface); }
+.kpi.is-hl { --kpi-bg: var(--surface); color: var(--ink); border-top: 2px solid var(--accent-text, var(--accent)); }
+.kpi.is-hl .kpi-v { color: var(--accent-text, var(--accent)); }
+.kpi.is-hl .kpi-l, .kpi.is-hl .kpi-n { color: var(--ink-2); }
+.card--accent { color: var(--on-accent); --card-head: var(--on-accent); }
+.takeaway { --takeaway-bg: var(--surface); }
+.tbl th { border-bottom-color: var(--ink-2); }
+.tbl tr.is-total td { border-top-color: var(--ink-2); }
+.page .num-badge { color: var(--on-accent); }
+.page .big { font-weight: 200; }
+
+/* inverse = even darker for dividers */
+.L-cover.page, .L-section.page, .L-closing.page, .L-back-cover.page { background: var(--dark); }
+.L-cover .decor { background:
+  linear-gradient(90deg, transparent 0 calc(100% - 420px), color-mix(in srgb, var(--accent) 50%, transparent) calc(100% - 420px) calc(100% - 419px), transparent calc(100% - 418px)),
+  radial-gradient(ellipse at 85% 30%, color-mix(in srgb, var(--accent-2) 18%, transparent), transparent 55%),
+  radial-gradient(ellipse at 10% 110%, color-mix(in srgb, var(--accent) 12%, transparent), transparent 50%);
+}
+.L-cover { --cover-kicker: var(--accent-text, var(--accent)); --cover-weight: 200; --cover-sub: var(--muted); }
+.L-cover .cover-title { font-size: 56px; letter-spacing: -0.025em; }
+.page--report.L-cover .cover-title { font-size: 48px; }
+.L-section .sec-num { font-weight: 200; font-size: 110px; color: var(--accent-text, var(--accent)); }
+.L-section .sec-title { font-weight: 300; }
+.L-statement .st-big { font-weight: 300; }
+.L-statement .st-num { font-weight: 200; }
+.page.inverse { --bullet: var(--accent-text, var(--accent)); }

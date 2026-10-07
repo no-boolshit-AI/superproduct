@@ -1,0 +1,40 @@
+{
+  "name": "superproduct",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Product-aware AI agents on the Claude Agent SDK: one product folder (brand tokens, voice, facts, offers, GTM) drives LinkedIn carousels, collage posts, decks and reports, landing pages and GitHub features. Swap the folder to switch brands.",
+  "license": "AGPL-3.0-or-later",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/no-boolshit-AI/superproduct.git"
+  },
+  "homepage": "https://github.com/no-boolshit-AI/superproduct#readme",
+  "bugs": {
+    "url": "https://github.com/no-boolshit-AI/superproduct/issues"
+  },
+  "keywords": [
+    "claude",
+    "claude-agent-sdk",
+    "ai-agents",
+    "brand",
+    "design-tokens",
+    "marketing",
+    "landing-page",
+    "presentations",
+    "linkedin"
+  ],
+  "type": "module",
+  "engines": {
+    "node": ">=20.12"
+  },
+  "scripts": {
+    "agents": "node scripts/agents.mjs",
+    "status": "node scripts/agents.mjs status",
+    "outputs": "node scripts/agents.mjs outputs",
+    "install:agents": "node scripts/agents.mjs install all",
+    "test:agents": "node scripts/agents.mjs test all",
+    "product": "node scripts/product.mjs",
+    "product:check": "node scripts/product.mjs check",
+    "test:product": "node --test lib/product.test.mjs && node scripts/product.mjs check --product lib/fixtures/acme"
+  }
+}

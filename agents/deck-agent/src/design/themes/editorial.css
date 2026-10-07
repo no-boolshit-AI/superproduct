@@ -1,0 +1,60 @@
+/* Editorial: warm paper, Playfair Display headlines, serif report body, terracotta + forest. */
+:root {
+  --page-bg: #f7f3ec;
+  --ink: #1f1b16;
+  --ink-2: #3f382f;
+  --muted: #7b7165;
+  --line: #d8cfc1;
+  --line-strong: #1f1b16;
+  --surface: #eee6d9;
+  --surface-2: #e3d8c6;
+  --dark: #233a33;
+  --on-dark: #fbf8f2;
+  --on-dark-muted: rgba(251, 248, 242, 0.74);
+  --accent: #b5462c;
+  --accent-2: #d8a657;
+  --pos: #3f7d5c;
+  --neg: #b5462c;
+  --warn: #d8a657;
+  --c1: #233a33; --c2: #b5462c; --c3: #d8a657; --c4: #7a9e9f; --c5: #a89a86; --c6: #5b4b3a; --c7: #c98b6e; --c8: #ddd3c3;
+  --c-muted: #c9bdab;
+  --c-axis: #8d8273;
+  --font-head: "Playfair Display", var(--font-head-fallback);
+  --font-body: "Inter", var(--font-body-fallback);
+  --font-num: "Playfair Display", var(--font-head-fallback);
+  --title-weight: 500;
+  --title-tracking: -0.005em;
+  --head-weight: 600;
+  --num-weight: 500;
+  --radius: 2px;
+  --quote-style: italic;
+}
+.page[data-format="report"] { --font-body: "Source Serif 4", var(--font-head-fallback); --fs-body: 12.75px; --lh-body: 1.55; }
+.page[data-format="report"] .el, .page[data-format="report"] .rp-head, .page[data-format="report"] .rp-foot, .page[data-format="report"] .exhibit-label, .page[data-format="report"] .exhibit-sub, .page[data-format="report"] .exhibit-foot { font-family: var(--font-ui, "Inter", var(--font-body-fallback)); }
+.page--deck .tracker { color: var(--accent-text, var(--accent)); font-family: var(--font-body); }
+.page--deck .pg-title { font-size: 29px; }
+.page--deck .pg-foot { border-top: 1px solid var(--line); padding-top: 8px; }
+.big { letter-spacing: -0.01em; }
+.kpi-v { letter-spacing: -0.01em; }
+.kpi { --kpi-bg: transparent; border-top: 1px solid var(--ink); border-radius: 0; padding: 12px 0 0; justify-content: flex-start; }
+.kpi.is-hl { --kpi-bg: transparent; color: var(--ink); border-top: 2px solid var(--accent-text, var(--accent)); }
+.kpi.is-hl .kpi-v { color: var(--accent-text, var(--accent)); } .kpi.is-hl .kpi-l, .kpi.is-hl .kpi-n { color: var(--ink-2); }
+.quote { font-style: var(--accent-style, italic); }
+.takeaway { font-family: var(--font-accent, var(--font-head)); font-style: var(--accent-style, italic); font-weight: var(--accent-weight, 500); --takeaway-bg: transparent; border-left: 3px solid var(--accent-text, var(--accent)); padding: 4px 0 4px 18px; font-size: 1.12em; }
+.L-cover .cover-title, .L-section .sec-title, .L-chapter .ch-title { font-weight: 500; }
+.L-cover.page { background: var(--page-bg); }
+.L-cover .decor { background:
+  linear-gradient(var(--ink), var(--ink)) var(--mx) calc(100% - 118px) / calc(100% - var(--mx) * 2) 1px no-repeat,
+  linear-gradient(var(--accent-text, var(--accent)), var(--accent-text, var(--accent))) var(--mx) 48px / 64px 3px no-repeat; }
+.L-cover .cover-title { font-size: 58px; line-height: 1.04; }
+.L-cover .cover-kicker { margin-top: 0; }
+.page--report.L-cover .cover-title { font-size: 50px; }
+.L-section.page, .L-closing.page, .L-back-cover.page, .L-chapter.page.inverse { background: var(--dark); }
+.L-section { --sec-num: var(--accent-2); }
+.L-section .sec-num { font-style: var(--accent-style, italic); }
+.L-chapter .ch-num { font-style: var(--accent-style, italic); }
+.L-statement .st-big { font-style: var(--accent-style, italic); }
+.page--report .rp-head { font-family: var(--font-ui, "Inter", var(--font-body-fallback)); }
+.page--report .ar-text p { text-align: justify; }
+.L-summary .sm-findings { background: transparent; border-top: 2px solid var(--accent-text, var(--accent)); border-bottom: 1px solid var(--line); padding: 16px 0; }
+.page--report .exhibit--rule { border-top: 1px solid var(--ink); }

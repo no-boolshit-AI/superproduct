@@ -1,0 +1,3 @@
+Sample images used only by `npm run preview` (layout previews). Not used in generated posts.
+- sample-portrait.jpg, sample-cutout.png: "Astronaut Eileen Collins", NASA, public domain (via scikit-image data).
+- sample-texture.jpg: "Hubble Deep Field", NASA/ESA, public domain (via scikit-image data).

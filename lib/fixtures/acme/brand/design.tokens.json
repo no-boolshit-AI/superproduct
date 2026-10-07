@@ -1,0 +1,90 @@
+{
+  "$description": "Test fixture: a light (yellow) primary, so agents must pick readable text colours.",
+  "color": {
+    "$type": "color",
+    "yellow": {
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [
+          1,
+          0.839,
+          0.039
+        ],
+        "hex": "#ffd60a"
+      }
+    },
+    "crust": {
+      "$value": "#2b1d16"
+    },
+    "flour": {
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [
+          0.98,
+          0.97,
+          0.95
+        ]
+      }
+    },
+    "role": {
+      "primary": {
+        "$value": "{color.yellow}"
+      },
+      "on-primary": {
+        "$value": "{color.crust}"
+      },
+      "background": {
+        "$value": "{color.flour}"
+      },
+      "text": {
+        "$value": "{color.crust}"
+      },
+      "inverse": {
+        "$value": "{color.crust}"
+      },
+      "on-inverse": {
+        "$value": "#ffffff"
+      },
+      "accent": {
+        "$value": "{color.role.primary}"
+      },
+      "on-accent": {
+        "$value": "{color.crust}"
+      }
+    }
+  },
+  "font": {
+    "family": {
+      "$type": "fontFamily",
+      "sans": {
+        "$value": [
+          "Acme Sans",
+          "DM Sans",
+          "ui-sans-serif",
+          "sans-serif"
+        ]
+      },
+      "serif": {
+        "$value": [
+          "Fraunces",
+          "serif"
+        ]
+      }
+    },
+    "weight": {
+      "$type": "fontWeight",
+      "regular": {
+        "$value": 400
+      }
+    }
+  },
+  "radius": {
+    "$type": "dimension",
+    "md": {
+      "$value": {
+        "value": 10,
+        "unit": "px"
+      }
+    }
+  }
+}

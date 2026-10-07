@@ -1,0 +1,43 @@
+{
+  "name": "deck-agent",
+  "version": "0.1.0",
+  "description": "Claude Agent SDK agent that builds corporate PDF presentations and reports (16:9 decks and A4 reports, incl. McKinsey-style) from HTML elements rendered to PNG.",
+  "license": "AGPL-3.0-or-later",
+  "type": "module",
+  "private": true,
+  "engines": {
+    "node": ">=20.12"
+  },
+  "scripts": {
+    "setup": "playwright install chromium",
+    "deck": "tsx src/cli.ts",
+    "web": "tsx src/web/server.ts",
+    "demo": "tsx scripts/demo.ts",
+    "gallery": "tsx scripts/gallery.ts",
+    "rerender": "tsx scripts/rerender.ts",
+    "test": "tsx test/run.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@anthropic-ai/claude-agent-sdk": "^0.3.291",
+    "@fontsource/ibm-plex-sans": "^5.3.0",
+    "@fontsource/inter": "^5.3.0",
+    "@fontsource/inter-tight": "^5.3.0",
+    "@fontsource/playfair-display": "^5.3.0",
+    "@fontsource/source-serif-4": "^5.3.0",
+    "@pdf-lib/fontkit": "^1.1.1",
+    "dejavu-fonts-ttf": "^2.37.3",
+    "esbuild": "^0.28.2",
+    "fflate": "^0.8.3",
+    "openai": "^7.28.0",
+    "pdf-lib": "^1.17.1",
+    "playwright": "^1.63.0",
+    "read-excel-file": "^9.3.10",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.4",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2"
+  }
+}

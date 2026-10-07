@@ -1,0 +1,83 @@
+{
+  "schemaVersion": 1,
+  "id": "acme-bread",
+  "name": "Acme Bread",
+  "wordmark": "acme bread",
+  "tagline": "Bread on Fridays",
+  "oneLiner": "A weekly sourdough subscription (fictional test fixture).",
+  "website": "https://acme.example",
+  "languages": [
+    "en"
+  ],
+  "cta": {
+    "primary": {
+      "label": "Start a subscription",
+      "url": "https://acme.example/start"
+    }
+  },
+  "offerings": [
+    {
+      "id": "weekly-loaf",
+      "name": "Weekly loaf",
+      "kind": "subscription",
+      "price": {
+        "from": 6,
+        "currency": "EUR",
+        "unit": "per week"
+      },
+      "url": "https://acme.example/start",
+      "status": "live",
+      "file": "offerings/weekly-loaf.md"
+    }
+  ],
+  "brand": {
+    "tokens": "brand/design.tokens.json",
+    "guidelines": "brand/guidelines.md",
+    "voice": "brand/voice.md",
+    "messaging": "brand/messaging.md",
+    "fonts": [
+      {
+        "family": "Acme Sans",
+        "role": "sans",
+        "license": "OFL-1.1 (Instrument Sans, renamed for the fixture)",
+        "files": [
+          {
+            "path": "assets/fonts/acme-sans.woff2",
+            "weight": "400 700",
+            "style": "normal"
+          }
+        ]
+      }
+    ],
+    "shape": "soft",
+    "imageStyle": "warm daylight, flour dust, crusty loaves"
+  },
+  "context": {
+    "always": [
+      "BRIEF.md"
+    ],
+    "content": [
+      "brand/voice.md",
+      "brand/messaging.md",
+      "knowledge/facts.md"
+    ],
+    "design": [
+      "brand/guidelines.md"
+    ],
+    "development": []
+  },
+  "agents": {
+    "collage-post": {
+      "palette": "brand",
+      "brandPalette": {
+        "bg": "{color.role.inverse}",
+        "ink": "{color.role.primary}"
+      },
+      "fonts": "brand"
+    }
+  },
+  "repos": [
+    "acme/bread-shop"
+  ],
+  "updated": "2026-10-07"
+}

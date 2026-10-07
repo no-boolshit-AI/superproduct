@@ -1,0 +1,72 @@
+/* Modern corporate: bold sans, soft cards, teal/blue with amber highlight. */
+:root {
+  --page-bg: #ffffff;
+  --ink: #14243b;
+  --ink-2: #3a4a5e;
+  --muted: #6b7a8c;
+  --line: #dde3ea;
+  --line-strong: #14243b;
+  --surface: #f2f5f8;
+  --surface-2: #e6ebf1;
+  --dark: #12355b;
+  --on-dark: #ffffff;
+  --on-dark-muted: rgba(255, 255, 255, 0.74);
+  --accent: #00a19b;
+  --accent-2: #f2a900;
+  --pos: #1f9d55;
+  --neg: #e2504c;
+  --warn: #f2a900;
+  --c1: #12355b; --c2: #00a19b; --c3: #f2a900; --c4: #5bb8d6; --c5: #8b98aa; --c6: #e2725b; --c7: #95c86a; --c8: #cfd8e2;
+  --c-muted: #c3ccd6;
+  --c-axis: #8a97a6;
+  --font-head: "IBM Plex Sans", var(--font-body-fallback);
+  --font-body: "IBM Plex Sans", var(--font-body-fallback);
+  --font-num: "IBM Plex Sans", var(--font-body-fallback);
+  --title-weight: 600;
+  --title-tracking: -0.012em;
+  --head-weight: 600;
+  --num-weight: 600;
+  --radius: 10px;
+  --bullet-radius: 50%;
+}
+.page[data-format="deck"] { --fs-title: 26px; }
+
+/* accent bar above the title, tracker as a soft pill */
+.page--deck .pg-head { position: relative; padding-top: 14px; }
+.page--deck .pg-head::before { content: ""; position: absolute; left: 0; top: 0; width: 44px; height: 4px; border-radius: 2px; background: var(--accent-text, var(--accent)); }
+.page--deck .tracker { position: absolute; right: 0; top: -4px; margin: 0; padding: 4px 12px; border-radius: 999px; background: var(--surface); color: var(--ink-2); letter-spacing: .05em; }
+.page--deck .pg-foot { border-top: 1px solid var(--line); padding-top: 9px; }
+.page--deck .pg-num { color: var(--on-accent); background: var(--accent); border-radius: 999px; padding: 1px 8px; min-width: 26px; text-align: center; font-weight: 600; }
+
+.card:not(.card--line) { --card-pad: 22px 22px 20px; }
+.takeaway { border-left: 0; border-radius: var(--radius); --takeaway-bg: color-mix(in srgb, var(--accent) 11%, var(--page-bg)); }
+.takeaway::before { content: ""; width: 8px; align-self: stretch; border-radius: 4px; background: var(--accent-text, var(--accent)); flex: none; margin: -2px 0; }
+.kpi { border-radius: 12px; }
+.kpi-v { --kpi-color: var(--dark); }
+.kpi.is-hl { --kpi-bg: var(--dark); color: var(--on-dark); }
+.tbl--filled th { background: var(--dark); }
+.tbl--filled th:first-child { border-top-left-radius: 6px; } .tbl--filled th:last-child { border-top-right-radius: 6px; }
+.el { --sw-radius: 50%; }
+
+/* cover: split with a geometric accent block */
+.L-cover.page { background: var(--page-bg); }
+.L-cover .decor { left: auto; width: 40%; background:
+  radial-gradient(circle at 30% 70%, rgba(255,255,255,.16) 0 120px, transparent 121px),
+  radial-gradient(circle at 85% 20%, var(--accent-2) 0 70px, transparent 71px),
+  linear-gradient(160deg, var(--accent) 0%, var(--dark) 100%);
+  border-radius: 0 0 0 48px;
+}
+.L-cover .cover-wrap { max-width: 640px; }
+.L-cover.has-image .decor { display: none; }
+.L-cover .cover-image { width: 40%; border-radius: 0 0 0 48px; overflow: hidden; }
+.page--report.L-cover .decor { left: 0; top: auto; width: auto; height: 36%; border-radius: 48px 48px 0 0; }
+.page--report.L-cover .cover-image { border-radius: 48px 48px 0 0; }
+
+.L-section.page, .L-closing.page, .L-back-cover.page { background: linear-gradient(150deg, var(--dark) 0%, var(--dark-deep, #0b2440) 100%); }
+.L-section { --sec-num: var(--accent-2); }
+.L-section .sec-num { font-weight: 300; }
+.L-section .decor { left: auto; width: 34%; background: radial-gradient(circle at 70% 50%, color-mix(in srgb, var(--accent) 80%, transparent) 0 190px, transparent 191px), radial-gradient(circle at 70% 50%, transparent 0 249px, rgba(255,255,255,.12) 250px 251px, transparent 252px); }
+
+.page--report .rp-head { border-bottom: 0; padding-bottom: 0; }
+.page--report .rp-head span:first-child::before { content: ""; display: inline-block; width: 22px; height: 4px; border-radius: 2px; background: var(--accent-text, var(--accent)); margin-right: 10px; vertical-align: middle; }
+.L-summary .sm-findings { border-top: 0; border-left: 6px solid var(--accent-text, var(--accent)); }

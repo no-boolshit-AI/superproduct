@@ -1,0 +1,10 @@
+node_modules/
+.env
+*.log
+# per-project profiles, secrets, skill bundles and mirrors
+projects/
+# one folder per run (clone + container home + logs)
+runs/
+# shared package caches mounted into containers
+cache/
+ask/

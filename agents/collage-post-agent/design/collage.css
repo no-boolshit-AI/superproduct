@@ -1,0 +1,215 @@
+/* =====================================================================
+   COLLAGE DESIGN SYSTEM
+   Editorial collage look: cutouts, duotones, torn paper, loud serif type.
+   Canvas 1080 x 1350 (4:5). All values are in canvas pixels.
+   Colours come ONLY from palette tokens (palettes.css); never hard-code.
+   ===================================================================== */
+@import url("palettes.css");
+
+/* ---------- fonts (bundled, offline) ---------- */
+@font-face{font-family:"Roboto Serif";font-style:normal;font-display:block;font-weight:100 900;font-stretch:50% 150%;
+  src:url(fonts/roboto-serif-latin-full-normal.woff2) format("woff2");
+  unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:"Roboto Serif";font-style:normal;font-display:block;font-weight:100 900;font-stretch:50% 150%;
+  src:url(fonts/roboto-serif-latin-ext-full-normal.woff2) format("woff2");
+  unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+@font-face{font-family:"Roboto Serif";font-style:italic;font-display:block;font-weight:100 900;font-stretch:50% 150%;
+  src:url(fonts/roboto-serif-latin-full-italic.woff2) format("woff2");
+  unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:"Roboto Serif";font-style:italic;font-display:block;font-weight:100 900;font-stretch:50% 150%;
+  src:url(fonts/roboto-serif-latin-ext-full-italic.woff2) format("woff2");
+  unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+@font-face{font-family:"Inter";font-style:normal;font-display:block;font-weight:100 900;
+  src:url(fonts/inter-latin-wght-normal.woff2) format("woff2");
+  unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:"Inter";font-style:normal;font-display:block;font-weight:100 900;
+  src:url(fonts/inter-latin-ext-wght-normal.woff2) format("woff2");
+  unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+
+/* ---------- tokens ---------- */
+:root{
+  --serif:"Roboto Serif",Georgia,"Times New Roman",serif;
+  --sans:"Inter","Helvetica Neue",Arial,sans-serif;
+  --gutter:80px;
+  --stroke:3px;             /* outline frames */
+  --body-size:31px;         /* body copy */
+  --mast-size:25px;         /* masthead */
+}
+
+/* ---------- page / canvas ---------- */
+html,body{margin:0;padding:0;background:#0b0b0b}
+body{display:flex;justify-content:center;align-items:flex-start;min-height:100vh}
+.canvas{position:relative;width:1080px;height:1350px;overflow:hidden;flex:none;isolation:isolate;
+  background:var(--bg);color:var(--ink);font-family:var(--sans);
+  -webkit-font-smoothing:antialiased;text-rendering:geometricPrecision;transform-origin:top center}
+.canvas *,.canvas *::before,.canvas *::after{box-sizing:border-box}
+.canvas.is-loud{background:var(--loud)}
+
+/* ---------- type ---------- */
+.mast{position:absolute;top:58px;left:50%;transform:translateX(-50%);z-index:60;text-align:center;white-space:nowrap;
+  font:400 var(--mast-size)/1 var(--sans);letter-spacing:-.005em;color:var(--ink);margin:0}
+.hl{font-family:var(--serif);font-weight:300;font-stretch:112%;font-optical-sizing:auto;
+  font-size:var(--size,120px);line-height:.96;letter-spacing:-.012em;margin:0;
+  color:var(--ink);overflow-wrap:normal;hyphens:manual;text-wrap:balance}
+.hl em{font-style:italic}
+.body{font:400 var(--body-size)/1.3 var(--sans);letter-spacing:-.004em;color:var(--ink);margin:0;text-wrap:pretty}
+.body p{margin:0 0 1.25em}
+.body p:last-child{margin-bottom:0}
+.u,.body u,.hl u{text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:.22em}
+.hl u{text-decoration-thickness:4px}
+.txt{position:absolute;z-index:40}
+
+/* ---------- images + effects ----------
+   <img class="img duo-cut edge-loud" src="assets/x.png">
+   filter = [pre] [duotone] [edge]; each class only sets its own variable.   */
+.img{display:block;max-width:none;filter:var(--pre,contrast(1.08)) var(--duo,) var(--edge,)}
+.punch{--pre:contrast(1.3) brightness(1.02)}
+.soft{--pre:contrast(.92) brightness(1.05)}
+.duo-hero{--duo:url(#duo-hero)}   .duo-cut{--duo:url(#duo-cut)}     .duo-pale{--duo:url(#duo-pale)}
+.duo-loud{--duo:url(#duo-loud)}   .duo-mono{--duo:url(#duo-mono)}   .duo-ghost{--duo:url(#duo-ghost)}
+.duo-shade{--duo:url(#duo-shade)}
+.duo-t1{--duo:url(#duo-t1)} .duo-t2{--duo:url(#duo-t2)} .duo-t3{--duo:url(#duo-t3)}
+.duo-t4{--duo:url(#duo-t4)} .duo-t5{--duo:url(#duo-t5)} .duo-t6{--duo:url(#duo-t6)}
+.edge-ink{--edge:url(#edge-ink)} .edge-loud{--edge:url(#edge-loud)} .edge-bg{--edge:url(#edge-bg)}
+.cover{object-fit:cover;width:100%;height:100%}
+.contain{object-fit:contain;width:100%;height:100%}
+
+/* rotation helper: style="--r:-6deg" */
+.rot{transform:rotate(var(--r,0deg))}
+
+/* scissor cuts: irregular hand-cut edges for photos without transparency */
+.scissor-1{clip-path:polygon(2% 6%,38% 0,71% 4%,100% 1%,97% 38%,100% 72%,94% 100%,55% 96%,18% 100%,0 81%,4% 44%)}
+.scissor-2{clip-path:polygon(0 3%,46% 0,100% 7%,96% 52%,100% 95%,61% 100%,7% 97%,3% 58%)}
+.scissor-3{clip-path:polygon(9% 0,100% 0,93% 31%,100% 63%,88% 100%,0 100%,6% 66%,0 29%)}
+.scissor-torn{clip-path:polygon(0 8%,12% 3%,22% 7%,35% 0,49% 6%,63% 2%,78% 8%,91% 1%,100% 6%,98% 35%,100% 64%,96% 100%,80% 95%,66% 100%,49% 94%,33% 100%,19% 95%,4% 100%,1% 70%,3% 40%)}
+
+/* grain + vignette overlays (add class to .canvas) */
+.grain::after{content:"";position:absolute;inset:-20px;z-index:90;pointer-events:none;opacity:.17;mix-blend-mode:var(--grain-blend,overlay);
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='260' height='260'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>")}
+.vignette{position:absolute;inset:0;z-index:3;pointer-events:none;
+  background:radial-gradient(ellipse 80% 70% at 50% 38%,transparent 35%,var(--vignette) 100%)}
+
+/* geometric collage pieces */
+.shape{position:absolute;background:var(--deep);z-index:4}
+.shape.ink{background:var(--ink)} .shape.loud{background:var(--loud)} .shape.slab{background:var(--slab)}
+.sq{position:absolute;width:52px;height:52px;background:var(--ink);transform:rotate(var(--r,20deg));z-index:6}
+.frame-line{position:absolute;border:var(--stroke) solid var(--ink);z-index:8}
+
+/* =====================================================================
+   LAYOUT 1 · COVER PORTRAIT  (.L-cover)
+   Full-bleed duotone image, dek top-right, giant headline bottom-left.
+   ===================================================================== */
+.L-cover .hero{position:absolute;inset:0;z-index:1;width:100%;height:100%;object-fit:cover;object-position:50% 30%}
+.L-cover .fade{position:absolute;inset:0;z-index:2;pointer-events:none;
+  background:linear-gradient(to bottom,transparent 50%,color-mix(in srgb,var(--bg) 55%,transparent) 100%)}
+.L-cover .dek{left:566px;top:186px;width:436px;font-size:30px;line-height:1.28}
+.L-cover .hl{left:80px;right:70px;bottom:92px;max-height:620px;--size:136px;line-height:.95}
+
+/* =====================================================================
+   LAYOUT 2 · DIAGONAL QUESTION  (.L-diagonal)
+   Words rotated individually, stair-stepping down; cutout bleeding
+   bottom-right with outline; body top-right; caption bottom-left.
+   ===================================================================== */
+.L-diagonal .stair{left:58px;top:250px;width:500px;max-height:680px;--size:114px;line-height:1.76;text-align:center;text-wrap:wrap}
+.L-diagonal .stair .w{display:inline-block;transform:rotate(var(--r,-29deg));transform-origin:50% 55%;margin-right:.32em;white-space:nowrap}
+.L-diagonal .stair .q{display:inline-block;margin-left:.1em;transform:translate(.05em,.95em) rotate(14deg)}
+.L-diagonal .dek{left:554px;top:186px;width:464px;font-size:30px;line-height:1.3}
+.L-diagonal .cut{position:absolute;z-index:10;right:-40px;bottom:-12px;width:650px;height:860px;object-fit:contain;object-position:right bottom}
+.L-diagonal .cap{left:72px;top:964px;width:486px;font-size:30px;line-height:1.3}
+
+/* =====================================================================
+   LAYOUT 3 · STATEMENT + GHOST  (.L-statement)
+   Huge statement top; tilted, ghosted texture image in the lower half;
+   short body block right.
+   ===================================================================== */
+.L-statement .hl{left:78px;top:184px;width:944px;max-height:540px;--size:104px;line-height:.98}
+.L-statement .ghost{position:absolute;z-index:1;left:-170px;top:690px;width:1150px;height:860px;object-fit:cover;
+  transform:rotate(-24deg);opacity:.42;
+  -webkit-mask-image:radial-gradient(ellipse 60% 55% at 45% 45%,#000 30%,transparent 75%);
+          mask-image:radial-gradient(ellipse 60% 55% at 45% 45%,#000 30%,transparent 75%)}
+.L-statement .dek{left:580px;top:796px;width:432px;font-size:31px;line-height:1.3}
+
+/* =====================================================================
+   LAYOUT 4 · LAYERED COLLAGE  (.L-layered)
+   Dark torn fragments behind, tilted colour bars, angular slab,
+   cutout centre-right, body top-left, statement across the bottom.
+   ===================================================================== */
+.L-layered .frag{position:absolute;z-index:1;overflow:hidden}
+.L-layered .frag img{width:100%;height:100%;object-fit:cover}
+.L-layered .frag-a{left:96px;top:30px;width:590px;height:370px;transform:rotate(-3deg)}
+.L-layered .frag-b{left:-60px;top:750px;width:400px;height:620px;transform:rotate(8deg)}
+.L-layered .bar-a{left:938px;top:200px;width:64px;height:600px;transform:rotate(-13deg);z-index:2}
+.L-layered .bar-b{left:150px;top:300px;width:450px;height:96px;clip-path:polygon(0 76%,100% 0,100% 12%,3% 100%);z-index:2}
+.L-layered .bar-c{left:700px;top:1090px;width:420px;height:70px;clip-path:polygon(0 70%,100% 0,100% 18%,0 100%);z-index:2}
+.L-layered .slab{left:330px;top:735px;width:800px;height:680px;clip-path:polygon(17% 100%,27% 19%,100% 0,100% 100%);z-index:3}
+.L-layered .cut{position:absolute;z-index:5;left:460px;top:415px;width:480px;height:540px;object-fit:contain;object-position:50% 100%}
+.L-layered .dek{left:100px;top:174px;width:404px;font-size:31px;line-height:1.3}
+.L-layered .hl{left:98px;top:928px;width:880px;max-height:340px;--size:66px;line-height:1.0}
+
+/* =====================================================================
+   LAYOUT 5 · FILMSTRIP  (.L-filmstrip)
+   Photo-booth strip on the left (4 frames, same subject, variations),
+   statement right, attribution below.
+   ===================================================================== */
+.L-filmstrip .strip{position:absolute;z-index:5;left:75px;top:-12px;width:290px;height:1380px;background:var(--frame);
+  padding:0 14px;display:flex;flex-direction:column;gap:17px}
+.L-filmstrip .fr{position:relative;flex:none;height:316px;overflow:hidden;background:var(--loud)}
+.L-filmstrip .fr img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 25%}
+.L-filmstrip .fr.crop img{object-position:50% 100%;transform:scale(1.25) translateY(-28%)}
+.L-filmstrip .fr.ghost img+img{mix-blend-mode:screen;opacity:.7;transform:translate(9px,-18px) scale(1.06)}
+.L-filmstrip .fr.slip img+img{mix-blend-mode:screen;opacity:.75;transform:translate(-12px,10px) scale(1.12)}
+.L-filmstrip .fr.zoom img{transform:scale(1.5);object-position:50% 30%}
+.L-filmstrip .fr .veil{position:absolute;inset:0;background:linear-gradient(to bottom,color-mix(in srgb,var(--loud) 70%,transparent),transparent 65%)}
+.L-filmstrip .hl{left:452px;top:236px;width:566px;max-height:744px;--size:82px;line-height:.97}
+.L-filmstrip .dek{left:458px;top:1048px;width:520px;font-size:31px;line-height:1.3}
+
+/* =====================================================================
+   LAYOUT 6 · LINEAGE BOX  (.L-lineage)  — the LOUD slide
+   Loud background, nested outline boxes, tilted portrait cards on ink
+   squares, confetti squares, ink band with the title, drawer flaps.
+   ===================================================================== */
+.L-lineage{background:var(--loud)}
+.L-lineage .mast{color:var(--ink)}
+.L-lineage .outer{left:186px;top:137px;width:724px;height:1260px}
+.L-lineage .box{position:absolute;z-index:8;left:266px;width:555px;height:158px;border:var(--stroke) solid var(--ink);
+  display:flex;align-items:center;justify-content:center;text-align:center;padding:0 34px;
+  font:400 31px/1.28 var(--sans);color:var(--ink2);text-wrap:balance}
+.L-lineage .b1{top:196px}.L-lineage .b2{top:409px}.L-lineage .b3{top:617px}.L-lineage .b4{top:1110px}
+.L-lineage .flaps{position:absolute;inset:0;z-index:9;pointer-events:none}
+.L-lineage .flaps line{stroke:var(--ink);stroke-width:3}
+.L-lineage .band{position:absolute;z-index:30;left:57px;top:840px;width:966px;height:270px;background:var(--ink);
+  display:flex;align-items:center;padding:0 70px}
+.L-lineage .band .hl{position:static;flex:1 1 auto;min-width:0;color:var(--on-ink);--size:108px;line-height:1;white-space:nowrap}
+.L-lineage .card{position:absolute;width:206px;height:206px;background:var(--card,var(--ink));overflow:hidden;
+  transform:rotate(var(--r,0deg));z-index:var(--z,12)}
+.L-lineage .card img{width:100%;height:100%;object-fit:cover;object-position:50% 20%;mix-blend-mode:multiply;--pre:grayscale(1) contrast(1.25)}
+.L-lineage .card img.contain{object-fit:contain;object-position:50% 100%}
+.L-lineage .c1{left:92px;top:196px;--r:-28deg}
+.L-lineage .c2{left:740px;top:285px;--r:14deg}
+.L-lineage .c3{left:152px;top:452px;--r:-24deg}
+.L-lineage .c4{left:812px;top:506px;--r:21deg}
+.L-lineage .c5{left:96px;top:682px;--r:-27deg;--z:10}
+.L-lineage .c6{left:438px;top:790px;--r:30deg;--z:10}
+.L-lineage .c7{left:722px;top:698px;--r:14deg;--z:10}
+.L-lineage .s1{left:62px;top:88px;--r:32deg;width:58px;height:58px}
+.L-lineage .s2{left:996px;top:118px;--r:-24deg;width:38px;height:38px}
+.L-lineage .s3{left:925px;top:262px;--r:16deg;width:56px;height:56px}
+.L-lineage .s4{left:20px;top:560px;--r:-12deg;width:30px;height:30px}
+
+/* =====================================================================
+   LAYOUT 7 · MOSAIC GRID  (.L-mosaic)
+   Two bands of portrait tiles, each tile a different tint; the bands
+   are tilted against each other; headline + aside in the gap.
+   ===================================================================== */
+.L-mosaic .row{position:absolute;display:flex;z-index:2}
+.L-mosaic .tile{position:relative;flex:1 1 0;overflow:hidden;background:var(--deep)}
+.L-mosaic .tile img{width:100%;height:100%;object-fit:cover;object-position:50% 25%}
+.L-mosaic .tile.solid{background:var(--ink)}
+.L-mosaic .tile.solid.loud{background:var(--loud)}
+.L-mosaic .r1{left:-40px;top:16px;width:1070px;height:362px;transform:rotate(6deg);transform-origin:0 0}
+.L-mosaic .r2{left:-8px;top:714px;width:1096px;height:306px}
+.L-mosaic .r2 .tile:nth-child(1),.L-mosaic .r2 .tile:nth-child(4){flex-grow:.62}
+.L-mosaic .r3{left:22px;top:990px;width:1060px;height:400px;transform:rotate(-4.5deg);transform-origin:0 100%}
+.L-mosaic .hl{left:64px;top:462px;width:960px;max-height:250px;--size:104px;line-height:.98;text-wrap:nowrap}
+.L-mosaic .aside{display:inline-block;vertical-align:top;width:300px;margin:.42em 0 0 .45em;
+  font:400 25px/1.3 var(--sans);letter-spacing:0;white-space:normal;text-wrap:balance}

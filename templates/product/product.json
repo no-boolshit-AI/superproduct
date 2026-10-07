@@ -1,0 +1,76 @@
+{
+  "$schema": "../schemas/product.schema.json",
+  "schemaVersion": 1,
+  "id": "{{id}}",
+  "name": "{{name}}",
+  "wordmark": "{{name}}",
+  "tagline": "[Tagline]",
+  "oneLiner": "[One sentence: what it is, for whom, why it's different]",
+  "description": "[Two or three sentences]",
+  "category": "[Market category]",
+  "stage": "idea",
+  "languages": [
+    "en"
+  ],
+  "website": "{{website}}",
+  "links": {},
+  "company": {
+    "legalName": "[Legal entity]",
+    "email": "[contact email]"
+  },
+  "cta": {
+    "primary": {
+      "label": "[Main action]",
+      "url": "{{website}}"
+    }
+  },
+  "audiences": [],
+  "offerings": [],
+  "brand": {
+    "tokens": "brand/design.tokens.json",
+    "css": "brand/tokens.css",
+    "guidelines": "brand/guidelines.md",
+    "voice": "brand/voice.md",
+    "messaging": "brand/messaging.md",
+    "logo": {},
+    "fonts": [],
+    "shape": "soft",
+    "imageStyle": "",
+    "signature": ""
+  },
+  "context": {
+    "always": [
+      "BRIEF.md"
+    ],
+    "content": [
+      "brand/voice.md",
+      "brand/messaging.md",
+      "knowledge/facts.md"
+    ],
+    "design": [
+      "brand/guidelines.md"
+    ],
+    "sales": [
+      "strategy/positioning.md",
+      "strategy/audiences.md",
+      "gtm/sales-pitch.md",
+      "knowledge/faq.md"
+    ],
+    "strategy": [
+      "strategy/vision.md",
+      "strategy/positioning.md",
+      "strategy/audiences.md",
+      "strategy/competitors.md",
+      "gtm/strategy.md",
+      "gtm/channels.md"
+    ],
+    "development": [
+      "knowledge/glossary.md",
+      "development/architecture.md",
+      "brand/voice.md"
+    ]
+  },
+  "agents": {},
+  "repos": [],
+  "updated": "{{date}}"
+}

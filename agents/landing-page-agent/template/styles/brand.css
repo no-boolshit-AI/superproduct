@@ -1,0 +1,6 @@
+/* DEFAULT BRAND — neutral placeholder. The set_brand tool replaces this file with the brand's own colours, fonts and corner style. */
+:root {
+  --font-display-family: "Inter Variable";
+  --font-body-family: "Inter Variable";
+  --heading-weight: 600;
+}

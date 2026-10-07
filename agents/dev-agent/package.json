@@ -1,0 +1,27 @@
+{
+  "name": "dev-agent",
+  "version": "0.1.0",
+  "description": "Claude Agent SDK developer agent: sets up a GitHub project once (stack detection, dev skills, Docker workspace), then turns feature requests into a PRD, a milestone plan, tested commits and a pushed branch / draft PR. Every run gets its own folder and container.",
+  "license": "AGPL-3.0-or-later",
+  "type": "module",
+  "private": true,
+  "engines": {
+    "node": ">=20.12"
+  },
+  "scripts": {
+    "agent": "tsx src/cli.ts",
+    "web": "tsx src/web/server.ts",
+    "doctor": "tsx src/cli.ts doctor",
+    "test": "tsx test/run.ts",
+    "typecheck": "tsc -p ."
+  },
+  "dependencies": {
+    "@anthropic-ai/claude-agent-sdk": "0.3.291",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.4",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2"
+  }
+}

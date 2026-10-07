@@ -1,0 +1,37 @@
+<!doctype html>
+<!--
+LAYOUT 04 · LAYERED COLLAGE — use for: a historical example / "what would X do" / story beat.
+COPY   .dek  1–2 short paragraphs, 25–45 words total, top-left (may end with a question).
+       .hl   serif statement, 12–22 words, max 5 lines, across the bottom.
+IMAGES a) 1 transparent cutout bust (head + shoulders), facing slightly left or forward.
+          generate_image kind=cutout — or a public-domain portrait with class .scissor-1 (hand-cut edge).
+          Classes: .img .cut .duo-pale
+       b) 1–2 background fragments (any related image; it is shown almost black).
+          Reuse the cutout's source or a texture. Classes: .img .duo-shade inside .frag.scissor-torn
+-->
+<html lang="en" data-palette="orchid">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Layered collage</title>
+<link rel="stylesheet" href="_design/collage.css">
+<script src="_design/collage.js" defer></script>
+</head>
+<body>
+<main class="canvas L-layered grain">
+  <div class="frag frag-a scissor-torn"><img class="img duo-shade" src="assets/sample-portrait.jpg" alt=""></div>
+  <div class="frag frag-b scissor-2"><img class="img duo-shade" src="assets/sample-texture.jpg" alt=""></div>
+  <div class="shape bar-a"></div>
+  <div class="shape bar-b"></div>
+  <div class="shape bar-c"></div>
+  <div class="shape slab"></div>
+  <img class="img cut duo-pale" src="assets/sample-cutout.png" alt="">
+  <p class="mast">Your Brand</p>
+  <div class="txt body dek">
+    <p>Some old maps left blank spaces where their makers’ knowledge ended. Explorers read those blanks as invitations.</p>
+    <p>What would they make of a map that claims to know everything?</p>
+  </div>
+  <h1 class="txt hl" data-fit data-min="48">Being curious today means leaving room for the places no algorithm has mapped yet.</h1>
+</main>
+</body>
+</html>

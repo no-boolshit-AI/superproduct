@@ -1,0 +1,21 @@
+{
+  "name": "Your Brand",
+  "wordmark": {
+    "text": "Your Brand\n& Company",
+    "logo": null
+  },
+  "colors": {
+    "primary": "#3052F7",
+    "primaryDeep": "#1E33B8",
+    "primaryLight": "#6F8BFF",
+    "violet": "#7A5CFF",
+    "surface": "#F2F2F2",
+    "ink": "#101E21",
+    "onPrimary": "#FFFFFF"
+  },
+  "fonts": {
+    "sans": { "family": "Inter Tight", "files": null },
+    "serif": { "family": "Source Serif 4", "files": null }
+  },
+  "imageStyle": "monochrome electric cobalt blue with soft violet highlights"
+}

@@ -1,0 +1,12 @@
+{
+  "name": "Northwind Partners",
+  "wordmark": { "text": "Northwind Partners", "logo": null },
+  "colors": {
+    "accent": "#0A7C66",
+    "accent2": "#F2A900",
+    "dark": "#0E2A36"
+  },
+  "fonts": {},
+  "confidentiality": "Confidential. Prepared for internal discussion only.",
+  "imageStyle": "editorial photography, soft daylight, teal and warm amber tones"
+}

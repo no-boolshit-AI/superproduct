@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Deck Agent</title>
+<style>
+:root{--bg:#f4f5f7;--panel:#fff;--ink:#0f1b2a;--muted:#667385;--line:#e1e5ea;--accent:#2251ff;--ok:#0f9d74;--err:#e0475b;--warn:#c98a00}
+@media (prefers-color-scheme:dark){:root{--bg:#0d1117;--panel:#151b23;--ink:#e6edf3;--muted:#8b97a6;--line:#262f3a;--accent:#5b7cff}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif}
+header{display:flex;align-items:center;gap:16px;padding:12px 20px;border-bottom:1px solid var(--line);background:var(--panel)}
+header h1{font-size:16px;margin:0;font-weight:650;letter-spacing:-.01em}header .meta{color:var(--muted);font-size:12.5px;margin-left:auto}
+main{display:grid;grid-template-columns:380px minmax(0,1fr);gap:0;min-height:calc(100vh - 49px)}
+aside{border-right:1px solid var(--line);background:var(--panel);padding:18px;display:flex;flex-direction:column;gap:14px;overflow:auto;max-height:calc(100vh - 49px)}
+section{padding:18px 22px;overflow:auto;max-height:calc(100vh - 49px)}
+label{display:block;font-size:12px;font-weight:600;color:var(--muted);margin:0 0 5px;text-transform:uppercase;letter-spacing:.05em}
+textarea,input,select{width:100%;font:inherit;color:inherit;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px}
+textarea{min-height:150px;resize:vertical}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+button{font:inherit;font-weight:600;border:0;border-radius:8px;padding:9px 14px;cursor:pointer;background:var(--accent);color:#fff}
+button.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}button:disabled{opacity:.5;cursor:default}
+.drop{border:1.5px dashed var(--line);border-radius:8px;padding:10px;color:var(--muted);font-size:13px;text-align:center;cursor:pointer}
+.drop.over{border-color:var(--accent);color:var(--accent)}
+.files{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}.files span{background:var(--bg);border:1px solid var(--line);border-radius:999px;padding:2px 9px;font-size:12px}
+.jobs{display:flex;flex-direction:column;gap:8px}.job{display:grid;grid-template-columns:72px 1fr;gap:10px;align-items:center;padding:6px;border-radius:8px;cursor:pointer;border:1px solid transparent}
+.job:hover,.job.sel{border-color:var(--line);background:var(--bg)}.job img,.job .ph{width:72px;height:48px;object-fit:cover;border-radius:4px;background:var(--line);display:block}
+.job b{display:block;font-size:13px;line-height:1.3;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}.job small{color:var(--muted)}
+.badge{display:inline-block;border-radius:999px;padding:1px 8px;font-size:11.5px;font-weight:600;background:var(--line)}
+.badge.done{background:color-mix(in srgb,var(--ok) 18%,transparent);color:var(--ok)}.badge.error,.badge.cancelled{background:color-mix(in srgb,var(--err) 18%,transparent);color:var(--err)}.badge.running{background:color-mix(in srgb,var(--accent) 18%,transparent);color:var(--accent)}
+.top{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px}.top h2{margin:0;font-size:19px;letter-spacing:-.01em}
+.top .sp{flex:1}.cost{color:var(--muted);font-size:12.5px}
+.pages{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
+.pages.report{grid-template-columns:repeat(auto-fill,minmax(170px,1fr))}
+.pages figure{margin:0}.pages img{width:100%;display:block;border-radius:4px;box-shadow:0 1px 4px rgba(0,0,0,.18);background:#fff}
+.pages figcaption{font-size:12px;color:var(--muted);padding-top:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.log{margin-top:18px;border-top:1px solid var(--line);padding-top:10px;font:12.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--muted);max-height:260px;overflow:auto;white-space:pre-wrap}
+.log .t{color:var(--ink)}.log .e{color:var(--err)}
+.revise{margin-top:18px;display:grid;gap:8px;max-width:760px}.revise textarea{min-height:80px}
+.empty{color:var(--muted);padding:60px 0;text-align:center}
+.summary{white-space:pre-wrap;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:12px 14px;margin:14px 0;max-width:900px}
+@media (max-width:860px){main{grid-template-columns:1fr}aside,section{max-height:none}}
+</style>
+</head>
+<body>
+<header><h1>Deck Agent</h1><span class="meta" id="meta">…</span></header>
+<main>
+<aside>
+  <div>
+    <label for="brief">Brief</label>
+    <textarea id="brief" placeholder="What is the document for, who reads it, what should it conclude? Paste notes, numbers, structure ideas. E.g. 'McKinsey-style board deck: should we enter the Polish market? Data attached.'"></textarea>
+  </div>
+  <div>
+    <label>Files (data, documents, images)</label>
+    <div class="drop" id="drop">Drop files or click · csv, xlsx, json, md, txt, pdf, png, jpg</div>
+    <input type="file" id="file" multiple hidden>
+    <div class="files" id="files"></div>
+  </div>
+  <div class="row">
+    <div><label for="format">Format</label><select id="format"><option value="auto">Auto</option><option value="deck">16:9 deck</option><option value="report">A4 report</option></select></div>
+    <div><label for="theme">Style</label><select id="theme"><option value="auto">Auto</option></select></div>
+  </div>
+  <div class="row">
+    <div><label for="pages">Pages</label><input id="pages" type="number" min="1" max="60" placeholder="auto"></div>
+    <div><label for="budget">Budget (USD)</label><input id="budget" type="number" min="0.5" step="0.5"></div>
+  </div>
+  <div class="row">
+    <div><label for="audience">Audience</label><input id="audience" placeholder="e.g. board"></div>
+    <div><label for="language">Language</label><input id="language" placeholder="en"></div>
+  </div>
+  <button id="go">Create document</button>
+  <div><label>Documents</label><div class="jobs" id="jobs"></div></div>
+</aside>
+<section id="view"><div class="empty">Write a brief and press “Create document”, or open an earlier one.</div></section>
+</main>
+<script>
+const $ = (s, el = document) => el.querySelector(s);
+const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+let files = [], current = null, es = null, pageState = new Map(), job = null;
+
+async function api(path, opts = {}) {
+  const r = await fetch(path, { ...opts, headers: { "Content-Type": "application/json" } });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(j.error || r.statusText);
+  return j;
+}
+const readB64 = (f) => new Promise((ok, no) => { const r = new FileReader(); r.onload = () => ok(String(r.result).split(",")[1]); r.onerror = no; r.readAsDataURL(f); });
+async function pack(list) { return Promise.all(list.map(async (f) => ({ name: f.name, data: await readB64(f) }))); }
+
+function renderFiles() { $("#files").innerHTML = files.map((f, i) => `<span title="click to remove" data-i="${i}">${esc(f.name)} ×</span>`).join(""); }
+$("#files").onclick = (e) => { const i = e.target.dataset.i; if (i !== undefined) { files.splice(+i, 1); renderFiles(); } };
+const drop = $("#drop");
+drop.onclick = () => $("#file").click();
+$("#file").onchange = (e) => { files.push(...e.target.files); renderFiles(); e.target.value = ""; };
+drop.ondragover = (e) => { e.preventDefault(); drop.classList.add("over"); };
+drop.ondragleave = () => drop.classList.remove("over");
+drop.ondrop = (e) => { e.preventDefault(); drop.classList.remove("over"); files.push(...e.dataTransfer.files); renderFiles(); };
+
+async function loadMeta() {
+  const m = await api("/api/meta");
+  $("#meta").textContent = `Claude: ${m.auth} · images: ${m.images} · brand: ${m.brand}${m.product ? ` (product folder${m.houseTheme ? `, house theme ${m.houseTheme}` : ""})` : ""}`;
+  $("#theme").innerHTML = `<option value="auto">Auto</option>` + m.themes.map((t) => `<option value="${t.id}" title="${esc(t.bestFor)}">${esc(t.label)}</option>`).join("");
+  $("#budget").value = m.defaultBudget; $("#budget").max = m.maxBudget;
+}
+async function loadJobs() {
+  const jobs = await api("/api/jobs");
+  $("#jobs").innerHTML = jobs.map((j) => `<div class="job${j.id === current ? " sel" : ""}" data-id="${j.id}">${j.thumb ? `<img src="/out/${j.id}/${j.thumb}?t=${Date.now()}" alt="">` : `<div class="ph"></div>`}<div><b>${esc(j.title)}</b><small><span class="badge ${j.running ? "running" : j.status}">${j.running ? "running" : j.status}</span> ${j.pages ? j.pages + " p" : ""} ${esc(j.theme ?? "")}</small></div></div>`).join("") || `<small style="color:var(--muted)">None yet.</small>`;
+}
+$("#jobs").onclick = (e) => { const el = e.target.closest(".job"); if (el) open(el.dataset.id); };
+
+$("#go").onclick = async () => {
+  const brief = $("#brief").value.trim();
+  if (!brief) return alert("Write a brief first.");
+  $("#go").disabled = true;
+  try {
+    const r = await api("/api/jobs", { method: "POST", body: JSON.stringify({ brief, format: $("#format").value, theme: $("#theme").value, pages: $("#pages").value, budget: $("#budget").value, audience: $("#audience").value, language: $("#language").value, files: await pack(files) }) });
+    files = []; renderFiles();
+    open(r.id);
+  } catch (err) { alert(err.message); } finally { $("#go").disabled = false; }
+};
+
+function view(statusText) {
+  const pages = [...pageState.values()].sort((a, b) => a.index - b.index);
+  const isReport = job?.format === "report" || pages.some((p) => p.report);
+  const pdf = job?.pdf;
+  $("#view").innerHTML = `
+    <div class="top"><h2>${esc(job?.title || job?.brief?.split("\n")[0] || current)}</h2>
+      <span class="badge ${statusText}">${statusText}</span>
+      ${job?.format ? `<span class="cost">${job.format === "deck" ? "16:9 deck" : "A4 report"} · ${esc(job.theme)}</span>` : ""}
+      <span class="sp"></span><span class="cost" id="cost">${job?.costUsd ? "$" + job.costUsd.toFixed(2) : ""}</span>
+      ${pdf ? `<a href="/out/${current}/${pdf}" target="_blank"><button class="ghost">Open PDF</button></a><a href="/out/${current}/${pdf}?download"><button>Download PDF</button></a>` : ""}
+      ${statusText === "running" ? `<button class="ghost" id="cancel">Cancel</button>` : ""}
+    </div>
+    ${job?.summary && statusText !== "running" ? `<div class="summary">${esc(job.summary)}</div>` : ""}
+    ${job?.error ? `<div class="summary" style="color:var(--err)">${esc(job.error)}</div>` : ""}
+    <div class="pages ${isReport ? "report" : ""}">${pages.map((p) => `<figure><a href="/out/${current}/${p.png || p.preview}" target="_blank"><img src="/out/${current}/${p.preview}?t=${p.t}" alt="Page ${p.index}" loading="lazy"></a><figcaption>${p.index}. ${esc(p.title || p.layout || "")}</figcaption></figure>`).join("") || `<div class="empty">Pages appear here as the agent renders them.</div>`}</div>
+    ${statusText !== "running" && job?.sessionId ? `<div class="revise"><label for="rev">Request changes</label><textarea id="rev" placeholder="e.g. Make page 5 a waterfall, shorten the executive summary, switch to the corporate style, add an appendix with the raw data"></textarea><div><button id="revbtn">Revise</button></div></div>` : ""}
+    <div class="log" id="log"></div>`;
+  $("#log").innerHTML = logLines.join("\n");
+  $("#log").scrollTop = 1e9;
+  $("#cancel") && ($("#cancel").onclick = () => api(`/api/jobs/${current}/cancel`, { method: "POST", body: "{}" }));
+  $("#revbtn") && ($("#revbtn").onclick = async () => {
+    const instructions = $("#rev").value.trim();
+    if (!instructions) return;
+    try { await api(`/api/jobs/${current}/revise`, { method: "POST", body: JSON.stringify({ instructions, budget: $("#budget").value }) }); open(current); } catch (e) { alert(e.message); }
+  });
+}
+
+let logLines = [];
+const log = (cls, s) => { logLines.push(`<span class="${cls}">${esc(s)}</span>`); const el = $("#log"); if (el) { el.innerHTML = logLines.join("\n"); el.scrollTop = 1e9; } };
+
+async function open(id) {
+  current = id; pageState = new Map(); logLines = [];
+  es?.close();
+  job = await api(`/api/jobs/${id}`).catch(() => ({ id }));
+  for (const p of job.pages || []) pageState.set(p.index, { ...p, t: Date.now() });
+  view(job.running ? "running" : job.status || "running");
+  loadJobs();
+  es = new EventSource(`/api/jobs/${id}/events`);
+  let throttle = null;
+  es.onmessage = (m) => {
+    const e = JSON.parse(m.data);
+    if (e.type === "text") log("t", e.text);
+    else if (e.type === "tool") log("", "→ " + e.summary);
+    else if (e.type === "status") log("", "· " + e.message);
+    else if (e.type === "error") log("e", "! " + e.message);
+    else if (e.type === "cost") { const c = $("#cost"); if (c) c.textContent = "$" + e.usd.toFixed(2); }
+    else if (e.type === "page") {
+      pageState.set(e.index, { index: e.index, preview: e.path, title: e.title, layout: e.layout, t: Date.now() });
+      clearTimeout(throttle); throttle = setTimeout(() => view("running"), 150);
+    } else if (e.type === "done") {
+      job = e.job; pageState = new Map((job.pages || []).map((p) => [p.index, { ...p, t: Date.now() }]));
+      view(job.status); loadJobs(); es.close();
+    }
+  };
+}
+
+loadMeta().then(loadJobs);
+setInterval(loadJobs, 15000);
+</script>
+</body>
+</html>

@@ -1,0 +1,69 @@
+/* Swiss minimal: black on white, signal red, strict grid, heavy rules, tight grotesk. */
+:root {
+  --page-bg: #ffffff;
+  --ink: #111111;
+  --ink-2: #333333;
+  --muted: #707070;
+  --line: #cfcfcf;
+  --line-strong: #111111;
+  --surface: #f1f1f1;
+  --surface-2: #e4e4e4;
+  --dark: #111111;
+  --on-dark: #ffffff;
+  --on-dark-muted: rgba(255, 255, 255, 0.66);
+  --accent: #e30613;
+  --accent-2: #111111;
+  --pos: #1c8c4e;
+  --neg: #e30613;
+  --warn: #f0a000;
+  --c1: #111111; --c2: #e30613; --c3: #8a8a8a; --c4: #c4c4c4; --c5: #4d4d4d; --c6: #ff6f61; --c7: #a6a6a6; --c8: #e6e6e6;
+  --c-muted: #c9c9c9;
+  --c-axis: #111111;
+  --font-head: "Inter Tight", var(--font-body-fallback);
+  --font-body: "Inter", var(--font-body-fallback);
+  --font-num: "Inter Tight", var(--font-body-fallback);
+  --title-weight: 600;
+  --title-tracking: -0.025em;
+  --head-weight: 600;
+  --num-weight: 600;
+  --radius: 0px;
+  --bullet: var(--ink);
+  --node: #111111;
+}
+.page[data-format="deck"] { --fs-title: 30px; --lh-title: 1.1; --mt: 26px; }
+.page[data-format="report"] { --fs-title: 26px; --lh-title: 1.12; }
+
+/* top bar: heavy rule with tracker left and page number right */
+.page--deck .pg-head { border-top: 3px solid var(--ink); padding-top: 9px; }
+.page--deck .tracker { color: var(--ink); letter-spacing: .04em; margin-bottom: 26px; }
+.page--deck .tracker::after { content: ""; flex: 1; }
+.page--deck .pg-title { --title-max: 1000px; }
+.page--deck .pg-foot { border-top: 1px solid var(--ink); padding-top: 8px; }
+.ax { stroke: var(--ink); }
+.el .ch-pill { border-color: var(--accent-text, var(--accent)); color: var(--accent-text, var(--accent)); }
+.big { letter-spacing: -0.04em; }
+.kpi-v { font-weight: 600; letter-spacing: -0.04em; }
+.kpi { --kpi-bg: transparent; border-top: 3px solid var(--ink); border-radius: 0; padding: 12px 0 0; justify-content: flex-start; }
+.kpi.is-hl { --kpi-bg: transparent; color: var(--ink); border-top-color: var(--accent-text, var(--accent)); }
+.kpi.is-hl .kpi-v { color: var(--accent-text, var(--accent)); } .kpi.is-hl .kpi-l, .kpi.is-hl .kpi-n { color: var(--ink-2); }
+.card { --card-bg: transparent; --card-pad: 12px 0 0; border-top: 3px solid var(--ink); }
+.card--accent { --card-bg: var(--accent); --card-pad: 18px; border-top: 0; }
+.card--dark { --card-pad: 18px; border-top: 0; }
+.takeaway { border-left: 0; border-top: 3px solid var(--accent-text, var(--accent)); --takeaway-bg: transparent; padding: 10px 0 0; font-weight: 600; }
+.page ul > li::before { width: 0.6em; height: 2px; top: 0.7em; }
+.panel > h3:first-child { border-bottom: 3px solid var(--ink); }
+
+.L-cover.page { background: var(--page-bg); }
+.L-cover { --cover-kicker: var(--accent-text, var(--accent)); --cover-weight: 700; }
+.L-cover .decor { background:
+  linear-gradient(var(--ink), var(--ink)) var(--mx) var(--mt) / calc(100% - var(--mx) * 2) 3px no-repeat,
+  linear-gradient(var(--accent), var(--accent)) calc(100% - var(--mx) - 120px) calc(var(--mt) + 40px) / 120px 120px no-repeat;
+}
+.L-cover .cover-title { font-size: 66px; line-height: 1.0; letter-spacing: -0.035em; }
+.page--report.L-cover .cover-title { font-size: 54px; }
+.L-section.page, .L-closing.page, .L-back-cover.page { background: var(--accent); }
+.L-section.inverse, .L-closing.inverse, .L-back-cover.inverse { --dark: var(--accent); --on-dark: var(--on-accent); --sec-num: var(--on-accent); --on-dark-muted: color-mix(in srgb, var(--on-accent) 82%, transparent); --bullet: var(--on-accent); --accent-text: var(--on-accent); }
+.L-section .sec-num { font-size: 140px; font-weight: 700; letter-spacing: -0.05em; }
+.L-section .sec-title { font-weight: 700; font-size: 56px; letter-spacing: -0.03em; }
+.page--report .rp-head { border-bottom: 3px solid var(--ink); color: var(--ink); }
+.exhibit--rule { border-top: 3px solid var(--ink); }

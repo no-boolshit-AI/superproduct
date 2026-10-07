@@ -1,0 +1,262 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Collage Post Agent</title>
+<style>
+@font-face{font-family:"Roboto Serif";src:url(/design/fonts/roboto-serif-latin-full-normal.woff2) format("woff2");font-weight:100 900;font-stretch:50% 150%}
+@font-face{font-family:"Roboto Serif";src:url(/design/fonts/roboto-serif-latin-ext-full-normal.woff2) format("woff2");font-weight:100 900;font-stretch:50% 150%;unicode-range:U+0100-02BA,U+1E00-1EFF}
+@font-face{font-family:"Inter";src:url(/design/fonts/inter-latin-wght-normal.woff2) format("woff2");font-weight:100 900}
+@font-face{font-family:"Inter";src:url(/design/fonts/inter-latin-ext-wght-normal.woff2) format("woff2");font-weight:100 900;unicode-range:U+0100-02BA,U+1E00-1EFF}
+:root{
+  --bg:#f5f1eb;--panel:#fffdf9;--fg:#1d1915;--mute:#6f675e;--line:#e3dbd0;--field:#fff;
+  --accent:#1d1915;--accent-fg:#f5f1eb;--warn:#a2401f;--ok:#2f6b4f;
+  --serif:"Roboto Serif",Georgia,serif;--sans:"Inter",system-ui,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#14110f;--panel:#1c1815;--fg:#efe8df;--mute:#a1978b;--line:#2f2924;--field:#110e0c;
+  --accent:#efe8df;--accent-fg:#14110f;--warn:#f08a64;--ok:#7fcfa6}}
+:root[data-theme="dark"]{--bg:#14110f;--panel:#1c1815;--fg:#efe8df;--mute:#a1978b;--line:#2f2924;--field:#110e0c;--accent:#efe8df;--accent-fg:#14110f;--warn:#f08a64;--ok:#7fcfa6}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.5 var(--sans)}
+header{max-width:1320px;margin:0 auto;padding:28px 16px 8px;display:flex;align-items:baseline;gap:16px;flex-wrap:wrap}
+h1{font:300 clamp(30px,4.4vw,48px)/1 var(--serif);font-stretch:112%;letter-spacing:-.012em;margin:0}
+header p{margin:0;color:var(--mute)}
+main{max-width:1320px;margin:0 auto;padding:16px;display:grid;grid-template-columns:minmax(0,380px) minmax(0,1fr);gap:20px;align-items:start}
+@media (max-width:900px){main{grid-template-columns:minmax(0,1fr)}}
+section{background:var(--panel);border:1px solid var(--line);padding:18px}
+h2{font:300 24px/1.1 var(--serif);font-stretch:112%;margin:0 0 14px}
+label{display:block;font-size:13px;color:var(--mute);margin:14px 0 6px}
+textarea,input,select{width:100%;font:inherit;color:var(--fg);background:var(--field);border:1px solid var(--line);padding:10px 12px;border-radius:0}
+textarea{min-height:190px;resize:vertical}
+textarea:focus,input:focus,select:focus,button:focus-visible{outline:2px solid var(--fg);outline-offset:1px}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.pals{display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:6px}
+.pal{border:1px solid var(--line);background:var(--field);padding:6px;cursor:pointer;text-align:left;font:12px/1.2 var(--sans);color:var(--fg)}
+.pal[aria-pressed="true"]{outline:2px solid var(--fg);outline-offset:-1px}
+.sw{display:flex;height:22px;margin-bottom:5px}.sw i{flex:1}
+details{margin-top:14px}summary{cursor:pointer;color:var(--mute);font-size:13px}
+.check{display:flex;gap:8px;align-items:center;margin-top:12px;font-size:13px;color:var(--fg)}
+.check input{width:auto}
+button.primary{margin-top:18px;width:100%;background:var(--accent);color:var(--accent-fg);border:0;padding:13px;font:600 15px var(--sans);cursor:pointer}
+button.primary:disabled{opacity:.5;cursor:default}
+button.ghost{background:none;border:1px solid var(--line);color:var(--fg);padding:8px 12px;font:13px var(--sans);cursor:pointer}
+.status{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+.status b{font-weight:600}
+.pill{font-size:12px;padding:2px 8px;border:1px solid var(--line);color:var(--mute)}
+.pill.done{color:var(--ok);border-color:currentColor}.pill.error{color:var(--warn);border-color:currentColor}
+.log{height:220px;overflow:auto;border:1px solid var(--line);background:var(--field);padding:10px 12px;font-size:13px}
+.log div{margin:0 0 6px;white-space:pre-wrap;overflow-wrap:anywhere}
+.log .t{color:var(--fg)} .log .k{color:var(--mute)} .log .e{color:var(--warn)}
+.assets{display:flex;gap:6px;overflow-x:auto;padding:10px 0 2px;min-height:12px}
+.assets img{height:84px;width:auto;border:1px solid var(--line);background:repeating-conic-gradient(#8885 0 25%,#0000 0 50%) 0 0/12px 12px}
+.slides{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:14px;margin-top:14px}
+.slides figure{margin:0}
+.slides img{display:block;width:100%;aspect-ratio:4/5;object-fit:cover;border:1px solid var(--line);background:var(--field)}
+.slides figcaption{font-size:12px;color:var(--mute);padding-top:5px;display:flex;gap:10px}
+.slides a,.links a{color:inherit}
+.links{display:flex;gap:14px;flex-wrap:wrap;margin-top:14px;font-size:14px}
+.revise{margin-top:16px;display:none}
+.revise textarea{min-height:80px}
+.empty{color:var(--mute);padding:30px 0;text-align:center}
+.jobs{max-width:1320px;margin:0 auto;padding:0 16px 48px}
+.joblist{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+.job{border:1px solid var(--line);background:var(--panel);padding:0;cursor:pointer;text-align:left;color:var(--fg);font:12px/1.3 var(--sans)}
+.job img,.job .ph{display:block;width:100%;aspect-ratio:4/5;object-fit:cover;background:var(--line)}
+.job span{display:block;padding:7px 8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.warn{border:1px solid var(--warn);color:var(--warn);padding:10px 12px;margin-bottom:12px;display:none}
+.mood{font-size:12px;color:var(--mute);margin-top:6px;min-height:2.4em}
+</style>
+</head>
+<body>
+<header>
+  <h1>Collage post agent</h1>
+  <p>Brief in, collage carousel out: HTML + PNG, GPT Image 2.5 for image ingredients only.</p>
+</header>
+<main>
+  <section aria-labelledby="new-h">
+    <h2 id="new-h">New post</h2>
+    <div class="warn" id="keys"></div>
+    <form id="form">
+      <label for="brief">Brief: a topic and angle, or your finished copy</label>
+      <textarea id="brief" required placeholder="e.g. Why we still need explorers. Angle: curiosity is a habit that feeds quietly wear down. Mention Ada Lovelace and Marie Curie; end with today's explorers. Audience: designers and educators."></textarea>
+      <div class="row">
+        <div><label for="slides">Slides</label>
+          <select id="slides"><option value="auto">Auto</option><option>1</option><option>3</option><option>4</option><option>5</option><option>6</option><option selected>7</option><option>8</option><option>9</option><option>10</option></select></div>
+        <div><label for="brand">Masthead</label><input id="brand"></div>
+      </div>
+      <label>Palette</label>
+      <div class="pals" id="pals" role="group" aria-label="Palette"></div>
+      <div class="mood" id="mood"></div>
+      <details>
+        <summary>Advanced</summary>
+        <div class="row">
+          <div><label for="model">Claude model</label><input id="model"></div>
+          <div><label for="imageModel">Image model</label>
+            <select id="imageModel"><option>gpt-image-2.5-flare</option><option>gpt-image-2.5-sunburst</option></select></div>
+        </div>
+        <div class="row">
+          <div><label for="quality">Image quality</label>
+            <select id="quality"><option>low</option><option>medium</option><option>high</option><option>xhigh</option><option>max</option></select></div>
+          <div><label for="maxImages">Max generated images</label><input id="maxImages" type="number" min="0" max="30"></div>
+        </div>
+        <div class="row">
+          <div><label for="scale">PNG size</label>
+            <select id="scale"><option value="1">1080 × 1350</option><option value="2">2160 × 2700</option></select></div>
+          <div><label for="budget">Claude budget (USD)</label><input id="budget" type="number" min="0.5" step="0.5"></div>
+        </div>
+        <label class="check"><input type="checkbox" id="cc"> Allow CC BY / BY-SA photos (credits added)</label>
+      </details>
+      <button class="primary" id="go" type="submit">Make the post</button>
+    </form>
+  </section>
+
+  <section aria-labelledby="job-h" id="jobpanel">
+    <div class="status"><h2 id="job-h" style="margin:0">Output</h2><span class="pill" id="pill">idle</span></div>
+    <div id="jobbody"><p class="empty">Start a post or open one below. You'll see the agent's progress, the images it sources, and the slides as they render.</p></div>
+  </section>
+</main>
+
+<div class="jobs">
+  <h2>Previous posts</h2>
+  <div class="joblist" id="jobs"></div>
+</div>
+
+<template id="tpl-job">
+  <div class="status" style="margin-bottom:6px"><b id="jtitle"></b><span style="display:flex;gap:8px"><button class="ghost" id="cancel" type="button">Cancel</button></span></div>
+  <div class="log" id="log" aria-live="polite"></div>
+  <div class="assets" id="assets"></div>
+  <div class="slides" id="slidegrid"></div>
+  <div class="links" id="links"></div>
+  <div class="revise" id="revise">
+    <label for="rev">Ask for changes</label>
+    <textarea id="rev" placeholder="e.g. Slide 3: shorter headline. Use the ultraviolet palette. Replace the mosaic portraits with hands at work."></textarea>
+    <button class="primary" id="revgo" type="button">Revise</button>
+  </div>
+</template>
+
+<script>
+const $ = (s, r = document) => r.querySelector(s);
+const state = { palette: "auto", meta: null, job: null, es: null };
+const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+async function api(path, opts) {
+  const r = await fetch(path, opts);
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(j.error || r.statusText);
+  return j;
+}
+
+function palChip(p) {
+  const b = document.createElement("button");
+  b.type = "button"; b.className = "pal"; b.dataset.name = p.name;
+  b.setAttribute("aria-pressed", String(state.palette === p.name));
+  b.innerHTML = p.colors ? `<div class="sw">${p.colors.map((c) => `<i style="background:${c}"></i>`).join("")}</div>${esc(p.label)}`
+    : `<div class="sw" style="background:repeating-linear-gradient(90deg,#1F110D 0 20%,#8DA6FF 0 40%,#C9F23A 0 60%,#FF8F45 0 80%,#EEE7D9 0)"></div>Auto`;
+  b.onclick = () => { state.palette = p.name; document.querySelectorAll(".pal").forEach((x) => x.setAttribute("aria-pressed", String(x.dataset.name === p.name))); $("#mood").textContent = p.mood || "The agent picks the palette that fits the topic."; };
+  return b;
+}
+
+async function init() {
+  const meta = state.meta = await api("/api/meta");
+  const d = meta.defaults;
+  $("#brand").value = d.brand; $("#model").value = d.model; $("#imageModel").value = d.imageModel;
+  $("#quality").value = d.imageQuality; $("#maxImages").value = d.maxImages; $("#scale").value = String(d.scale);
+  $("#budget").value = d.maxBudgetUsd; $("#cc").checked = !!d.allowAttribution;
+  $("#slides").value = String(d.slides);
+  state.palette = d.palette || "auto";
+  const pals = $("#pals");
+  pals.append(palChip({ name: "auto", label: "Auto" }));
+  meta.palettes.forEach((p) => pals.append(palChip(p)));
+  const cur = meta.palettes.find((p) => p.name === state.palette);
+  $("#mood").textContent = cur ? cur.mood : "The agent picks the palette that fits the topic.";
+  if (meta.missingKeys.length) { const w = $("#keys"); w.style.display = "block"; w.textContent = `Missing ${meta.missingKeys.join(" and ")}. Copy .env.example to .env, add the keys and restart.`; }
+  loadJobs();
+  const hash = location.hash.slice(1); if (hash) openJob(hash);
+}
+
+async function loadJobs() {
+  const jobs = await api("/api/jobs");
+  const list = $("#jobs"); list.innerHTML = "";
+  if (!jobs.length) { list.innerHTML = '<p class="empty" style="grid-column:1/-1">No posts yet.</p>'; return; }
+  for (const j of jobs) {
+    const b = document.createElement("button"); b.className = "job"; b.type = "button";
+    b.innerHTML = (j.thumb ? `<img src="/out/${esc(j.id)}/${esc(j.thumb)}?t=${Date.parse(j.updatedAt)}" alt="" loading="lazy">` : '<div class="ph"></div>') +
+      `<span>${esc(j.brief.split("\n")[0])}</span><span style="color:var(--mute);padding-top:0">${new Date(j.createdAt).toLocaleString()} · ${j.running ? "running" : j.status}</span>`;
+    b.onclick = () => openJob(j.id);
+    list.append(b);
+  }
+}
+
+function setPill(status) { const p = $("#pill"); p.textContent = status; p.className = "pill " + (status === "done" ? "done" : status === "error" || status === "cancelled" ? "error" : ""); }
+
+function logLine(cls, text) { const l = $("#log"); if (!l) return; const d = document.createElement("div"); d.className = cls; d.textContent = text; l.append(d); l.scrollTop = l.scrollHeight; }
+
+function showSlides(id, pngs, slides) {
+  const g = $("#slidegrid"); g.innerHTML = ""; const t = Date.now();
+  pngs.forEach((png, i) => {
+    const html = slides?.[i]?.html || png.replace(/^png\//, "").replace(/\.png$/, ".html");
+    const f = document.createElement("figure");
+    f.innerHTML = `<a href="/out/${id}/${html}" target="_blank" rel="noopener"><img src="/out/${id}/${png}?t=${t}" alt="Slide ${i + 1}"></a>
+      <figcaption>${String(i + 1).padStart(2, "0")} <a href="/out/${id}/${html}" target="_blank" rel="noopener">HTML</a><a href="/out/${id}/${png}?download">PNG</a></figcaption>`;
+    g.append(f);
+  });
+}
+
+function openJob(id) {
+  if (state.es) state.es.close();
+  location.hash = id; state.job = id;
+  const body = $("#jobbody"); body.innerHTML = ""; body.append($("#tpl-job").content.cloneNode(true));
+  $("#jtitle").textContent = id; setPill("running");
+  $("#cancel").onclick = () => api(`/api/jobs/${id}/cancel`, { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" }).catch(() => {});
+  $("#revgo").onclick = () => revise(id);
+  const seen = new Set();
+  const es = state.es = new EventSource(`/api/jobs/${id}/events`);
+  es.onmessage = (m) => {
+    const e = JSON.parse(m.data);
+    if (e.type === "status") logLine("k", "▸ " + e.message);
+    else if (e.type === "text") logLine("t", e.text);
+    else if (e.type === "tool") logLine("k", "· " + e.summary);
+    else if (e.type === "error") logLine("e", "✗ " + e.message);
+    else if (e.type === "cost") logLine("k", `$${e.usd.toFixed(2)} Claude spend · ${e.turns} turns`);
+    else if (e.type === "image" && !seen.has(e.path)) { seen.add(e.path); const im = document.createElement("img"); im.src = `/out/${id}/${e.path}`; im.alt = e.label; im.title = e.label; $("#assets").append(im); }
+    else if (e.type === "render") showSlides(id, e.images.filter((p) => !p.includes("_")));
+    else if (e.type === "done") {
+      const j = e.job; setPill(j.status); $("#cancel").style.display = "none";
+      if (j.error) logLine("e", j.error);
+      if (j.slides?.length) {
+        showSlides(id, j.slides.map((s) => s.png), j.slides);
+        $("#links").innerHTML = `<a href="/out/${id}/${j.zip}?download"><b>Download all (zip)</b></a><a href="/out/${id}/index.html" target="_blank" rel="noopener">Gallery page</a><a href="/out/${id}/caption.md" target="_blank" rel="noopener">Caption</a>`;
+        $("#revise").style.display = "block";
+      }
+      es.close(); loadJobs();
+    }
+  };
+  es.onerror = () => { es.close(); };
+}
+
+async function revise(id) {
+  const instructions = $("#rev").value.trim(); if (!instructions) return;
+  $("#revgo").disabled = true;
+  try { await api(`/api/jobs/${id}/revise`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ instructions, model: $("#model").value, budget: $("#budget").value }) }); openJob(id); }
+  catch (err) { alertBox(err.message); $("#revgo").disabled = false; }
+}
+
+function alertBox(msg) { const w = $("#keys"); w.style.display = "block"; w.textContent = msg; }
+
+$("#form").onsubmit = async (ev) => {
+  ev.preventDefault(); const go = $("#go"); go.disabled = true;
+  try {
+    const { id } = await api("/api/jobs", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({
+      brief: $("#brief").value, slides: $("#slides").value, palette: state.palette, brand: $("#brand").value, model: $("#model").value,
+      imageModel: $("#imageModel").value, quality: $("#quality").value, maxImages: $("#maxImages").value, scale: $("#scale").value,
+      budget: $("#budget").value, allowAttribution: $("#cc").checked }) });
+    openJob(id); loadJobs();
+  } catch (err) { alertBox(err.message); }
+  finally { go.disabled = false; }
+};
+init().catch((e) => alertBox(e.message));
+</script>
+</body>
+</html>

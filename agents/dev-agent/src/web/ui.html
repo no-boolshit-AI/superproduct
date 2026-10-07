@@ -1,0 +1,311 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>dev-agent</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 16 16%27%3E%3Crect width=%2716%27 height=%2716%27 rx=%274%27 fill=%27%232b59c3%27/%3E%3Cpath d=%27M4 5l3 3-3 3M8.5 11H12%27 stroke=%27white%27 stroke-width=%271.6%27 fill=%27none%27/%3E%3C/svg%3E">
+<style>
+:root{--bg:#f6f5f2;--panel:#fff;--ink:#1d1c1a;--mute:#6d6a63;--line:#e4e1da;--accent:#2b59c3;--accent-ink:#fff;--ok:#1f7a4d;--bad:#b3261e;--warn:#9a6700;--chip:#efede8;--code:#f1efe9;--shadow:0 1px 2px rgba(0,0,0,.05)}
+@media (prefers-color-scheme:dark){:root{--bg:#141413;--panel:#1c1c1a;--ink:#ecebe7;--mute:#9b988f;--line:#2e2d2a;--accent:#7aa2ff;--accent-ink:#0d1220;--ok:#5cc28b;--bad:#ff8a80;--warn:#e8b54a;--chip:#26251f;--code:#23221e;--shadow:none}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.5 ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}
+a{color:var(--accent)}
+button,input,select,textarea{font:inherit;color:inherit}
+.app{display:grid;grid-template-columns:270px 1fr;min-height:100vh}
+aside{border-right:1px solid var(--line);padding:16px;display:flex;flex-direction:column;gap:14px;background:var(--panel);position:sticky;top:0;height:100vh;overflow:auto}
+.brand{font-weight:700;font-size:17px;letter-spacing:-.01em;display:flex;align-items:center;gap:8px}
+.brand small{font-weight:400;color:var(--mute);font-size:12px}
+.nav h4{margin:10px 0 6px;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--mute)}
+.nav a{display:flex;gap:8px;align-items:center;padding:6px 8px;border-radius:8px;text-decoration:none;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nav a:hover,.nav a.on{background:var(--chip)}
+.dot{width:8px;height:8px;border-radius:50%;flex:none;background:var(--mute)}
+.dot.done{background:var(--ok)}.dot.error,.dot.blocked,.dot.stopped{background:var(--bad)}.dot.waiting{background:var(--warn)}.dot.running{background:var(--accent);animation:pulse 1.2s infinite}.dot.cancelled{background:var(--line)}
+@keyframes pulse{50%{opacity:.35}}
+main{padding:24px clamp(16px,3vw,40px);max-width:1100px;width:100%}
+h1{font-size:22px;margin:0 0 4px;letter-spacing:-.01em}
+h2{font-size:16px;margin:22px 0 8px}
+.sub{color:var(--mute);margin:0 0 18px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;box-shadow:var(--shadow);margin-bottom:14px}
+label{display:block;font-weight:600;margin:12px 0 6px}
+input[type=text],input[type=number],input[type=password],select,textarea{width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:8px;background:var(--bg)}
+textarea{min-height:140px;resize:vertical}
+.row{display:flex;gap:12px;flex-wrap:wrap;align-items:end}.row>*{flex:1;min-width:160px}
+.btn{border:1px solid var(--line);background:var(--panel);padding:8px 14px;border-radius:8px;cursor:pointer}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:600}
+.btn.danger{color:var(--bad)}
+.btn:disabled{opacity:.5;cursor:default}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.chip{display:inline-block;padding:2px 8px;border-radius:999px;background:var(--chip);font-size:12px;color:var(--mute)}
+.chip.done{color:var(--ok)}.chip.error,.chip.blocked,.chip.stopped{color:var(--bad)}.chip.waiting{color:var(--warn)}.chip.running{color:var(--accent)}
+.steps{display:flex;gap:4px;flex-wrap:wrap;margin:12px 0}
+.steps span{padding:3px 9px;border-radius:6px;background:var(--chip);color:var(--mute);font-size:12px}
+.steps span.past{color:var(--ok)}.steps span.now{background:var(--accent);color:var(--accent-ink)}
+.ms{display:flex;gap:10px;align-items:baseline;padding:7px 0;border-bottom:1px solid var(--line)}.ms:last-child{border:0}
+.ms b{min-width:28px}.ms .t{flex:1}.ms code{font-size:12px}
+.tabs{display:flex;gap:2px;border-bottom:1px solid var(--line);margin-top:6px}
+.tabs button{border:0;background:none;padding:8px 12px;cursor:pointer;color:var(--mute);border-bottom:2px solid transparent}
+.tabs button.on{color:var(--ink);border-color:var(--accent)}
+.log{font-size:13px;max-height:70vh;overflow:auto;padding:8px 2px}
+.log .e{padding:2px 0}
+.log .status{font-weight:600}
+.log .step{margin:14px 0 6px;color:var(--mute);font-size:11px;text-transform:uppercase;letter-spacing:.08em;border-top:1px solid var(--line);padding-top:8px}
+.log .tool,.log .exec{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;color:var(--mute);white-space:pre-wrap;word-break:break-word}
+.log .exec.ok::before{content:"✓ ";color:var(--ok)}.log .exec.fail::before{content:"✗ ";color:var(--bad)}
+.log .text{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px;margin:6px 0;white-space:pre-wrap}
+.log .text.dev{border-style:dashed}
+.log .err{color:var(--bad);font-weight:600}
+.log .cost{color:var(--mute);font-size:12px;text-align:right}
+.log .ms-ev{font-weight:600;color:var(--ok)}
+.md{line-height:1.6}.md h1{font-size:20px}.md h2{font-size:16px;margin-top:20px}.md h3{font-size:14px}
+.md code{background:var(--code);padding:1px 5px;border-radius:4px;font-size:12.5px}
+.md pre{background:var(--code);padding:10px;border-radius:8px;overflow:auto}.md pre code{background:none;padding:0}
+.ask{border:2px solid var(--accent)}
+.ask .q{margin:12px 0}.ask .q .h{font-weight:600}.ask .opt{display:flex;gap:8px;align-items:flex-start;padding:5px 0;font-weight:400;margin:0}
+.ask .opt small{color:var(--mute);display:block}
+.kv{display:grid;grid-template-columns:170px 1fr;gap:6px 14px;font-size:13px}.kv div:nth-child(odd){color:var(--mute)}
+.banner{padding:10px 12px;border-radius:8px;background:var(--chip);margin-bottom:14px}.banner.bad{color:var(--bad)}
+.muted{color:var(--mute)}
+@media (max-width:760px){.app{grid-template-columns:1fr}aside{position:static;height:auto}.kv{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside>
+    <div class="brand">dev-agent <small id="meta"></small></div>
+    <div class="actions" style="margin:0"><a class="btn primary" href="#/new">New feature</a><a class="btn" href="#/setup">Set up project</a></div>
+    <div class="nav"><h4>Projects</h4><div id="projects"></div><h4>Runs</h4><div id="runs"></div></div>
+  </aside>
+  <main id="main"></main>
+</div>
+<script>
+const $ = (s, el = document) => el.querySelector(s);
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+const STEPS = ["clone", "workspace", "plan", "approval", "implement", "review", "verify", "publish", "done"];
+let es = null, state = { projects: [], runs: [], meta: {} };
+
+async function api(path, opts = {}) {
+  const res = await fetch(path, { ...opts, headers: { "Content-Type": "application/json", ...(opts.headers || {}) } });
+  const j = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(j.error || res.statusText);
+  return j;
+}
+const post = (path, body) => api(path, { method: "POST", body: JSON.stringify(body || {}) });
+
+function md(src) {
+  const blocks = [];
+  let s = esc(src).replace(/```[\w-]*\n([\s\S]*?)```/g, (_, c) => `\u0000${blocks.push(c) - 1}\u0000`);
+  s = s.split(/\n{2,}/).map((p) => {
+    if (/^\u0000\d+\u0000$/.test(p.trim())) return p;
+    if (/^#{1,4} /.test(p)) return p.replace(/^(#{1,4}) (.*)$/gm, (_, h, t) => `<h${h.length}>${t}</h${h.length}>`);
+    if (/^\s*([-*]|\d+\.) /.test(p)) {
+      const ordered = /^\s*\d+\./.test(p);
+      const items = p.split(/\n(?=\s*(?:[-*]|\d+\.) )/).map((i) => `<li>${i.replace(/^\s*(?:[-*]|\d+\.) /, "").replace(/^\[( |x|~|-)\] /i, (m, x) => (x.toLowerCase() === "x" ? "☑ " : "☐ "))}</li>`);
+      return `<${ordered ? "ol" : "ul"}>${items.join("")}</${ordered ? "ol" : "ul"}>`;
+    }
+    return `<p>${p.replace(/\n/g, "<br>")}</p>`;
+  }).join("\n");
+  s = s.replace(/`([^`]+)`/g, "<code>$1</code>").replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>").replace(/\[([^\]]+)\]\((https?:[^)\s]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+  return s.replace(/\u0000(\d+)\u0000/g, (_, i) => `<pre><code>${blocks[i]}</code></pre>`);
+}
+
+async function refreshNav() {
+  try {
+    const [p, r] = await Promise.all([api("/api/projects"), api("/api/runs")]);
+    state.projects = p.projects; state.settingUp = p.settingUp; state.runs = r;
+  } catch {}
+  const here = location.hash;
+  $("#projects").innerHTML = state.projects.map((x) => `<a href="#/project/${x.slug}" class="${here === `#/project/${x.slug}` ? "on" : ""}"><span class="dot done"></span>${esc(x.slug)} <span class="muted">${esc(x.stack)}</span></a>`).join("")
+    + (state.settingUp || []).filter((s) => !state.projects.some((x) => x.slug === s)).map((s) => `<a href="#/project/${s}"><span class="dot running"></span>${esc(s)} <span class="muted">setting up</span></a>`).join("")
+    || `<div class="muted">None yet</div>`;
+  $("#runs").innerHTML = state.runs.slice(0, 40).map((x) => `<a href="#/run/${x.id}" title="${esc(x.title)}" class="${here === `#/run/${x.id}` ? "on" : ""}"><span class="dot ${x.live ? "running" : x.status}"></span>${esc(x.title)}</a>`).join("") || `<div class="muted">None yet</div>`;
+}
+
+async function loadMeta() {
+  state.meta = await api("/api/meta").catch(() => ({}));
+  const m = state.meta;
+  $("#meta").textContent = m.runtime ? `${m.runtime}${m.docker === false ? " (docker down)" : ""} · ${m.model}` : "";
+}
+
+function banners() {
+  const m = state.meta, out = [];
+  if (m.missingAuth && m.missingAuth.length) out.push(`<div class="banner bad">Missing Claude credentials: set ${esc(m.missingAuth[0])} in .env and restart.</div>`);
+  if (m.docker === false) out.push(`<div class="banner bad">Docker isn't reachable. Start Docker Desktop (or set RUNTIME=local).</div>`);
+  if (m.github === false) out.push(`<div class="banner">No GitHub token found (GITHUB_TOKEN or <code>gh auth login</code>): needed for private repos and pull requests.</div>`);
+  return out.join("");
+}
+
+// ------------------------------------------------------------------ views
+function viewNew() {
+  const opts = state.projects.map((p) => `<option value="${esc(p.slug)}">${esc(p.slug)} · ${esc(p.repo)}</option>`).join("");
+  $("#main").innerHTML = `${banners()}<h1>New feature</h1><p class="sub">dev-agent writes a PRD and a milestone plan, implements and tests each milestone in its own workspace, then pushes a branch${state.projects.length ? "" : ". Set up a project first"}.</p>
+  <div class="card">
+    <label>Project</label>${state.projects.length ? `<select id="project">${opts}</select>` : `<a class="btn" href="#/setup">Set up a project</a>`}
+    <label>What should be built?</label><textarea id="request" placeholder="Describe the feature: who it's for, what it should do, constraints, links…"></textarea>
+    <div class="row"><div><label>GitHub issue (optional)</label><input type="text" id="issue" placeholder="123 or issue URL"></div>
+      <div><label>Plan approval</label><select id="approve"><option value="">Project default</option><option value="true">Pause after PRD + plan</option><option value="false">Fully autonomous</option></select></div>
+      <div><label>Budget (USD)</label><input type="number" id="budget" min="1" placeholder="${esc(state.meta.budget || 30)}"></div>
+      <div><label>Model</label><select id="model"><option value="">Default (${esc(state.meta.model || "opus")})</option><option>opus</option><option>sonnet</option></select></div></div>
+    <label style="font-weight:400"><input type="checkbox" id="nopr"> Push the branch only (no pull request)</label>
+    <div class="actions"><button class="btn primary" id="go" ${state.projects.length ? "" : "disabled"}>Start</button><span id="err" class="muted"></span></div>
+  </div>`;
+  $("#go") && ($("#go").onclick = async () => {
+    try {
+      $("#go").disabled = true;
+      const a = $("#approve").value;
+      const r = await post("/api/runs", { project: $("#project").value, request: $("#request").value, issue: $("#issue").value || undefined, approvePlan: a === "" ? undefined : a === "true", budget: $("#budget").value || undefined, model: $("#model").value || undefined, noPr: $("#nopr").checked });
+      location.hash = `#/run/${r.id}`;
+    } catch (e) { $("#err").textContent = e.message; $("#go").disabled = false; }
+  });
+}
+
+function viewSetup() {
+  $("#main").innerHTML = `${banners()}<h1>Set up a project</h1><p class="sub">First run for a repository: dev-agent reads the code, asks you a few questions here, installs the dev skills for the stack (e.g. Laravel Boost) and checks that the workspace boots and the tests pass.</p>
+  <div class="card"><div class="row"><div style="flex:3"><label>GitHub repository</label><input type="text" id="repo" placeholder="owner/name or https://github.com/owner/name"></div>
+  <div><label>Short name (optional)</label><input type="text" id="slug" placeholder="from the repo name"></div></div>
+  <div class="actions"><button class="btn primary" id="go">Start setup</button><span id="err" class="muted"></span></div></div>`;
+  $("#go").onclick = async () => {
+    try { $("#go").disabled = true; const r = await post("/api/projects", { repo: $("#repo").value, slug: $("#slug").value || undefined }); location.hash = `#/project/${r.slug}`; }
+    catch (e) { $("#err").textContent = e.message; $("#go").disabled = false; }
+  };
+}
+
+async function viewProject(slug) {
+  const d = await api(`/api/projects/${slug}`).catch(() => ({}));
+  const p = d.profile;
+  const runs = state.runs.filter((r) => r.project === slug);
+  let html = `${banners()}<h1>${esc(p ? p.name : slug)}</h1><p class="sub">${p ? `${esc(p.repo.owner)}/${esc(p.repo.name)} · ${esc(p.stack.primary)}` : "Setting up…"}</p>`;
+  if (d.settingUp || !p) html += `<div id="asks"></div><div class="card"><div class="actions" style="margin:0 0 6px"><button class="btn danger" id="cancel">Cancel setup</button></div><div class="log" id="log"></div></div>`;
+  if (p) html += `<div class="card"><div class="kv">
+    <div>Base branch</div><div>${esc(p.git.baseBranch)} · branches <code>${esc(p.git.branchPrefix)}…</code> · ${esc(p.git.commitStyle)} commits</div>
+    <div>Publishing</div><div>${p.publish.pullRequest === "none" ? "push branch only" : `${esc(p.publish.pullRequest)} pull request`}${p.publish.reviewers.length ? ` · reviewers ${esc(p.publish.reviewers.join(", "))}` : ""}</div>
+    <div>Autonomy</div><div>${p.autonomy.approvePlan ? "pauses for plan approval" : "fully autonomous"} · ${p.autonomy.clarifyingQuestions ? "may ask questions" : "no questions"} · ${p.autonomy.reviewRounds} review round(s)</div>
+    <div>Workspace</div><div>${esc(p.workspace.customImage || `${p.workspace.base} image`)}${p.workspace.services.length ? ` + ${esc(p.workspace.services.join(", "))}` : ""}</div>
+    <div>Verify</div><div>${p.verify.map((v) => `<code>${esc(v.command)}</code>`).join(" · ") || "none"}</div>
+    <div>Repo tooling</div><div>${esc(p.tooling.recipes.join(", ") || "none")} (${esc(p.tooling.policy)})</div>
+    <div>Agent skills</div><div>${(d.skills || []).map((s) => `<span class="chip" title="${esc(s.description)}">${esc(s.name)}</span>`).join(" ") || "none"}</div>
+  </div><div class="actions"><a class="btn primary" href="#/new">New feature</a><button class="btn" id="reconf">Reconfigure</button></div></div>
+  <h2>Project knowledge</h2><div class="card md">${md(d.knowledge || "")}</div>
+  <h2>Runs</h2><div class="card">${runs.map((r) => `<div class="ms"><span class="dot ${r.status}"></span><a class="t" href="#/run/${r.id}">${esc(r.title)}</a><span class="chip ${r.status}">${esc(r.status)}</span></div>`).join("") || `<span class="muted">No runs yet.</span>`}</div>`;
+  $("#main").innerHTML = html;
+  if ($("#reconf")) $("#reconf").onclick = async () => { try { await post("/api/projects", { repo: p.repo.url, slug, reconfigure: true }); viewProject(slug); } catch (e) { alert(e.message); } };
+  if ($("#log")) {
+    $("#cancel").onclick = () => post(`/api/projects/${slug}/cancel`);
+    stream(`/api/projects/${slug}/events`, `/api/projects/${slug}/answer`, (e) => { if (e.type === "done") setTimeout(() => { refreshNav(); viewProject(slug); }, 500); });
+  }
+}
+
+async function viewRun(id) {
+  let r;
+  try { r = await api(`/api/runs/${id}`); } catch (e) { $("#main").innerHTML = `<p>${esc(e.message)}</p>`; return; }
+  const si = STEPS.indexOf(r.step);
+  const waiting = r.status === "waiting" && r.step === "approval";
+  $("#main").innerHTML = `${banners()}<h1>${esc(r.title)}</h1>
+  <p class="sub"><span class="chip ${r.live ? "running" : r.status}">${r.live ? "running" : esc(r.status)}</span> ${esc(r.project)} · <code>${esc(r.branch)}</code> · $${r.costUsd.toFixed(2)} of $${r.budgetUsd}
+  ${r.publish?.prUrl ? ` · <a href="${esc(r.publish.prUrl)}" target="_blank" rel="noopener">pull request</a>` : r.publish?.branchUrl ? ` · <a href="${esc(r.publish.branchUrl)}" target="_blank" rel="noopener">branch</a>` : ""}</p>
+  ${r.error ? `<div class="banner bad">${esc(r.error)}</div>` : ""}
+  <div class="steps">${STEPS.map((s, i) => `<span class="${i < si || r.step === "done" ? "past" : i === si ? "now" : ""}">${s}</span>`).join("")}</div>
+  <div id="asks"></div>
+  ${waiting && !r.live ? approvalCard(id) : ""}
+  ${r.milestones.length ? `<div class="card">${r.milestones.map((m) => `<div class="ms"><b>${esc(m.id)}</b><span class="t">${esc(m.title)}${m.knownIssues ? ` <span class="chip waiting" title="${esc(m.knownIssues)}">known issues</span>` : ""}</span>${m.commit ? `<code>${m.commit.slice(0, 7)}</code>` : ""}<span class="chip ${m.status === "done" ? "done" : m.status === "in_progress" ? "running" : ""}">${esc(m.status.replace(/_/g, " "))}</span></div>`).join("")}</div>` : ""}
+  <div class="actions">${r.live ? `<button class="btn danger" id="cancel">Stop</button>` : `
+    ${["error", "stopped", "cancelled", "blocked"].includes(r.status) ? `<button class="btn primary" id="resume">Resume</button><input type="number" id="budget" min="1" placeholder="budget $" style="width:110px">` : ""}
+    ${r.milestones.some((m) => m.commit) && !waiting ? `<button class="btn" id="publish">Push again</button>` : ""}`}
+  </div>
+  ${!r.live && r.milestones.some((m) => m.commit) ? `<div class="card"><label style="margin-top:0">Follow-up change on this branch</label><textarea id="rev" style="min-height:70px" placeholder="e.g. Also export the VAT column"></textarea><div class="actions"><button class="btn" id="revise">Revise</button></div></div>` : ""}
+  <div class="tabs"><button data-t="log" class="on">Activity</button><button data-t="prd">PRD</button><button data-t="plan">Plan</button><button data-t="notes">Notes</button><button data-t="req">Request</button></div>
+  <div class="card" style="border-top-left-radius:0"><div class="log" id="log"></div><div class="md" id="doc" hidden></div></div>
+  <p class="muted" style="font-size:12px">Folder: <code>${esc(r.folder)}</code></p>`;
+  const docs = { prd: r.prd || "_Not written yet._", plan: r.plan || "_Not written yet._", notes: r.notes || "_No notes yet._", req: r.request };
+  document.querySelectorAll(".tabs button").forEach((b) => b.onclick = () => {
+    document.querySelectorAll(".tabs button").forEach((x) => x.classList.toggle("on", x === b));
+    const t = b.dataset.t; $("#log").hidden = t !== "log"; $("#doc").hidden = t === "log"; if (t !== "log") $("#doc").innerHTML = md(docs[t]);
+  });
+  const act = async (path, body) => { try { await post(path, body); setTimeout(() => route(), 300); } catch (e) { alert(e.message); } };
+  if ($("#cancel")) $("#cancel").onclick = () => act(`/api/runs/${id}/cancel`);
+  if ($("#resume")) $("#resume").onclick = () => act(`/api/runs/${id}/resume`, { budget: $("#budget").value || undefined });
+  if ($("#publish")) $("#publish").onclick = () => act(`/api/runs/${id}/publish`);
+  if ($("#revise")) $("#revise").onclick = () => act(`/api/runs/${id}/revise`, { instructions: $("#rev").value });
+  bindApproval(id);
+  stream(`/api/runs/${id}/events`, `/api/runs/${id}/answer`, (e) => {
+    if (["milestone", "done", "publish"].includes(e.type) || (e.type === "status" && /PRD saved|Plan saved/.test(e.message))) { clearTimeout(window.__rt); window.__rt = setTimeout(() => { refreshNav(); if (e.type === "done") viewRun(id); }, 600); }
+  }, id);
+}
+
+function approvalCard(id, evId) {
+  return `<div class="card ask" id="approval" ${evId ? `data-q="${esc(evId)}"` : ""}><b>The PRD and plan are ready for your review.</b> Read them in the tabs below, then approve or ask for changes.
+  <textarea id="fb" style="min-height:70px;margin-top:10px" placeholder="Feedback for a revised PRD/plan (optional)"></textarea>
+  <div class="actions"><button class="btn primary" data-d="approve">Approve and implement</button><button class="btn" data-d="revise">Revise with feedback</button><button class="btn danger" data-d="cancel">Stop the run</button></div></div>`;
+}
+function bindApproval(id) {
+  document.querySelectorAll("#approval [data-d]").forEach((b) => b.onclick = async () => {
+    try { await post(`/api/runs/${id}/approve`, { decision: b.dataset.d, feedback: $("#fb").value }); $("#approval").remove(); setTimeout(route, 400); } catch (e) { alert(e.message); }
+  });
+}
+
+function questionCard(e, answerUrl) {
+  const el = document.createElement("div");
+  el.className = "card ask"; el.dataset.q = e.id;
+  el.innerHTML = `${e.context ? `<b>${esc(e.context)}</b>` : "<b>The agent has a question</b>"}` + e.questions.map((q) => {
+    const defs = q.default == null ? [] : Array.isArray(q.default) ? q.default : [q.default];
+    const type = q.multiSelect ? "checkbox" : "radio";
+    const opts = (q.options || []).map((o) => `<label class="opt"><input type="${type}" name="${esc(q.id)}" value="${esc(o.label)}" ${defs.includes(o.label) ? "checked" : ""}><span>${esc(o.label)}${o.description ? `<small>${esc(o.description)}</small>` : ""}</span></label>`).join("");
+    const free = q.secretEnv ? `<input type="password" data-free="${esc(q.id)}" placeholder="${esc(q.secretEnv)} (stored as a secret, never shown to the agent)">`
+      : (!q.options || !q.options.length || q.allowOther !== false) ? `<input type="text" data-free="${esc(q.id)}" placeholder="${q.options && q.options.length ? "Other (optional)" : ""}" value="${!q.options || !q.options.length ? esc(defs[0] || "") : ""}">` : "";
+    return `<div class="q"><div class="h">${q.header ? `<span class="chip">${esc(q.header)}</span> ` : ""}${esc(q.question)}</div>${opts}${free}</div>`;
+  }).join("") + `<div class="actions"><button class="btn primary">Send</button></div>`;
+  $("button.primary", el).onclick = async () => {
+    const answers = {};
+    for (const q of e.questions) {
+      const picked = [...el.querySelectorAll(`input[name="${CSS.escape(q.id)}"]:checked`)].map((i) => i.value);
+      const free = (el.querySelector(`[data-free="${CSS.escape(q.id)}"]`) || {}).value || "";
+      if (q.multiSelect) answers[q.id] = free ? [...picked, free] : picked;
+      else answers[q.id] = free || picked[0] || "";
+    }
+    try { await post(answerUrl, { id: e.id, answers }); el.remove(); } catch (err) { alert(err.message); }
+  };
+  return el;
+}
+
+function stream(url, answerUrl, onEvent, runId) {
+  if (es) es.close();
+  const log = $("#log");
+  const add = (cls, html) => { const d = document.createElement("div"); d.className = `e ${cls}`; d.innerHTML = html; const stick = log.scrollTop + log.clientHeight >= log.scrollHeight - 40; log.appendChild(d); if (stick) log.scrollTop = log.scrollHeight; };
+  es = new EventSource(url);
+  es.onmessage = (m) => {
+    const e = JSON.parse(m.data);
+    switch (e.type) {
+      case "status": add("status", `▸ ${esc(e.message)}`); break;
+      case "step": add("step", esc(e.step)); break;
+      case "text": add(`text ${e.label === "developer" ? "dev" : ""}`, `${e.label ? `<span class="chip">${esc(e.label)}</span> ` : ""}${esc(e.text)}`); break;
+      case "tool": add("tool", esc(e.summary)); break;
+      case "exec": add(`exec ${e.ok === true ? "ok" : e.ok === false ? "fail" : ""}`, `${e.phase ? `[${esc(e.phase)}] ` : "$ "}${esc(e.command)}${e.ok === false && e.tail ? `\n${esc(e.tail.split("\n").slice(-10).join("\n"))}` : ""}`); break;
+      case "milestone": add("ms-ev", `◆ ${esc(e.id)} ${esc(e.title)}: ${esc(e.status)}${e.commit ? ` (${e.commit.slice(0, 7)})` : ""}`); break;
+      case "cost": add("cost", `$${e.usd.toFixed(2)} ${esc(e.label || "")} · $${e.total.toFixed(2)} total`); break;
+      case "publish": add("status", `✓ Pushed ${esc(e.branch)} ${e.prUrl ? `<a href="${esc(e.prUrl)}" target="_blank" rel="noopener">pull request</a>` : ""}`); break;
+      case "error": add("err", `✗ ${esc(e.message)}`); break;
+      case "question": $("#asks").appendChild(questionCard(e, answerUrl)); break;
+      case "approval": if (!$("#approval")) { $("#asks").insertAdjacentHTML("beforeend", approvalCard(runId, e.id)); bindApproval(runId); } break;
+      case "answered": { const q = document.querySelector(`[data-q="${CSS.escape(e.id)}"]`); if (q) q.remove(); break; }
+      case "done": add("status", `■ ${esc(e.status)}`); es.close(); break;
+    }
+    onEvent && onEvent(e);
+  };
+}
+
+function route() {
+  if (es) { es.close(); es = null; }
+  const h = location.hash || "#/new";
+  let m;
+  if ((m = h.match(/^#\/run\/(.+)$/))) viewRun(m[1]);
+  else if ((m = h.match(/^#\/project\/(.+)$/))) viewProject(m[1]);
+  else if (h === "#/setup") viewSetup();
+  else viewNew();
+  refreshNav();
+}
+window.addEventListener("hashchange", route);
+loadMeta().then(() => refreshNav()).then(route);
+setInterval(refreshNav, 15000);
+</script>
+</body>
+</html>

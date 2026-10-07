@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node scripts/agents.mjs list:*)",
+      "Bash(node scripts/agents.mjs status:*)",
+      "Bash(node scripts/agents.mjs outputs:*)",
+      "Bash(node scripts/agents.mjs pending:*)",
+      "Bash(node scripts/product.mjs show:*)",
+      "Bash(node scripts/product.mjs check:*)",
+      "Bash(node scripts/product.mjs context:*)"
+    ],
+    "deny": [
+      "Read(./agents/*/.env)",
+      "Read(./agents/dev-agent/projects/*/secrets.env)"
+    ]
+  }
+}

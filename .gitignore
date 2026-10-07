@@ -1,0 +1,23 @@
+# What stays out of the public superproduct repository.
+
+# Your product and your work are private by default. To version them in a private copy,
+# delete these lines there (never in a pull request to the public repository).
+/product/
+/products/
+/products-archive/
+/briefs/*
+!/briefs/README.md
+
+# Secrets
+.env
+.env.*
+!.env.example
+secrets.env
+
+# Dependencies, builds and local tooling (agent outputs are ignored in each agent's own .gitignore)
+node_modules/
+*.tsbuildinfo
+/.claude/
+.DS_Store
+*.log
+*.tgz

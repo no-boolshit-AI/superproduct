@@ -1,0 +1,6 @@
+node_modules/
+output/
+.env
+*.log
+# screenshots of posts whose look you want to match (usually someone else's work)
+reference/

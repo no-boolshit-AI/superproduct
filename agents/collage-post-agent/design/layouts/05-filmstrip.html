@@ -1,0 +1,33 @@
+<!doctype html>
+<!--
+LAYOUT 05 · FILMSTRIP — use for: a human/emotional point, identity, a person's voice.
+COPY   .hl   serif statement, 14–24 words, up to ~10 short lines.
+       .dek  attribution / support line, 14–26 words.
+IMAGES 1 frontal head-and-shoulders portrait (NOT transparent), centred, plain background.
+       The same image is reused in all 4 frames; frame classes vary it:
+       .crop (only chin/neck), plain, .ghost (double exposure), .slip (offset double), .zoom.
+       generate_image kind=portrait aspect=portrait — or a public-domain photo of a named person.
+       Classes: .img .duo-loud
+-->
+<html lang="en" data-palette="orchid">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Filmstrip</title>
+<link rel="stylesheet" href="_design/collage.css">
+<script src="_design/collage.js" defer></script>
+</head>
+<body>
+<main class="canvas L-filmstrip grain">
+  <div class="strip">
+    <div class="fr crop"><img class="img duo-loud" src="assets/sample-portrait.jpg" alt=""><div class="veil"></div></div>
+    <div class="fr"><img class="img duo-loud" src="assets/sample-portrait.jpg" alt=""></div>
+    <div class="fr ghost"><img class="img duo-loud" src="assets/sample-portrait.jpg" alt=""><img class="img duo-loud" src="assets/sample-portrait.jpg" alt=""></div>
+    <div class="fr slip"><img class="img duo-loud" src="assets/sample-portrait.jpg" alt=""><img class="img duo-loud" src="assets/sample-portrait.jpg" alt=""></div>
+  </div>
+  <p class="mast">Your Brand</p>
+  <h1 class="txt hl" data-fit data-min="50">A machine can predict the next word, the next note, the next frame. It cannot decide what is worth making.</h1>
+  <p class="txt body dek">Judgement, taste and purpose stay human. Good tools widen what we can reach; they should not narrow what we want.</p>
+</main>
+</body>
+</html>

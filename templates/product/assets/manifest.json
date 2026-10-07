@@ -1,0 +1,4 @@
+{
+  "$comment": "Every file agents may use: path (relative to product/), kind (logo|font|image|video|document), use, alt, source, rights.",
+  "assets": []
+}

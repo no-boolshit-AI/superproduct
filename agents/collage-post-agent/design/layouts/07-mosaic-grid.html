@@ -1,0 +1,41 @@
+<!doctype html>
+<!--
+LAYOUT 07 · MOSAIC GRID — use for: "who's doing it now", community, examples, closing CTA.
+COPY   .hl     2 lines: a short first word/phrase + a longer second line (2–4 words total).
+       .aside  sits next to line 1: 6–12 words, underline the call to action with <u>.
+IMAGES 6–10 portraits/scenes, each tile tinted differently (.duo-t1 … .duo-t6, then repeat).
+       Row r1: 3 tiles (tilted down-right). Row r2: 4 tiles (straight). Row r3: 3 tiles (tilted up-right).
+       Public-domain photos of the people named, or generate_image kind=portrait (archetypes).
+       Fewer images? Use <div class="tile solid"></div> or <div class="tile solid loud"></div>, or repeat with a different tint.
+-->
+<html lang="en" data-palette="orchid">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mosaic grid</title>
+<link rel="stylesheet" href="_design/collage.css">
+<script src="_design/collage.js" defer></script>
+</head>
+<body>
+<main class="canvas L-mosaic grain">
+  <div class="row r1">
+    <div class="tile"><img class="img duo-t1" src="assets/sample-portrait.jpg" alt=""></div>
+    <div class="tile"><img class="img duo-t2" src="assets/sample-portrait.jpg" alt=""></div>
+    <div class="tile"><img class="img duo-t3" src="assets/sample-portrait.jpg" alt=""></div>
+  </div>
+  <div class="row r2">
+    <div class="tile"><img class="img duo-t4" src="assets/sample-portrait.jpg" alt=""></div>
+    <div class="tile"><img class="img duo-t5" src="assets/sample-portrait.jpg" alt=""></div>
+    <div class="tile"><img class="img duo-t2" src="assets/sample-portrait.jpg" alt=""></div>
+    <div class="tile"><img class="img duo-t6" src="assets/sample-portrait.jpg" alt=""></div>
+  </div>
+  <div class="row r3">
+    <div class="tile"><img class="img duo-t4" src="assets/sample-portrait.jpg" alt=""></div>
+    <div class="tile"><img class="img duo-t1" src="assets/sample-portrait.jpg" alt=""></div>
+    <div class="tile"><img class="img duo-t5" src="assets/sample-portrait.jpg" alt=""></div>
+  </div>
+  <p class="mast">Your Brand</p>
+  <h1 class="txt hl" data-fit data-min="64">Today’s<span class="aside">Find the people mapping new ground and <u>follow their questions.</u></span><br>explorers</h1>
+</main>
+</body>
+</html>

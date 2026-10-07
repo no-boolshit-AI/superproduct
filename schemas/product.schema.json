@@ -1,0 +1,108 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "product.schema.json",
+  "title": "Product manifest (product/product.json)",
+  "description": "Machine-readable identity, offers, brand files, context profiles and per-agent choices of a product. Read by lib/product.mjs; validated by node scripts/product.mjs check.",
+  "type": "object",
+  "required": ["schemaVersion", "id", "name"],
+  "properties": {
+    "$schema": { "type": "string" },
+    "schemaVersion": { "const": 1 },
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$", "description": "Lowercase slug." },
+    "name": { "type": "string", "description": "The product name as written in running text." },
+    "wordmark": { "type": "string", "description": "How the name is written in the logo and mastheads." },
+    "tagline": { "type": "string" },
+    "oneLiner": { "type": "string" },
+    "description": { "type": "string" },
+    "category": { "type": "string" },
+    "stage": { "enum": ["idea", "building", "beta", "live", "sunset"] },
+    "languages": { "type": "array", "items": { "type": "string" } },
+    "website": { "type": "string" },
+    "links": { "type": "object", "additionalProperties": { "type": "string" } },
+    "company": { "type": "object", "additionalProperties": { "type": "string" } },
+    "cta": {
+      "type": "object",
+      "properties": { "primary": { "$ref": "#/$defs/cta" } },
+      "additionalProperties": { "$ref": "#/$defs/cta" }
+    },
+    "audiences": {
+      "type": "array",
+      "items": { "type": "object", "required": ["id", "label"], "properties": { "id": { "type": "string" }, "label": { "type": "string" }, "file": { "type": "string" } } }
+    },
+    "offerings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "name"],
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" },
+          "kind": { "type": "string", "description": "course, subscription, free-tool, free-lesson, directory, guides, plan…" },
+          "audience": { "type": "string" },
+          "summary": { "type": "string" },
+          "price": {
+            "type": ["object", "null"],
+            "properties": { "from": { "type": "number" }, "amount": { "type": "number" }, "currency": { "type": "string" }, "unit": { "type": "string" }, "note": { "type": "string" } }
+          },
+          "url": { "type": "string" },
+          "status": { "enum": ["live", "coming-soon", "unlisted", "beta", "retired"] },
+          "file": { "type": "string" }
+        }
+      }
+    },
+    "brand": {
+      "type": "object",
+      "properties": {
+        "tokens": { "type": "string", "description": "DTCG 2025.10 design tokens file, with color.role.* and font.family.*" },
+        "css": { "type": "string", "description": "Generated CSS variables (node scripts/product.mjs tokens)." },
+        "guidelines": { "type": "string" },
+        "voice": { "type": "string" },
+        "messaging": { "type": "string" },
+        "logo": { "type": "object", "additionalProperties": { "type": "string" }, "description": "primary (light backgrounds), inverse (dark), mark (square), and optional PNG variants." },
+        "fonts": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["family"],
+            "properties": {
+              "family": { "type": "string" },
+              "role": { "type": "string" },
+              "license": { "type": "string" },
+              "source": { "type": "string" },
+              "files": {
+                "type": "array",
+                "items": { "type": "object", "required": ["path"], "properties": { "path": { "type": "string" }, "weight": { "type": "string" }, "style": { "type": "string" }, "unicodeRange": { "type": "string" } } }
+              }
+            }
+          }
+        },
+        "shape": { "enum": ["sharp", "soft", "round"] },
+        "imageStyle": { "type": "string", "description": "One sentence for image generation prompts." },
+        "signature": { "type": "string" }
+      }
+    },
+    "context": {
+      "type": "object",
+      "description": "Context profiles: lists of files (relative to product/) compiled into agent prompts. 'always' comes first for every agent.",
+      "additionalProperties": { "type": "array", "items": { "type": "string" } }
+    },
+    "agents": {
+      "type": "object",
+      "description": "Per-agent product choices. String values like {color.role.primary} are resolved from the tokens.",
+      "properties": {
+        "carousel": { "type": "object", "properties": { "profiles": { "$ref": "#/$defs/profiles" }, "brand": { "type": "object" }, "wordmark": { "enum": ["logo", "text"] }, "imageStyle": { "type": "string" } } },
+        "collage-post": { "type": "object", "properties": { "profiles": { "$ref": "#/$defs/profiles" }, "palette": { "type": "string" }, "brandPalette": { "type": "object" }, "fonts": { "enum": ["brand", "style"] }, "masthead": { "type": "string" } } },
+        "deck": { "type": "object", "properties": { "profiles": { "$ref": "#/$defs/profiles" }, "theme": { "enum": ["strategy", "corporate", "executive", "swiss", "editorial"] }, "colors": { "type": "object" }, "confidentiality": { "type": "string" } } },
+        "landing-page": { "type": "object", "properties": { "profiles": { "$ref": "#/$defs/profiles" }, "brand": { "type": "object" } } },
+        "dev": { "type": "object", "properties": { "profiles": { "$ref": "#/$defs/profiles" } } }
+      },
+      "additionalProperties": { "type": "object" }
+    },
+    "repos": { "type": "array", "items": { "type": "string", "pattern": "^[^/\\s]+/[^/\\s]+$" }, "description": "GitHub owner/repo of the product's own code; dev-agent attaches the development context to these." },
+    "updated": { "type": "string" }
+  },
+  "$defs": {
+    "cta": { "type": "object", "required": ["label", "url"], "properties": { "label": { "type": "string" }, "url": { "type": "string" }, "note": { "type": "string" } } },
+    "profiles": { "type": "array", "items": { "type": "string" } }
+  }
+}

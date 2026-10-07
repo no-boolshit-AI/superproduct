@@ -1,0 +1,368 @@
+/*
+ * Corporate Landing — design tokens (Tailwind CSS v4).
+ *
+ * System tokens: neutrals, type scale, spacing, layout, motion. Brand tokens
+ * (brand-*, second-*, accent*, inverse, fonts, radii, heading weight) have
+ * neutral defaults here and are overridden per site by styles/brand.css,
+ * which the set_brand tool generates from the brand's own colours.
+ *
+ * Default Tailwind palettes, sizes, radii and shadows are reset on purpose:
+ * only the names below exist as utilities.
+ */
+
+@theme {
+  /* ---------- Breakpoints ---------- */
+  --breakpoint-*: initial;
+  --breakpoint-sm: 40rem;  /* 640  */
+  --breakpoint-md: 48rem;  /* 768  */
+  --breakpoint-lg: 64rem;  /* 1024 */
+  --breakpoint-xl: 80rem;  /* 1280 */
+
+  /* ---------- Colour: neutrals (fixed) ---------- */
+  --color-*: initial;
+  --color-white: #ffffff;
+  --color-black: #000000;
+
+  --color-canvas: #ffffff;
+  --color-surface: #f6f6f4;
+  --color-subtle: #ededea;
+  --color-line: #e2e2de;
+  --color-line-strong: #c9c9c3;
+  --color-ink: #16171a;
+  --color-ink-soft: #33353b;
+  --color-muted: #5f626a;
+  --color-faint: #8e9198;
+
+  /* ---------- Colour: brand (defaults; overridden by styles/brand.css) ---------- */
+  --color-brand-50: #f5f5f6;
+  --color-brand-100: #e9e9eb;
+  --color-brand-200: #d3d4d8;
+  --color-brand-300: #b3b5bb;
+  --color-brand-400: #8b8e96;
+  --color-brand-500: #6c6f78;
+  --color-brand-600: #54575f;
+  --color-brand-700: #43464d;
+  --color-brand-800: #34363c;
+  --color-brand-900: #26282c;
+  --color-brand-950: #17181b;
+
+  --color-second-50: #f6f5f3;
+  --color-second-100: #ebe8e3;
+  --color-second-200: #d8d2c8;
+  --color-second-300: #bdb3a4;
+  --color-second-400: #9e917e;
+  --color-second-500: #837562;
+  --color-second-600: #6b5f4f;
+  --color-second-700: #564c40;
+  --color-second-800: #423a31;
+  --color-second-900: #2f2a24;
+
+  --color-accent: var(--color-brand-600);
+  --color-accent-hover: var(--color-brand-700);
+  --color-accent-soft: var(--color-brand-50);
+  --color-accent-line: var(--color-brand-200);
+  --color-accent-text: var(--color-brand-700);
+  --color-on-accent: #ffffff;
+
+  --color-inverse: var(--color-brand-950);
+  --color-inverse-raised: rgb(255 255 255 / 0.06);
+  --color-inverse-line: rgb(255 255 255 / 0.14);
+  --color-on-inverse: #ffffff;
+  --color-on-inverse-muted: rgb(255 255 255 / 0.72);
+  --color-on-inverse-faint: rgb(255 255 255 / 0.48);
+
+  /* Tone-aware colours: primitives use these; tone-inverse / tone-accent redefine them on a section. */
+  --color-fg: var(--color-ink);
+  --color-fg-soft: var(--color-ink-soft);
+  --color-fg-muted: var(--color-muted);
+  --color-fg-faint: var(--color-faint);
+  --color-border: var(--color-line);
+  --color-border-strong: var(--color-line-strong);
+  --color-card: var(--color-canvas);
+  --color-card-soft: var(--color-surface);
+  --color-link: var(--color-accent-text);
+
+  --color-success: #17804a;
+  --color-success-soft: #e6f4ec;
+  --color-warning: #a65f00;
+  --color-warning-soft: #fdf1df;
+  --color-danger: #be2d2d;
+  --color-danger-soft: #fbe9e9;
+
+  /* ---------- Typography ---------- */
+  --font-*: initial;
+  --font-sans: var(--font-body-family, "Inter Variable"), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-display: var(--font-display-family, var(--font-body-family, "Inter Variable")), ui-sans-serif, system-ui, sans-serif;
+  --font-accent: var(--font-accent-family, var(--font-display-family, "Inter Variable")), ui-serif, Georgia, serif;
+  --font-mono: "JetBrains Mono Variable", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --font-weight-*: initial;
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  --tracking-*: initial;
+  --tracking-kicker: 0.08em;
+  --leading-*: initial;
+
+  --text-*: initial;
+  --text-hero: 4.5rem;
+  --text-hero--line-height: 1.02;
+  --text-hero--letter-spacing: -0.035em;
+  --text-hero--font-weight: var(--heading-weight, 600);
+
+  --text-display: 3.5rem;
+  --text-display--line-height: 1.05;
+  --text-display--letter-spacing: -0.03em;
+  --text-display--font-weight: var(--heading-weight, 600);
+
+  --text-title: 2.5rem;
+  --text-title--line-height: 1.1;
+  --text-title--letter-spacing: -0.025em;
+  --text-title--font-weight: var(--heading-weight, 600);
+
+  --text-heading: 1.75rem;
+  --text-heading--line-height: 1.2;
+  --text-heading--letter-spacing: -0.02em;
+  --text-heading--font-weight: var(--heading-weight, 600);
+
+  --text-subheading: 1.25rem;
+  --text-subheading--line-height: 1.35;
+  --text-subheading--letter-spacing: -0.01em;
+  --text-subheading--font-weight: var(--heading-weight, 600);
+
+  --text-lead: 1.25rem;
+  --text-lead--line-height: 1.55;
+  --text-lead--font-weight: 400;
+
+  --text-body: 1.0625rem;
+  --text-body--line-height: 1.6;
+  --text-body--font-weight: 400;
+
+  --text-label: 0.9375rem;
+  --text-label--line-height: 1.3;
+  --text-label--font-weight: 500;
+
+  --text-small: 0.875rem;
+  --text-small--line-height: 1.5;
+  --text-small--font-weight: 400;
+
+  --text-kicker: 0.8125rem;
+  --text-kicker--line-height: 1.2;
+  --text-kicker--letter-spacing: 0.08em;
+  --text-kicker--font-weight: 600;
+
+  --text-micro: 0.75rem;
+  --text-micro--line-height: 1.4;
+  --text-micro--font-weight: 500;
+
+  /* ---------- Radius (brand roundness overrides these) ---------- */
+  --radius-*: initial;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-button: 10px;
+  --radius-full: 9999px;
+
+  /* ---------- Elevation ---------- */
+  --shadow-*: initial;
+  --shadow-sm: 0 1px 2px rgb(22 23 26 / 0.06), 0 1px 1px rgb(22 23 26 / 0.04);
+  --shadow-md: 0 6px 16px -4px rgb(22 23 26 / 0.1), 0 2px 4px -2px rgb(22 23 26 / 0.06);
+  --shadow-lg: 0 28px 56px -16px rgb(22 23 26 / 0.22), 0 8px 16px -8px rgb(22 23 26 / 0.08);
+  --shadow-brand: 0 18px 40px -12px color-mix(in oklab, var(--color-accent) 45%, transparent);
+  --inset-shadow-*: initial;
+  --drop-shadow-*: initial;
+
+  /* ---------- Layout ---------- */
+  --container-page: 76rem;   /* 1216px — default content width, always centred */
+  --container-wide: 86rem;   /* 1376px — galleries, big visuals */
+  --container-narrow: 48rem; /* 768px  — editorial, forms, FAQ */
+  --container-prose: 42rem;  /* 672px  — long copy */
+  --container-lede: 38rem;   /* 608px  — intro paragraphs */
+  --container-headline: 52rem; /* 832px — H1 width */
+
+  /* ---------- Motion ---------- */
+  --ease-*: initial;
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --animate-*: initial;
+  --animate-marquee: marquee 45s linear infinite;
+  --animate-fade-up: fade-up 600ms var(--ease-out) both;
+
+  @keyframes marquee {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+  }
+  @keyframes fade-up {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+}
+
+/* ---------- Layout utilities ---------- */
+
+/* Centred content container. Every section's content sits inside one. */
+@utility container-page {
+  width: 100%;
+  margin-inline: auto;
+  max-width: var(--container-page);
+  padding-inline: 1.25rem;
+  @media (width >= 48rem) { padding-inline: 2rem; }
+}
+@utility container-wide {
+  width: 100%;
+  margin-inline: auto;
+  max-width: var(--container-wide);
+  padding-inline: 1.25rem;
+  @media (width >= 48rem) { padding-inline: 2rem; }
+}
+@utility container-narrow {
+  width: 100%;
+  margin-inline: auto;
+  max-width: var(--container-narrow);
+  padding-inline: 1.25rem;
+  @media (width >= 48rem) { padding-inline: 2rem; }
+}
+
+/* Vertical rhythm for sections */
+@utility section-y {
+  padding-block: 4.5rem;
+  @media (width >= 48rem) { padding-block: 7rem; }
+}
+@utility section-y-tight {
+  padding-block: 3rem;
+  @media (width >= 48rem) { padding-block: 4.5rem; }
+}
+/* Gap between a section intro and its content */
+@utility section-gap {
+  row-gap: 2.5rem;
+  @media (width >= 48rem) { row-gap: 4rem; }
+}
+
+/* ---------- Tones: set on a section; primitives inside adapt ---------- */
+@utility tone-inverse {
+  color: var(--color-on-inverse);
+  --color-fg: var(--color-on-inverse);
+  --color-fg-soft: rgb(255 255 255 / 0.86);
+  --color-fg-muted: var(--color-on-inverse-muted);
+  --color-fg-faint: var(--color-on-inverse-faint);
+  --color-border: var(--color-inverse-line);
+  --color-border-strong: rgb(255 255 255 / 0.26);
+  --color-card: var(--color-inverse-raised);
+  --color-card-soft: rgb(255 255 255 / 0.04);
+  --color-link: var(--color-brand-300);
+}
+/* Reset to light colours inside an inverse/accent section (e.g. a white card on a dark band). */
+@utility tone-light {
+  color: var(--color-ink);
+  --color-fg: var(--color-ink);
+  --color-fg-soft: var(--color-ink-soft);
+  --color-fg-muted: var(--color-muted);
+  --color-fg-faint: var(--color-faint);
+  --color-border: var(--color-line);
+  --color-border-strong: var(--color-line-strong);
+  --color-card: var(--color-canvas);
+  --color-card-soft: var(--color-surface);
+  --color-link: var(--color-accent-text);
+}
+@utility tone-accent {
+  color: var(--color-on-accent);
+  --color-fg: var(--color-on-accent);
+  --color-fg-soft: var(--color-on-accent);
+  --color-fg-muted: color-mix(in oklab, var(--color-on-accent) 78%, transparent);
+  --color-fg-faint: color-mix(in oklab, var(--color-on-accent) 55%, transparent);
+  --color-border: color-mix(in oklab, var(--color-on-accent) 22%, transparent);
+  --color-border-strong: color-mix(in oklab, var(--color-on-accent) 40%, transparent);
+  --color-card: color-mix(in oklab, var(--color-on-accent) 10%, transparent);
+  --color-card-soft: color-mix(in oklab, var(--color-on-accent) 6%, transparent);
+  --color-link: var(--color-on-accent);
+}
+
+/* ---------- Brand backgrounds (all derived from brand tokens) ---------- */
+@utility bg-brand-fade {
+  background-image: linear-gradient(180deg, var(--color-brand-50) 0%, var(--color-canvas) 100%);
+}
+@utility bg-brand-mesh {
+  background-color: var(--color-brand-100);
+  background-image:
+    radial-gradient(60% 70% at 15% 20%, var(--color-brand-300) 0%, transparent 70%),
+    radial-gradient(55% 60% at 85% 30%, var(--color-second-200) 0%, transparent 70%),
+    radial-gradient(70% 70% at 60% 100%, var(--color-brand-200) 0%, transparent 70%);
+}
+@utility bg-brand-deep {
+  background-color: var(--color-brand-800);
+  background-image:
+    radial-gradient(70% 80% at 20% 0%, var(--color-brand-600) 0%, transparent 70%),
+    radial-gradient(60% 60% at 100% 100%, var(--color-brand-900) 0%, transparent 70%);
+}
+@utility bg-inverse-glow {
+  background-color: var(--color-inverse);
+  background-image:
+    radial-gradient(50% 60% at 50% 0%, color-mix(in oklab, var(--color-brand-500) 45%, transparent) 0%, transparent 70%),
+    radial-gradient(40% 50% at 100% 100%, color-mix(in oklab, var(--color-second-500) 25%, transparent) 0%, transparent 70%);
+}
+@utility bg-grid {
+  background-image:
+    linear-gradient(to right, var(--color-line) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--color-line) 1px, transparent 1px);
+  background-size: 48px 48px;
+}
+@utility bg-dots {
+  background-image: radial-gradient(var(--color-line-strong) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+@utility scrim {
+  background-image: linear-gradient(180deg, rgb(22 23 26 / 0) 40%, rgb(22 23 26 / 0.55) 100%);
+}
+@utility frosted {
+  background-color: rgb(255 255 255 / 0.72);
+  border: 1px solid rgb(255 255 255 / 0.6);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+@utility fade-x {
+  mask-image: linear-gradient(90deg, transparent 0%, #000 10%, #000 90%, transparent 100%);
+}
+@utility kicker {
+  font-size: var(--text-kicker);
+  line-height: var(--text-kicker--line-height);
+  letter-spacing: var(--tracking-kicker);
+  font-weight: 600;
+  text-transform: uppercase;
+}
+@utility no-scrollbar {
+  scrollbar-width: none;
+  &::-webkit-scrollbar { display: none; }
+}
+
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    scroll-behavior: smooth;
+    scroll-padding-top: 5rem;
+  }
+  body {
+    background-color: var(--color-canvas);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+  }
+  h1, h2, h3, h4 {
+    font-family: var(--font-display);
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
