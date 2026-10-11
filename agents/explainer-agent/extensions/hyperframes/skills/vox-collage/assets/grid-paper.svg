@@ -1,0 +1,4 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
+  <!-- Grid paper: one 48px cell, hairline ink at low alpha. Tile it as a background. -->
+  <path d="M48 0.5H0.5V48" fill="none" stroke="#1B1B18" stroke-opacity="0.08" stroke-width="1"/>
+</svg>

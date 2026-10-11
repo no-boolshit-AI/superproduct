@@ -1,0 +1,36 @@
+{
+  "name": "explainer-agent",
+  "version": "0.1.0",
+  "description": "Claude Agent SDK agent that turns a brief into an explainer video with HyperFrames (HTML → MP4): it runs the HyperFrames explainer workflow with all HyperFrames skills bundled, headless, in the product folder's brand.",
+  "type": "module",
+  "private": true,
+  "license": "UNLICENSED",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "setup": "tsx scripts/setup.ts",
+    "setup:voice": "tsx scripts/setup-voice.ts",
+    "video": "tsx src/cli.ts",
+    "web": "tsx src/web/server.ts",
+    "render": "tsx scripts/render.ts",
+    "skills:check": "tsx scripts/skills.ts check",
+    "skills:update": "tsx scripts/skills.ts update",
+    "test": "tsx test/run.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@anthropic-ai/claude-agent-sdk": "^0.3.292",
+    "@hyperframes/core": "0.8.140",
+    "@hyperframes/producer": "0.8.140",
+    "gsap": "3.14.2",
+    "hyperframes": "0.8.140",
+    "openai": "^7.31.0",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.4",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2"
+  }
+}

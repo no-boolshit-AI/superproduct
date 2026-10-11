@@ -1,11 +1,11 @@
 # superproduct
 
-**One product folder, five AI agents.** superproduct is an open-source set of
+**One product folder, six AI agents.** superproduct is an open-source set of
 [Claude Agent SDK](https://github.com/anthropics/claude-agent-sdk-typescript) agents that make marketing and product
-work for *your* product: LinkedIn carousels, editorial collage posts, decks and reports, landing pages, and features on
-your GitHub repositories. Every agent reads the same **product folder** (brand tokens, logo, fonts, voice, verified
-facts, offers, go-to-market and development notes), so what they make is on-brand and on-message. Swap the folder and
-the same agents work for another brand.
+work for *your* product: LinkedIn carousels, editorial collage posts, decks and reports, explainer videos, landing
+pages, and features on your GitHub repositories. Every agent reads the same **product folder** (brand tokens, logo,
+fonts, voice, verified facts, offers, go-to-market and development notes), so what they make is on-brand and
+on-message. Swap the folder and the same agents work for another brand.
 
 You don't drive the agents one by one. You talk to one Claude ([Claude Code](https://github.com/anthropics/claude-code),
 or Cowork in the Claude desktop app) opened in this folder. Following [`CLAUDE.md`](CLAUDE.md), it routes each request to
@@ -19,6 +19,7 @@ back.
 | [**carousel**](agents/carousel-agent) | LinkedIn document carousels in a consulting look (hero numbers, frosted-glass cover): PDF, PNGs, caption | Claude; OpenAI for imagery (optional) |
 | [**collage-post**](agents/collage-post-agent) | Editorial collage posts and carousels, 1080×1350 (cutouts, duotones, torn paper, loud type): PNGs, caption | Claude, OpenAI |
 | [**deck**](agents/deck-agent) | 16:9 decks and A4 reports from a brief and your data, with charts, tables and diagrams: searchable PDF | Claude; OpenAI for images (optional) |
+| [**explainer**](agents/explainer-agent) | Explainer and motion-graphics videos, 4:5 by default (9:16, 1:1, 16:9), made with [HyperFrames](https://github.com/heygen-com/hyperframes) and all its skills, plus a Vox-style paper-collage style; pictures generated in the product's illustration style; narration, music and sound effects: MP4, contact sheet, caption | Claude, FFmpeg; OpenAI for pictures, ElevenLabs for narration, music and effects (both optional; HeyGen or a free local voice also narrate) |
 | [**landing-page**](agents/landing-page-agent) | Next.js + Tailwind landing pages, linted, built, click-tested and screenshotted: static site | Claude |
 | [**dev**](agents/dev-agent) | Features on an existing GitHub repository: PRD, milestone plan, tested commits in Docker, review, branch and draft PR | Claude, GitHub token, Docker |
 
@@ -34,7 +35,7 @@ you ──► Claude in this folder (CLAUDE.md + skills/)
         agents/<agent> ──reads──► product/   brand tokens · logo · fonts · voice · facts · offers · GTM
           │
           ▼
-        PDFs, PNGs, static sites, branches and pull requests (in each agent's output folder)
+        PDFs, PNGs, videos, static sites, branches and pull requests (in each agent's output folder)
 ```
 
 ### The product folder
@@ -67,7 +68,8 @@ complete fictional example is in [`lib/fixtures/acme`](lib/fixtures/acme).
 
 ## Quick start
 
-You need Node 20.12+, git and Claude Code (or the Claude desktop app with Cowork); Docker for the dev agent.
+You need Node 20.12+, git and Claude Code (or the Claude desktop app with Cowork); Docker for the dev agent; Node 22+
+and FFmpeg for the explainer agent.
 
 ```bash
 git clone https://github.com/no-boolshit-AI/superproduct.git
@@ -80,7 +82,7 @@ node scripts/agents.mjs test all        # zero-cost self-tests against a mock Cl
 Fill in each agent's `.env` from its `.env.example` (see [Keys](#keys)), then check that everything is ready:
 
 ```bash
-node scripts/agents.mjs status          # installed? keys set (names only)? Chromium? Docker?
+node scripts/agents.mjs status          # installed? keys set (names only)? Chromium? Docker? FFmpeg?
 ```
 
 ### Set up your product
@@ -113,6 +115,8 @@ To try the agents before your own product is ready, point them at the fictional 
 >
 > A board deck on Q3 from these two spreadsheets.
 >
+> A 45-second explainer video on what our product does, for the LinkedIn feed.
+>
 > Add CSV export to the invoices page in acme/shop.
 >
 > We changed our prices: \<link\>. Update the product folder.
@@ -127,6 +131,7 @@ Every agent also runs by hand from its folder; its README lists the commands, fo
 | carousel, deck, landing-page | the Claude Code login on your computer, or `ANTHROPIC_API_KEY` | `OPENAI_API_KEY` for images (carousel, deck; optional) |
 | collage-post | `ANTHROPIC_API_KEY` | `OPENAI_API_KEY` |
 | dev | `ANTHROPIC_API_KEY` or `CLAUDE_CODE_OAUTH_TOKEN` (from `claude setup-token`) | `GITHUB_TOKEN`, Docker |
+| explainer | the Claude Code login on your computer, or `ANTHROPIC_API_KEY` | `OPENAI_API_KEY` for pictures; `ELEVENLABS_API_KEY` for narration, music and sound effects, or `HEYGEN_API_KEY` for narration (all optional) |
 
 Keys go in each agent's own `.env`, which is git-ignored. `status` reports which names are set, never their values.
 
@@ -142,7 +147,7 @@ and `scripts/product.mjs` work from the VM.
 ```
 ├─ CLAUDE.md             instructions for the main Claude: routing, briefs, budgets, review, rules
 ├─ agents.json           registry: commands, install and test steps, required keys, outputs
-├─ agents/               the five agents
+├─ agents/               the six agents
 ├─ skills/               one skill per agent, plus product and campaign (multi-agent work)
 ├─ lib/product.mjs       product folder loader: find, validate, tokens to colours and fonts, compiled context
 ├─ lib/fixtures/acme/    fictional example product, used by the tests
@@ -183,5 +188,7 @@ HTTP API, for example), the AGPL requires you to offer them its source code too.
 
 Bundled third-party files keep their own licences: the fonts are under the SIL Open Font License (licence files next to
 them), the collage agent's sample photos are credited in
-[`design/samples/CREDITS.txt`](agents/collage-post-agent/design/samples/CREDITS.txt), and npm dependencies come under
+[`design/samples/CREDITS.txt`](agents/collage-post-agent/design/samples/CREDITS.txt), the explainer agent's bundled
+HyperFrames skills are under the Apache License 2.0
+([`vendor/hyperframes/LICENSE`](agents/explainer-agent/vendor/hyperframes/LICENSE)), and npm dependencies come under
 their own terms.

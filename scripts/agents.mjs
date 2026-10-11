@@ -4,7 +4,7 @@
  *
  *   node scripts/agents.mjs init                      once, on your computer: link skills/ into .claude/skills + permissions
  *   node scripts/agents.mjs list                      agents, what they do, how to run them
- *   node scripts/agents.mjs status [agent] [--json]   installed? keys present? Chromium/Docker? latest output
+ *   node scripts/agents.mjs status [agent] [--json]   installed? keys present? Chromium/Docker/FFmpeg? latest output
  *   node scripts/agents.mjs outputs [agent] [-n 5] [--json]   latest results with their key files
  *   node scripts/agents.mjs install <agent|all>       npm install + setup steps (on your computer, not in the Cowork VM)
  *   node scripts/agents.mjs test <agent|all>          zero-cost test of an agent (no Claude spend)
@@ -79,6 +79,13 @@ function chromiumInstalled() {
   return dirs.some((d) => existsSync(d) && readdirSync(d).some((n) => n.startsWith("chromium")));
 }
 
+/** The Chrome HyperFrames renders with (`hyperframes browser ensure`), or HYPERFRAMES_BROWSER_PATH from the agent's env. */
+function hyperframesChromeInstalled(env) {
+  if (env.HYPERFRAMES_BROWSER_PATH) return existsSync(env.HYPERFRAMES_BROWSER_PATH);
+  const dirs = [path.join(os.homedir(), ".cache", "hyperframes", "chrome"), path.join(os.homedir(), ".cache", "puppeteer", "chrome-headless-shell")];
+  return dirs.some((d) => existsSync(d) && readdirSync(d).length > 0);
+}
+
 function age(ms) {
   const s = Math.round((Date.now() - ms) / 1000);
   if (s < 90) return `${s}s ago`;
@@ -146,6 +153,9 @@ function statusOf(a) {
   // Chromium and Docker live on the user's computer; the Cowork VM can't see them
   if (!coworkVm && a.needs.includes("chromium") && !chromiumInstalled()) problems.push("Chromium not downloaded (install runs it)");
   if (!coworkVm && a.needs.includes("docker") && !has("docker", ["version", "--format", "{{.Server.Version}}"])) problems.push("Docker not running");
+  if (!coworkVm && a.needs.includes("ffmpeg") && !has("ffmpeg", ["-version"])) problems.push("FFmpeg not found (brew install ffmpeg)");
+  if (!coworkVm && a.needs.includes("node22") && Number(process.versions.node.split(".")[0]) < 22) problems.push(`Node ${process.versions.node}: needs Node 22 or newer`);
+  if (!coworkVm && a.needs.includes("hyperframes-chrome") && !hyperframesChromeInstalled(env)) problems.push("HyperFrames' Chrome not downloaded (install runs it)");
   const latest = outputsOf(a, 1)[0];
   return { id: a.id, dir: a.dir, ready: problems.length === 0, problems, claude, optionalMissing, latest: latest ? { id: latest.id, status: latest.status, age: age(latest.mtime) } : null };
 }
@@ -227,7 +237,7 @@ switch (cmd) {
   case "status": {
     const rows = targets(rest[0]).map(statusOf);
     const product = productStatus();
-    if (coworkVm && !json) console.log(dim("(Cowork VM: Chromium, Docker and the Claude login are on your computer and aren't checked here)"));
+    if (coworkVm && !json) console.log(dim("(Cowork VM: Chromium, Docker, FFmpeg and the Claude login are on your computer and aren't checked here)"));
     if (json) {
       // agents only, as before; the product's own report: node scripts/product.mjs check --json
       console.log(JSON.stringify(rows, null, 2));

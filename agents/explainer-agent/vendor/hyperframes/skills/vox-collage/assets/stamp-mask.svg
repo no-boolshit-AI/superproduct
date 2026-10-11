@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="300" viewBox="0 0 600 300">
+  <!-- Distress mask for rubber stamps (alpha mask): opaque keeps the ink, the transparent speckles knock it out. -->
+  <filter id="m" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB">
+    <feTurbulence type="fractalNoise" baseFrequency="0.08" numOctaves="2" seed="3"/>
+    <feColorMatrix type="matrix" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  -9 0 0 0 6.4"/>
+  </filter>
+  <rect width="600" height="300" filter="url(#m)"/>
+</svg>

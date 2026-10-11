@@ -1,0 +1,193 @@
+<!--
+  Vox Collage — caption skin (preset-local source).
+
+  The workflow copies it into the project as caption-skin.html; captions.mjs then fills the
+  three reserved holes, wraps the fragment in a <template>, and writes compositions/captions.html:
+    · the empty GROUPS array            → the engine's scene-aware word groups
+    · the 0 duration + 0 width/height   → real total + canvas size
+    · the empty data-brand-tokens style → :root tokens derived from the project's frame.md
+
+  Token contract — reference ONLY this fixed vocab (captions.mjs injects it from frame.md, so the
+  brand overlay flows through; each var has a literal fallback for standalone preview):
+    --cap-ink · --cap-canvas · --cap-accent · --cap-accent-2 · --font-display ·
+    --font-body · --cap-band-top · --cap-band-height
+  Hooks (do not rename): .caption-group / .caption-word + states .is-active / .is-spoken,
+  root data-composition-id="captions", timeline at window.__timelines["captions"].
+  State changes use gsap.set({className}); never tl.call() callbacks (seek does not fire them).
+
+  Visual: each caption line is a strip of white paper laid on the board — a slight tilt that
+  changes per group, a soft cut-paper shadow, ink type in the display face. Upcoming words are
+  faint ink; the current word gets the highlighter band (the accent as a fill, ink text on it);
+  spoken words settle to solid ink. No pill, no blur, no glow: paper and a highlighter only.
+-->
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+
+<!-- captions.mjs injects the project's :root tokens here -->
+<style data-brand-tokens></style>
+
+<style>
+  #captions-root {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+  .caption-layer {
+    position: absolute;
+    inset: 0;
+    z-index: 20;
+    pointer-events: none;
+  }
+  .caption-stage {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: var(--cap-band-top, 1120px);
+    height: var(--cap-band-height, 230px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .caption-group {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+  }
+  /* the paper strip: white, knife-cut, a soft cut-paper shadow, tilted per group */
+  .caption-pill {
+    position: relative;
+    max-width: 86%;
+    padding: 16px 30px 20px;
+    background: #ffffff;
+    border-radius: 2px;
+    box-shadow: 0 4px 3px rgba(27, 27, 24, 0.22), 0 10px 22px rgba(27, 27, 24, 0.12);
+  }
+  .caption-group:nth-child(3n + 1) .caption-pill { rotate: -1.4deg; }
+  .caption-group:nth-child(3n + 2) .caption-pill { rotate: 0.9deg; }
+  .caption-group:nth-child(3n + 3) .caption-pill { rotate: -0.5deg; }
+  .caption-line {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.08em 0.3em;
+    font-family: var(--font-display, "Archivo Black"), "Arial Black", sans-serif;
+    font-weight: 500;
+    font-size: clamp(38px, 4.2vw, 54px);
+    line-height: 1.14;
+    letter-spacing: -0.02em;
+  }
+  /* upcoming — faint ink */
+  .caption-word {
+    display: inline-block;
+    padding: 0 0.05em;
+    color: color-mix(in srgb, var(--cap-ink, #1b1b18) 38%, #ffffff);
+  }
+  /* current word — the highlighter band behind ink type (box-shadow spread: no layout shift) */
+  .caption-word.is-active {
+    color: var(--cap-ink, #1b1b18);
+    background: var(--cap-accent, #ffe135);
+    box-shadow: 0 0 0 0.06em var(--cap-accent, #ffe135);
+  }
+  /* already spoken — solid ink */
+  .caption-word.is-spoken {
+    color: var(--cap-ink, #1b1b18);
+    background: transparent;
+    box-shadow: none;
+  }
+  .caption-word.cap-brand { font-family: var(--font-body, "Inter"), sans-serif; }
+  .caption-word.cap-num { font-variant-numeric: tabular-nums; }
+  .caption-word.cap-cta {
+    text-decoration: underline;
+    text-decoration-thickness: 3px;
+    text-decoration-color: var(--cap-ink, #1b1b18);
+    text-underline-offset: 0.12em;
+  }
+  @media (max-aspect-ratio: 9/16) {
+    .caption-pill { max-width: 92%; }
+    .caption-line { font-size: clamp(34px, 5.2vw, 48px); }
+  }
+</style>
+
+<div
+  id="captions-root"
+  data-composition-id="captions"
+  data-timeline-locked
+  data-start="0"
+  data-duration="0"
+  data-fps="30"
+  data-width="0"
+  data-height="0"
+>
+  <div class="caption-layer" aria-hidden="true">
+    <div id="caption-stage" class="caption-stage"></div>
+  </div>
+</div>
+
+<script>
+  // captions.mjs injects the engine's scene-aware groups + real duration here.
+  var GROUPS = [];
+  var DURATION = 0;
+
+  (function () {
+    var stage = document.getElementById("caption-stage");
+
+    GROUPS.forEach(function (group, g) {
+      var groupEl = document.createElement("div");
+      groupEl.className = "caption-group";
+      groupEl.id = "caption-group-" + g;
+      var pill = document.createElement("div");
+      pill.className = "caption-pill";
+      var line = document.createElement("div");
+      line.className = "caption-line";
+      (group.words || []).forEach(function (w, i) {
+        var span = document.createElement("span");
+        span.className = "caption-word";
+        span.id = "caption-word-" + g + "-" + i;
+        span.textContent = String(w.text);
+        line.appendChild(span);
+      });
+      pill.appendChild(line);
+      groupEl.appendChild(pill);
+      stage.appendChild(groupEl);
+    });
+
+    window.__timelines = window.__timelines || {};
+    var tl = gsap.timeline({ paused: true });
+
+    GROUPS.forEach(function (group, g) {
+      var groupEl = document.getElementById("caption-group-" + g);
+      var words = group.words || [];
+      var next = GROUPS[g + 1];
+      var isLast = g === GROUPS.length - 1;
+      var start = Math.max(0, Number(group.start));
+      var end = isLast ? DURATION : Math.min(Number(next.start), Number(group.end) + 0.3);
+      if (end <= start) end = start + 0.01;
+
+      // the strip lands like paper: a hard cut-in with a small drop on twos (seek-safe fromTo)
+      tl.set(groupEl, { opacity: 1 }, start);
+      tl.fromTo(groupEl, { y: -10 }, { y: 0, duration: 0.17, ease: "steps(2)", immediateRender: false }, start);
+      tl.set(groupEl, { opacity: 0 }, end);
+
+      words.forEach(function (w, i) {
+        var el = document.getElementById("caption-word-" + g + "-" + i);
+        var at = Math.max(start, Number(w.start));
+        tl.set(el, { className: "caption-word" }, start);
+        tl.set(el, { className: "caption-word is-active" }, at);
+        if (i + 1 < words.length) {
+          var nextAt = Math.max(start, Number(words[i + 1].start));
+          tl.set(el, { className: "caption-word is-spoken" }, nextAt);
+        }
+      });
+      if (words.length) {
+        var lastEl = document.getElementById("caption-word-" + g + "-" + (words.length - 1));
+        var lastSpoken = Math.min(end, Number(words[words.length - 1].end) + 0.1);
+        tl.set(lastEl, { className: "caption-word is-spoken" }, lastSpoken);
+      }
+    });
+
+    tl.to({}, { duration: DURATION }, 0);
+    window.__timelines["captions"] = tl;
+  })();
+</script>

@@ -1,0 +1,298 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Explainer Agent</title>
+<style>
+:root{--bg:#f4f5f7;--panel:#fff;--ink:#0f1b2a;--muted:#667385;--line:#e1e5ea;--accent:#2251ff;--ok:#0f9d74;--err:#e0475b;--warn:#c98a00}
+@media (prefers-color-scheme:dark){:root{--bg:#0d1117;--panel:#151b23;--ink:#e6edf3;--muted:#8b97a6;--line:#262f3a;--accent:#5b7cff}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif}
+header{display:flex;align-items:center;gap:16px;padding:12px 20px;border-bottom:1px solid var(--line);background:var(--panel)}
+header h1{font-size:16px;margin:0;font-weight:650;letter-spacing:-.01em}header .meta{color:var(--muted);font-size:12.5px;margin-left:auto;text-align:right}
+header .meta .bad{color:var(--err)}
+main{display:grid;grid-template-columns:380px minmax(0,1fr);gap:0;min-height:calc(100vh - 49px)}
+aside{border-right:1px solid var(--line);background:var(--panel);padding:18px;display:flex;flex-direction:column;gap:14px;overflow:auto;max-height:calc(100vh - 49px)}
+section{padding:18px 22px;overflow:auto;max-height:calc(100vh - 49px)}
+label{display:block;font-size:12px;font-weight:600;color:var(--muted);margin:0 0 5px;text-transform:uppercase;letter-spacing:.05em}
+label.check{display:flex;align-items:center;gap:7px;text-transform:none;letter-spacing:0;font-size:13.5px;color:var(--ink);font-weight:500;margin:0}
+label.check input{width:auto;margin:0}
+textarea,input,select{width:100%;font:inherit;color:inherit;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px}
+input:disabled{opacity:.5}
+textarea{min-height:150px;resize:vertical}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px;align-items:end}
+details{border:1px solid var(--line);border-radius:8px;padding:8px 10px}details summary{cursor:pointer;color:var(--muted);font-size:13px}
+details[open] summary{margin-bottom:10px}details .row{margin-bottom:10px}
+.hint{color:var(--muted);font-size:12px;margin-top:4px}
+button{font:inherit;font-weight:600;border:0;border-radius:8px;padding:9px 14px;cursor:pointer;background:var(--accent);color:#fff}
+button.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}button.small{padding:4px 10px;font-size:12.5px}button:disabled{opacity:.5;cursor:default}
+.drop{border:1.5px dashed var(--line);border-radius:8px;padding:10px;color:var(--muted);font-size:13px;text-align:center;cursor:pointer}
+.drop.over{border-color:var(--accent);color:var(--accent)}
+.files{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}.files span{background:var(--bg);border:1px solid var(--line);border-radius:999px;padding:2px 9px;font-size:12px;cursor:pointer}
+.jobs{display:flex;flex-direction:column;gap:8px}.job{display:grid;grid-template-columns:72px 1fr;gap:10px;align-items:center;padding:6px;border-radius:8px;cursor:pointer;border:1px solid transparent}
+.job:hover,.job.sel{border-color:var(--line);background:var(--bg)}.job img,.job .ph{width:72px;height:48px;object-fit:cover;border-radius:4px;background:var(--line);display:block}
+.job b{display:block;font-size:13px;line-height:1.3;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}.job small{color:var(--muted)}
+.badge{display:inline-block;border-radius:999px;padding:1px 8px;font-size:11.5px;font-weight:600;background:var(--line)}
+.badge.done{background:color-mix(in srgb,var(--ok) 18%,transparent);color:var(--ok)}.badge.error,.badge.cancelled{background:color-mix(in srgb,var(--err) 18%,transparent);color:var(--err)}.badge.running{background:color-mix(in srgb,var(--accent) 18%,transparent);color:var(--accent)}
+.top{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px}.top h2{margin:0;font-size:19px;letter-spacing:-.01em}
+.top .sp{flex:1}.cost{color:var(--muted);font-size:12.5px}.top a{color:var(--accent);font-weight:600;text-decoration:none;font-size:13px}
+.steps{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 16px}.steps span{font-size:12px;border:1px solid var(--line);border-radius:999px;padding:3px 10px;color:var(--muted)}
+.steps span.on{border-color:color-mix(in srgb,var(--ok) 50%,transparent);color:var(--ok);background:color-mix(in srgb,var(--ok) 10%,transparent)}
+.steps span.now{border-color:var(--accent);color:var(--accent)}
+.stage{display:grid;grid-template-columns:minmax(0,auto) minmax(260px,1fr);gap:20px;align-items:start}
+.player video{display:block;max-width:100%;max-height:72vh;border-radius:6px;background:#000;box-shadow:0 1px 6px rgba(0,0,0,.25)}
+.player .wait{display:flex;align-items:center;justify-content:center;border-radius:6px;border:1.5px dashed var(--line);color:var(--muted);max-height:72vh;max-width:100%}
+.post{display:flex;flex-direction:column;gap:12px;min-width:0}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:10px 12px}
+.card h3{margin:0 0 6px;font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);display:flex;align-items:center;gap:8px}.card h3 button{margin-left:auto}
+.card p{margin:0;white-space:pre-wrap}.card ul{margin:0;padding-left:18px}
+.card.ph{border-color:color-mix(in srgb,var(--warn) 45%,transparent)}.card.ph li{color:var(--warn)}
+.card.warn{border-color:color-mix(in srgb,var(--err) 45%,transparent)}.card.warn li{color:var(--err);white-space:pre-wrap}
+.sheet img{width:100%;display:block;border-radius:4px;cursor:zoom-in}
+.log{margin-top:18px;border-top:1px solid var(--line);padding-top:10px;font:12.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--muted);max-height:300px;overflow:auto;white-space:pre-wrap}
+.log .t{color:var(--ink)}.log .e{color:var(--err)}.log .s{color:var(--ok)}
+.revise{margin-top:18px;display:grid;gap:8px;max-width:760px}.revise textarea{min-height:80px}
+.empty{color:var(--muted);padding:60px 0;text-align:center}
+.summary{white-space:pre-wrap;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:12px 14px;margin:14px 0;max-width:900px}
+@media (max-width:1100px){.stage{grid-template-columns:1fr}}
+@media (max-width:860px){main{grid-template-columns:1fr}aside,section{max-height:none}}
+</style>
+</head>
+<body>
+<header><h1>Explainer Agent</h1><span class="meta" id="meta">…</span></header>
+<main>
+<aside>
+  <div>
+    <label for="brief">Brief</label>
+    <textarea id="brief" placeholder="What should the video explain, to whom, and what should they do afterwards? Paste notes, facts and numbers. E.g. 'Explain what an AI agent is to a finance team in 45 seconds; end on Find your agent.'"></textarea>
+  </div>
+  <div>
+    <label>Files (optional)</label>
+    <div class="drop" id="drop">Drop files or click · images, clips, notes (md, txt, pdf), a music bed (mp3, wav)</div>
+    <input type="file" id="file" multiple hidden>
+    <div class="files" id="files"></div>
+  </div>
+  <div class="row">
+    <div><label for="format">Format</label><select id="format"></select></div>
+    <div><label for="length">Length (seconds)</label><input id="length" type="number" min="3" max="300"></div>
+  </div>
+  <div><label for="style">Style</label><select id="style"></select></div>
+  <div>
+    <label class="check"><input type="checkbox" id="voice"> Narration (voiceover + captions)</label>
+    <input id="voiceId" placeholder="Voice id (optional)" disabled style="margin-top:6px">
+    <div class="hint" id="voiceHint"></div>
+  </div>
+  <div>
+    <label class="check"><input type="checkbox" id="images" checked> Generated pictures (house illustration style)</label>
+    <div class="hint" id="imagesHint"></div>
+  </div>
+  <div>
+    <label for="musicPrompt">Music</label>
+    <input id="musicPrompt" placeholder="None · or 'auto', or a mood: dry upright piano, 90 bpm">
+    <div class="hint" id="soundHint"></div>
+  </div>
+  <div class="row">
+    <div><label for="audience">Audience</label><input id="audience" placeholder="e.g. finance team"></div>
+    <div><label for="language">Language</label><input id="language" placeholder="en"></div>
+  </div>
+  <div class="row">
+    <div><label for="quality">Render quality</label><select id="quality"><option value="high">High (delivery)</option><option value="standard">Standard</option><option value="draft">Draft (fast)</option></select></div>
+    <div><label for="budget">Budget (USD)</label><input id="budget" type="number" min="0.5" step="0.5"></div>
+  </div>
+  <details>
+    <summary>More options</summary>
+    <div class="row">
+      <div><label for="workflow">Workflow</label><select id="workflow"></select></div>
+      <div><label class="check"><input type="checkbox" id="sfx"> Sound effects</label></div>
+    </div>
+    <div id="urlRow" hidden><label for="url">Website</label><input id="url" placeholder="https://…"></div>
+  </details>
+  <button id="go">Create video</button>
+  <div><label>Videos</label><div class="jobs" id="jobs"></div></div>
+</aside>
+<section id="view"><div class="empty">Write a brief and press “Create video”, or open an earlier one.</div></section>
+</main>
+<script>
+const $ = (s, el = document) => el.querySelector(s);
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+let files = [], current = null, es = null, job = null, meta = null, steps = new Set(), lastStep = null;
+const SIZES = { portrait: [1080, 1350], vertical: [1080, 1920], square: [1080, 1080], landscape: [1920, 1080] };
+
+async function api(path, opts = {}) {
+  const r = await fetch(path, { ...opts, headers: { "Content-Type": "application/json" } });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(j.error || r.statusText);
+  return j;
+}
+const readB64 = (f) => new Promise((ok, no) => { const r = new FileReader(); r.onload = () => ok(String(r.result).split(",")[1]); r.onerror = no; r.readAsDataURL(f); });
+const pack = (list) => Promise.all(list.map(async (f) => ({ name: f.name, data: await readB64(f) })));
+
+function renderFiles() { $("#files").innerHTML = files.map((f, i) => `<span title="click to remove" data-i="${i}">${esc(f.name)} ×</span>`).join(""); }
+$("#files").onclick = (e) => { const i = e.target.dataset.i; if (i !== undefined) { files.splice(+i, 1); renderFiles(); } };
+const drop = $("#drop");
+drop.onclick = () => $("#file").click();
+$("#file").onchange = (e) => { files.push(...e.target.files); renderFiles(); e.target.value = ""; };
+drop.ondragover = (e) => { e.preventDefault(); drop.classList.add("over"); };
+drop.ondragleave = () => drop.classList.remove("over");
+drop.ondrop = (e) => { e.preventDefault(); drop.classList.remove("over"); files.push(...e.dataTransfer.files); renderFiles(); };
+$("#voice").onchange = () => { $("#voiceId").disabled = !$("#voice").checked; };
+$("#workflow").onchange = () => { $("#urlRow").hidden = $("#workflow").value !== "product-launch-video"; };
+
+async function loadMeta() {
+  meta = await api("/api/meta");
+  const hf = meta.hyperframes;
+  const bad = meta.ready.length ? ` · <span class="bad">${esc(meta.ready.join("; "))} → npm run setup</span>` : "";
+  $("#meta").innerHTML = `Claude: ${esc(meta.auth)} · brand: ${esc(meta.brand)} · HyperFrames ${esc(hf.cli ?? "missing")} · ${hf.skillCount} skills${bad}`;
+  $("#format").innerHTML = meta.formats.map((f) => `<option value="${f.id}" title="${esc(f.label)}"${f.id === meta.defaults.format ? " selected" : ""}>${esc(f.label.split(" · ")[0])}</option>`).join("");
+  $("#workflow").innerHTML = meta.workflows.map((w) => `<option value="${w}">${esc(w)}</option>`).join("");
+  $("#style").innerHTML = meta.styles.map((s) => `<option value="${s.id}"${s.id === meta.defaults.style ? " selected" : ""}>${esc(s.label)}</option>`).join("");
+  $("#length").value = meta.defaults.length;
+  $("#budget").value = meta.defaults.budget; $("#budget").max = meta.maxBudget;
+  $("#voiceHint").textContent = meta.voice ? `Voice: ${meta.voice}` : "No voice set up: add HEYGEN_API_KEY or ELEVENLABS_API_KEY to .env, or run npm run setup:voice";
+  $("#images").disabled = !meta.images; $("#images").checked = !!meta.images;
+  $("#imagesHint").textContent = meta.images ? `Pictures: ${meta.images}` : "Off: add OPENAI_API_KEY to .env to generate pictures";
+  $("#musicPrompt").disabled = !meta.sound;
+  $("#soundHint").textContent = meta.sound ? "Music and sound effects: ElevenLabs (a music file dropped above wins)" : "Composed music and generated sound effects need ELEVENLABS_API_KEY in .env (a music file dropped above still works)";
+}
+async function loadJobs() {
+  const jobs = await api("/api/jobs");
+  $("#jobs").innerHTML = jobs.map((j) => `<div class="job${j.id === current ? " sel" : ""}" data-id="${esc(j.id)}">${j.thumb ? `<img src="/out/${esc(j.id)}/${esc(j.thumb)}?t=${Date.now()}" alt="">` : `<div class="ph"></div>`}<div><b>${esc(j.title)}</b><small><span class="badge ${j.running ? "running" : esc(j.status)}">${j.running ? "running" : esc(j.status)}</span> ${j.durationSec ? j.durationSec.toFixed(0) + " s · " : ""}${esc(j.format ?? "")}</small></div></div>`).join("") || `<small style="color:var(--muted)">None yet.</small>`;
+}
+$("#jobs").onclick = (e) => { const el = e.target.closest(".job"); if (el) open(el.dataset.id); };
+
+$("#go").onclick = async () => {
+  const brief = $("#brief").value.trim();
+  if (!brief) return alert("Write a brief first.");
+  $("#go").disabled = true;
+  try {
+    const r = await api("/api/jobs", { method: "POST", body: JSON.stringify({
+      brief, format: $("#format").value, length: $("#length").value, voice: $("#voice").checked, voiceId: $("#voiceId").value,
+      audience: $("#audience").value, language: $("#language").value, quality: $("#quality").value, budget: $("#budget").value,
+      workflow: $("#workflow").value, style: $("#style").value, url: $("#url").value, sfx: $("#sfx").checked,
+      images: $("#images").checked, musicPrompt: $("#musicPrompt").disabled ? "" : $("#musicPrompt").value, files: await pack(files) }) });
+    files = []; renderFiles();
+    open(r.id);
+  } catch (err) { alert(err.message); } finally { $("#go").disabled = false; }
+};
+
+/** post.md → { Caption, "Alt text", Video, "Placeholders to fill", Notes } */
+function sections(md) {
+  const out = {};
+  for (const part of String(md ?? "").split(/\n(?=## )/)) {
+    const m = part.match(/^## (.+)\n+([\s\S]*)$/);
+    if (m) out[m[1].trim()] = m[2].trim();
+  }
+  return out;
+}
+
+function stepsHtml() {
+  if (!meta) return "";
+  return `<div class="steps">${meta.steps.map((s) => `<span class="${steps.has(s.id) ? (s.id === lastStep && job?.running ? "now" : "on") : ""}">${steps.has(s.id) ? "✓ " : ""}${esc(s.label)}</span>`).join("")}</div>`;
+}
+
+function playerHtml() {
+  const [w, h] = SIZES[job.options?.format] ?? [1080, 1350];
+  const box = `aspect-ratio:${w}/${h};height:min(72vh,${Math.round((h / w) * 640)}px)`;
+  if (job.video) return `<div class="player"><video controls playsinline preload="metadata" style="${box}" src="/out/${esc(job.id)}/${esc(job.video)}?t=${esc(job.updatedAt)}"></video></div>`;
+  return `<div class="player"><div class="wait" style="${box}">${job.running ? "Rendering when the frames are ready…" : "No video"}</div></div>`;
+}
+
+function postHtml() {
+  const s = sections(job.post);
+  const card = (title, body, copy) => body ? `<div class="card"><h3>${esc(title)}${copy ? `<button class="ghost small" data-copy="${esc(title)}">Copy</button>` : ""}</h3><p>${esc(body)}</p></div>` : "";
+  const ph = (job.placeholders ?? []);
+  const warn = (job.warnings ?? []);
+  return `<div class="post">
+    ${card("Caption", s["Caption"], true)}
+    ${card("Alt text", s["Alt text"], true)}
+    ${ph.length ? `<div class="card ph"><h3>Placeholders to fill</h3><ul>${ph.map((p) => `<li>${esc(p)}</li>`).join("")}</ul></div>` : ""}
+    ${s["Frames"] ? card("Frames", s["Frames"].replace(/`/g, "")) : ""}
+    ${s["Notes"] ? card("Notes", s["Notes"]) : ""}
+    ${warn.length ? `<div class="card warn"><h3>Warnings</h3><ul>${warn.map((w) => `<li>${esc(w)}</li>`).join("")}</ul></div>` : ""}
+    ${job.contactSheet ? `<div class="card sheet"><h3>Contact sheet</h3><a href="/out/${esc(job.id)}/${esc(job.contactSheet)}" target="_blank" rel="noopener"><img src="/out/${esc(job.id)}/${esc(job.contactSheet)}?t=${esc(job.updatedAt)}" alt="Contact sheet"></a></div>` : ""}
+  </div>`;
+}
+
+function render() {
+  if (!job) return;
+  const status = job.running ? "running" : job.status;
+  const links = job.video ? `<a href="/out/${esc(job.id)}/${esc(job.video)}?download">Download MP4</a>${job.post ? ` <a href="/out/${esc(job.id)}/post.md?download">post.md</a>` : ""}` : "";
+  const dur = job.durationSec ? ` · ${job.width}×${job.height} · ${job.durationSec.toFixed(1)} s` : "";
+  $("#view").innerHTML = `
+    <div class="top"><h2>${esc(job.title ?? job.id)}</h2><span class="badge ${esc(status)}">${esc(status)}</span>
+      <span class="cost">${job.costUsd ? `$${job.costUsd.toFixed(2)}` : ""}${dur}</span><span class="sp"></span>${links}
+      ${job.running ? `<button class="ghost small" id="cancel">Cancel</button>` : ""}</div>
+    ${stepsHtml()}
+    ${job.error ? `<div class="summary" style="border-color:var(--err)">${esc(job.error)}</div>` : ""}
+    <div class="stage">${playerHtml()}${postHtml()}</div>
+    ${job.summary ? `<div class="summary">${esc(job.summary)}</div>` : ""}
+    ${!job.running && job.sessionId ? `<div class="revise"><label for="rev">Request changes</label><textarea id="rev" placeholder="E.g. 'Frame 3 is too fast; make the CTA bigger; use a darker ground.'"></textarea><div><button id="revgo">Revise video</button></div></div>` : ""}
+    <div class="log" id="log"></div>`;
+  for (const line of logLines) appendLog(line, false);
+  $("#cancel")?.addEventListener("click", () => api(`/api/jobs/${job.id}/cancel`, { method: "POST", body: "{}" }));
+  $("#revgo")?.addEventListener("click", revise);
+  for (const b of document.querySelectorAll("[data-copy]")) b.onclick = () => navigator.clipboard.writeText(sections(job.post)[b.dataset.copy] ?? "").then(() => { b.textContent = "Copied"; setTimeout(() => (b.textContent = "Copy"), 1200); });
+}
+
+let logLines = [];
+function appendLog(line, keep = true) {
+  if (keep) logLines.push(line);
+  const log = $("#log");
+  if (!log) return;
+  const div = document.createElement("div");
+  div.className = line.cls ?? "";
+  div.textContent = line.text;
+  log.appendChild(div);
+  log.scrollTop = log.scrollHeight;
+}
+
+function onEvent(e) {
+  if (e.type === "step") {
+    steps.add(e.step); lastStep = e.step; appendLog({ text: `■ ${e.label}`, cls: "s" });
+    if (!job.title && current) api(`/api/jobs/${current}`).then((j) => { if (j.id === current) { job = { ...j, video: job.video ?? j.video }; render(); } }).catch(() => render());
+    else render();
+  }
+  else if (e.type === "tool") appendLog({ text: `${e.worker ? "  ↳ " : "→ "}${e.summary}` });
+  else if (e.type === "text") appendLog({ text: e.text, cls: "t" });
+  else if (e.type === "status") appendLog({ text: `· ${e.message}` });
+  else if (e.type === "denied") appendLog({ text: `✗ refused (${e.tool}): ${e.reason}`, cls: "e" });
+  else if (e.type === "error") appendLog({ text: `! ${e.message}`, cls: "e" });
+  else if (e.type === "video") { job.video = e.path; job.updatedAt = String(Date.now()); render(); }
+  else if (e.type === "cost") { job.costUsd = e.usd; }
+  else if (e.type === "done") { es?.close(); es = null; refresh(); }
+}
+
+async function refresh() {
+  if (!current) return;
+  job = await api(`/api/jobs/${current}`);
+  for (const s of job.steps ?? []) steps.add(s);
+  render();
+  loadJobs();
+}
+
+async function open(id) {
+  current = id; steps = new Set(); lastStep = null; logLines = [];
+  es?.close();
+  job = await api(`/api/jobs/${id}`);
+  render(); loadJobs();
+  es = new EventSource(`/api/jobs/${id}/events`);
+  es.onmessage = (m) => onEvent(JSON.parse(m.data));
+  es.onerror = () => { es?.close(); es = null; };
+}
+
+async function revise() {
+  const instructions = $("#rev").value.trim();
+  if (!instructions) return;
+  $("#revgo").disabled = true;
+  try {
+    await api(`/api/jobs/${job.id}/revise`, { method: "POST", body: JSON.stringify({ instructions }) });
+    open(job.id);
+  } catch (err) { alert(err.message); $("#revgo").disabled = false; }
+}
+
+loadMeta().catch((e) => ($("#meta").textContent = e.message));
+loadJobs();
+setInterval(() => { if (!job?.running) loadJobs(); }, 15000);
+</script>
+</body>
+</html>

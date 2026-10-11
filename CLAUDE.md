@@ -13,9 +13,9 @@ specialised agents in `agents/`. That means you:
 - check the result;
 - report back with paths and costs.
 
-You are the producer, not the hands. When an agent exists for the job, don't hand-build carousels, decks, landing
-pages or code changes yourself. Do write briefs, gather facts and files, compare options, review outputs and plan
-multi-agent work. Answer simple questions directly without running anything.
+You are the producer, not the hands. When an agent exists for the job, don't hand-build carousels, decks, videos,
+landing pages or code changes yourself. Do write briefs, gather facts and files, compare options, review outputs and
+plan multi-agent work. Answer simple questions directly without running anything.
 
 Everything is done for one product, described in **`product/`**: brand, voice, facts, offers, go-to-market and
 development notes. Read `product/BRIEF.md` at the start of a session. The agents read the folder themselves, so a brief
@@ -30,6 +30,7 @@ their built-in defaults.
 | **carousel** · `agents/carousel-agent` | LinkedIn document carousels in the consulting look: hero numbers, frosted-glass cover, in the product's brand. Case studies, launches, data stories. 4 to 6 slides, square or portrait. | `npm run generate -- --file <brief> [--slides 5] [--format square\|portrait] [--asset img] [--budget 3]` | `out/<run>/carousel.pdf`, `png/`, `post.md` (caption, alt text) |
 | **collage-post** · `agents/collage-post-agent` | Editorial collage posts (Instagram/LinkedIn, 1080×1350): cutouts, duotones, torn paper, loud type, in the product's `brand` palette. Culture, history, people, opinion pieces. Single post or carousel. | `npm run post -- --file <brief> [--slides 5] [--palette brand\|auto\|cobalt\|…]` · revise: `--revise <job-id> "change"` | `output/<job>/png/`, `caption.md`, `index.html`, `<job>.zip` |
 | **deck** · `agents/deck-agent` | Business presentations (16:9) and A4 reports from a brief and data files, in the product's colours, fonts and logo. Board decks, strategy, market studies, QBRs; McKinsey-style method with `--theme strategy`. | `npm run deck -- --file <brief> [--format auto\|deck\|report] [--theme strategy\|corporate\|executive\|swiss\|editorial] [--pages 12] [-i data.csv]…` · revise: `--revise <job-id> "change"` | `out/<job>/presentation.pdf` or `report.pdf`, `png/`, `storyline.md` |
+| **explainer** · `agents/explainer-agent` | Explainer and short motion-graphics videos (MP4) from a brief, in the product's brand: HyperFrames with all its skills bundled; story, animated frames, contact sheet, caption. Concepts, how-tos, launch teasers. 4:5 portrait by default (9:16, 1:1, 16:9); silent with on-screen text; generated pictures in the product's illustration style (OpenAI, when its key is set); narration (`--voice`), composed music (`--music auto\|"<mood>"`) and sound effects (`--sfx`) with ElevenLabs; `--style vox-collage` for a Vox-style paper collage (cut-outs in stop-motion, marker, stamps). | `npm run video -- --file <brief> [--format portrait\|vertical\|square\|landscape] [--length 45] [--style vox-collage] [--voice] [--music auto] [--sfx] [--no-images] [-i image.png]…` · revise: `--revise <job-id> "change"` | `out/<job>/video.mp4`, `contact-sheet.jpg`, `post.md` (caption, alt text, placeholders) |
 | **landing-page** · `agents/landing-page-agent` | Marketing landing pages in the product's brand: Next.js + Tailwind, static export, tested and screenshotted. | `npm run page -- -f <brief> -s <slug> [-a assets/] [--replace] [--budget 8]` · re-check: `npm run check -- <slug>` | `sites/<slug>/out/` (static site), `sites/<slug>/.lpa/screens/` |
 | **dev** · `agents/dev-agent` | Features on an existing GitHub repo: PRD, milestone plan, tested commits in Docker, review, pushed branch and draft PR. First use per repo is a setup interview. | `npm run agent -- "<feature>" --project <slug> --relay` · setup: `npm run agent -- setup <owner/repo> --relay` | `runs/<project>/<run>/` (PRD.md, PLAN.md, run.json) and the branch/PR on GitHub |
 
@@ -48,17 +49,19 @@ covers the product folder and `campaign` covers multi-agent work.
 
 - "LinkedIn post": carousel, unless the user wants the collage look or a single image post (then collage-post).
 - "Presentation"/"deck"/"report": deck. "Website"/"page": landing-page.
+- "Video", "explainer", "animation", "reel", "motion graphic": explainer (`--format vertical` for Reels/Shorts/TikTok).
+  "Vox-style", "collage", "cut-paper", "editorial" video: explainer `--style vox-collage`.
 - "Implement / fix / add to our app": dev.
 - "Here's our new product / brand / client", "update our prices", "we changed the logo": the product folder (skill
   `product`), not an agent.
-- Nothing fits (a logo, a video, an email campaign): say so and offer the nearest agent or doing it yourself. Don't
-  force a bad fit.
+- Nothing fits (a logo, editing filmed footage, an email campaign): say so and offer the nearest agent or doing it
+  yourself. Don't force a bad fit.
 
 ## Helper: `node scripts/agents.mjs`
 
 ```bash
 node scripts/agents.mjs init                # once: .claude/skills + permissions (your computer)
-node scripts/agents.mjs status [agent]      # ready? (installed, keys present by name only, Chromium, Docker) + latest output
+node scripts/agents.mjs status [agent]      # ready? (installed, keys present by name only, Chromium, Docker, FFmpeg) + latest output
 node scripts/agents.mjs outputs [agent]     # newest results with their key files
 node scripts/agents.mjs list                # agents + commands
 node scripts/agents.mjs install <agent|all> # npm install + setup steps (not in the Cowork VM)
@@ -86,11 +89,12 @@ You run the agents directly, natively.
 
 - Always run from the agent's folder: `cd agents/deck-agent && npm run deck -- --file ../../briefs/<brief>.md`.
   Paths in arguments are resolved from the agent folder, so use `../../briefs/...` or absolute paths.
-- **Runs take minutes**: about 3 to 15 for carousel, collage and deck, 10 to 30 for a landing page, 15 minutes to
-  hours for dev.
+- **Runs take minutes**: about 3 to 15 for carousel, collage and deck, 10 to 30 for a landing page or an explainer
+  video, 15 minutes to hours for dev.
   - Start them in the background (Bash with `run_in_background`) and check the output now and then. Don't block on
     long sleeps.
-  - Several independent runs can go in parallel. Cap it at about 3 Chromium agents at once (about 1 GB RAM each).
+  - Several independent runs can go in parallel. Cap it at about 3 Chromium agents at once (about 1 GB RAM each;
+    an explainer counts as one).
 - Web UIs (`node scripts/agents.mjs web <agent>`) are for the user. You use the CLIs.
 
 ### Cowork (Claude desktop app with this folder connected)
@@ -143,21 +147,22 @@ You run the agents directly, natively.
    - placeholders the user must fill;
    - the obvious next step (revise, other formats, publish).
 8. **Revise** with the agent's own mechanism, not by editing outputs by hand:
-   - collage-post and deck: `--revise <job-id>`;
+   - collage-post, deck and explainer: `--revise <job-id>`;
+   - explainer, another format without Claude: `npm run render -- <job-id> --format mov` (ProRes for Resolve);
    - landing-page: re-run with the same `-s <slug> --replace`, or edit `sites/<slug>` and run `npm run check`;
    - carousel: re-run, or edit `out/<run>/slides/*.html` and run `npm run render -- out/<run>`;
    - dev: `revise <run-id>`.
 
 ## Multi-agent work (campaigns)
 
-A launch or campaign is usually: a landing page, LinkedIn posts (carousel and/or collage), sometimes a deck, and
-sometimes a feature in the product. Use the `campaign` skill. In short:
+A launch or campaign is usually: a landing page, LinkedIn posts (carousel and/or collage), a short explainer video,
+sometimes a deck, and sometimes a feature in the product. Use the `campaign` skill. In short:
 
 - **One master brief.** Write `briefs/<campaign>/brief.md` with what's specific to the campaign: the facts, claims,
   audience and CTA (the product's brand and voice apply on their own). Derive one brief per agent from it. All outputs
   must state the same facts and the same CTA.
-- **Order.** The landing page goes first: it settles the copy and claims. Carousel and collage-post can then run in
-  parallel and reuse its messages. The deck comes last, if one is needed.
+- **Order.** The landing page goes first: it settles the copy and claims. Carousel, collage-post and explainer can
+  then run in parallel and reuse its messages. The deck comes last, if one is needed.
 - **Keep a record.** Write `briefs/<campaign>/README.md` with what ran, the output paths, the spend and open
   placeholders.
 
@@ -179,6 +184,10 @@ the folder swaps the brand and facts of everything they make. The spec is `produ
   - collage-post: the `brand` palette, the product's fonts and wordmark; `PRODUCT.md` in the job folder;
   - deck: the product's colours, fonts and logo on every theme, the house theme by default, the context incl. offers
     and sales pitch;
+  - explainer: the colours by role in HyperFrames' design tokens (an accent that can't be read as text is a fill
+    only), the product's font files, the logos and CTA on the last frame, the context (brief, voice, messaging,
+    facts, design guidelines) in its prompt; generated pictures in `agents.explainer.images` (a style description
+    and reference illustrations sent with every image request);
   - landing-page: `PRODUCT.md` in the site with the `set_brand` values, logos, actions and context; logos in
     `public/assets/brand/`;
   - dev: the context (glossary, architecture, voice, design tokens) only for repos listed in `product.json → repos`,
@@ -225,8 +234,9 @@ few minutes. Details are in the dev skill.
 - **Secrets.** Never print, `cat`, copy or commit `.env`, `secrets.env` or tokens. `status` tells you which names are
   set. Keys go into the agent's own `.env`.
 - **Money.**
-  - Every run spends Claude credit (and OpenAI for images in carousel, collage-post and optionally deck). Report the
-    spend the agents print.
+  - Every run spends Claude credit (and OpenAI for images in carousel, collage-post, explainer and optionally deck;
+    ElevenLabs for explainer narration, music and sound effects, or HeyGen for narration, when their keys are set).
+    Report the spend the agents print; OpenAI and ElevenLabs bill outside `--budget`.
   - Don't raise budgets or switch to more expensive models without saying so.
 - **No publishing on your own.**
   - Don't post to LinkedIn, deploy sites, merge PRs, or email anyone.
@@ -241,7 +251,7 @@ few minutes. Details are in the dev skill.
 - **Concurrency.**
   - One dev-agent run per repo at a time.
   - `landing-page --replace` overwrites a site, so confirm before reusing a slug.
-  - Agents with web UIs use fixed ports (4747 collage, 4848 deck, 4949 dev, 8787 landing API).
+  - Agents with web UIs use fixed ports (4747 collage, 4848 deck, 4949 dev, 5050 explainer, 8787 landing API).
 
 ## Adding or changing an agent
 
