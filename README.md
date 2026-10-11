@@ -8,9 +8,9 @@ fonts, voice, verified facts, offers, go-to-market and development notes), so wh
 on-message. Swap the folder and the same agents work for another brand.
 
 You don't drive the agents one by one. You talk to one Claude ([Claude Code](https://github.com/anthropics/claude-code),
-or Cowork in the Claude desktop app) opened in this folder. Following [`CLAUDE.md`](CLAUDE.md), it routes each request to
-the right agent, writes the brief, runs it with a budget, relays the agent's questions, checks the result and reports
-back.
+or Cowork in the Claude desktop app) opened in this folder. Following [`AGENTS.md`](AGENTS.md), it routes each request
+to the right agent, writes the brief, runs it with a budget, relays the agent's questions, checks the result and reports
+back. [How it works](#how-it-works) shows the whole loop.
 
 ## The agents
 
@@ -28,20 +28,64 @@ budget cap. Each agent is self-contained, with its own README, `.env.example` an
 
 ## How it works
 
-```
-you ──► Claude in this folder (CLAUDE.md + skills/)
-          │  picks the agent, writes workspace/briefs/<date>-<slug>.md, runs it, relays questions, checks the output
-          ▼
-        agents/<agent> ──reads──► workspace/product/   brand tokens · logo · fonts · voice · facts · offers · GTM
-          │
-          ▼
-        workspace/out/, sites/, dev/   PDFs, PNGs, videos, static sites, branches and pull requests
+The project has three parts:
+
+- **The main agent.** You talk to one coding agent opened in this folder: Claude Code, Cowork in the Claude desktop
+  app, or another agent that reads [`AGENTS.md`](AGENTS.md) (`CLAUDE.md` imports it). It is the producer: it picks the
+  agent, writes the brief, runs it with a budget, relays its questions, checks the result and reports back. It doesn't
+  make the carousel or the deck itself.
+- **The kit**, this repository, all public: the six agents in `agents/` (each a self-contained Claude Agent SDK app
+  with its own CLI, design system and tests), one skill per agent in `skills/` (how to brief and run it), the registry
+  `agents.json`, and the shared code in `lib/` and `scripts/` that finds the product, knows where files go, and
+  checks, installs and tests the agents. Nothing of yours is in it.
+- **The workspace**, `workspace/`: your product folder (brand, voice, facts, offers), your briefs and everything the
+  agents make. The kit's `.gitignore` leaves it out, and it is a git repository of its own.
+
+```mermaid
+flowchart TB
+    you(["You"])
+    main["Main agent<br/>Claude Code, Cowork or<br/>any agent reading AGENTS.md"]
+
+    subgraph kit["The kit: this repository, public"]
+        guide["AGENTS.md · skills/<br/>agents.json"]
+        agents["agents/<br/>six specialised agents"]
+        shared["lib/ · scripts/<br/>shared code and helpers"]
+    end
+
+    subgraph ws["workspace/: yours, its own git repository"]
+        briefs["briefs/"]
+        product["product/<br/>brand · voice · facts"]
+        results["out/ · sites/ · dev/<br/>the results"]
+    end
+
+    you -->|"1 · asks"| main
+    main -.->|"follows"| guide
+    main -->|"2 · writes the brief"| briefs
+    main -->|"3 · runs one"| agents
+    agents -.->|"uses"| shared
+    agents -->|"4 · reads"| briefs
+    agents -->|"4 · reads"| product
+    agents -->|"4 · writes"| results
+    main -->|"5 · checks and reports back"| you
 ```
 
-### The kit and your workspace
+A request, step by step:
 
-This repository is the kit: agents, skills, templates and docs, all public. Everything that is yours lives in one
-folder inside it, `workspace/`, which the kit's `.gitignore` leaves out and which is a git repository of its own:
+1. **You ask:** "A LinkedIn carousel about our spring offer, portrait, 5 slides."
+2. **The main agent writes the brief.** It picks the carousel agent, checks that it's ready
+   (`node scripts/agents.mjs status`) and writes `workspace/briefs/2026-10-11-spring-offer.md` with only what is
+   specific to this job: the product's brand, voice and facts are already in the product folder.
+3. **It runs the agent** from the agent's folder, with a spend cap:
+   `cd agents/carousel-agent && npm run generate -- --file ../../workspace/briefs/2026-10-11-spring-offer.md --budget 3`.
+4. **The agent does the work.** It loads the product folder (the design tokens become its colours, fonts and logo; the
+   voice and the verified facts go into its prompt), runs its own Claude session with its own tools to write, render
+   and check the slides, and saves the result in `workspace/out/carousel/<run>/`.
+5. **The main agent checks and reports.** It looks at the slides and the caption, then gives you the paths, the spend
+   and any placeholders to fill. Changes go back through the agent (`--revise <job>`, or a re-run).
+
+### The workspace
+
+Everything that is yours lives in `workspace/`:
 
 ```
 workspace/
