@@ -37,7 +37,8 @@ npm run deck -- [brief text] [options]
   -t, --theme <t>         auto (default) | strategy | corporate | executive | swiss | editorial
   -n, --pages <n>         target page count
   -i, --input <path>      data (csv/xlsx/json), documents (md/txt/pdf) or images; repeatable
-      --product <dir>     product folder for brand, voice and facts, or "none" (default: $PRODUCT_DIR, then ../../product)
+      --product <dir|id>  product folder for brand, voice and facts, the id of one in workspace/products, or "none"
+                          (default: $PRODUCT_DIR, then the workspace's product/)
       --brand <path>      brand file; overrides the product folder's brand
       --audience, --lang, --model, --budget
       --revise <job-id>   apply a change request to an existing job (resumes the same agent session)
@@ -50,7 +51,7 @@ npm run deck -- "McKinsey-style board deck: should Northwind enter Poland?" -i d
 npm run deck -- --file briefs/example-report.md --format report --theme editorial -i data/sector-resilience.csv
 npm run deck -- --revise 20261006-142233-mckinsey-style-board-deck "Turn page 6 into a waterfall and add an appendix"
 npm run rerender -- 20261006-142233-mckinsey-style-board-deck --theme corporate --dpi 300   # no Claude, no cost
-npm run deck -- --file brief.md --product ~/clients/acme/product   # another product's brand, voice and facts
+npm run deck -- --file brief.md --product acme                    # another product (workspace/products/acme)
 ```
 
 ## Web UI
@@ -87,7 +88,7 @@ With `--format auto` (the default) the agent decides from the brief. Page PNGs a
 The agent never puts McKinsey's (or any other firm's) name or logo on your pages. The brand on them is yours, and it comes from the first of:
 
 1. `--brand <file>`: a brand file (name, wordmark text or logo, confidentiality line, colour and font overrides; `brands/example-brand.json` shows the format).
-2. **The product folder** (`--product <dir>`, else `$PRODUCT_DIR`, else the nearest `product/` above this agent; see [`templates/product/README.md`](../../templates/product/README.md)). Its design tokens map onto every theme, so each theme keeps its layout character in the product's colours, fonts and logo.
+2. **The product folder** (`--product <dir|id>`, else `$PRODUCT_DIR`, else the workspace's `product/`; see [`templates/product/README.md`](../../templates/product/README.md)). Its design tokens map onto every theme, so each theme keeps its layout character in the product's colours, fonts and logo.
 3. `$BRAND_FILE`, then `./brand.json`.
 
 The product folder also feeds the prompt: the compiled context (`BRIEF.md`, voice, messaging, facts, offers, sales pitch; profiles `content` and `sales`) goes into the system prompt and into `product-context.md` in the job folder. The agent writes in the product's voice, may use its verified facts (never the ones marked draft), and prefers the product's house theme (`product.json → agents.deck.theme`) unless the brief asks for another style or `--theme` fixes one.
@@ -173,7 +174,7 @@ brief + files ──▶ Claude (Agent SDK) ──tools──▶ job folder
   - pages that look empty, missing sources, missing elements and images that fail to load.
 - Pages are self-contained. Network access is blocked at render time and fonts are bundled (@fontsource, OFL).
 
-## Output (per job, `out/<job-id>/`)
+## Output (per job, `workspace/out/deck/<job-id>/`; `OUTPUT_DIR` to change it)
 
 `presentation.pdf` or `report.pdf` · `png/page-NN.png` · `exhibits/page-NN-<element>.png` · `storyline.md` (title read-through + speaker notes) · `storyline-plan.md` · `manifest.json` · `preview/` · `pages/` + `elements/` (editable specs) · `product-context.md` (when a product folder was used) · `events.jsonl` · `job.json` (incl. the product and brand source)
 
@@ -182,8 +183,8 @@ brief + files ──▶ Claude (Agent SDK) ──tools──▶ job folder
 ```bash
 npm run typecheck
 npm test          # tool handlers, product folder mapping (fixture product), offline end-to-end with a mock Claude API
-                  # (real SDK + CLI + MCP + hooks), web server. Tests ignore the repo's product/ (PRODUCT_DIR=none).
-npm run demo      # sample deck + report → out/demo-*/, in the product's brand when there is a product folder
+                  # (real SDK + CLI + MCP + hooks), web server. Tests ignore the workspace's product/ (PRODUCT_DIR=none).
+npm run demo      # sample deck + report → workspace/out/deck/demo-*/, in the product's brand when there is one
                   # (--product none for the theme's own look)
 npm run gallery   # every theme → docs/themes-*.jpg (themes' own look; --product <dir> → docs/themes-*-product.jpg)
 ```

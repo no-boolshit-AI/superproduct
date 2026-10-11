@@ -5,9 +5,9 @@ description: Coordinate several agents for one launch or campaign (landing page 
 
 # Multi-agent campaigns
 
-Every agent already reads `product/` (brand, voice, verified facts, offers, the main action). The campaign's job is
-what's specific to this launch, kept identical across outputs. Start from `product/BRIEF.md`,
-`product/brand/messaging.md`, `product/knowledge/facts.md` and, for launches, `product/gtm/launches/README.md`.
+Every agent already reads the product folder, `workspace/product/` (brand, voice, verified facts, offers, the main action). The campaign's job is
+what's specific to this launch, kept identical across outputs. Start from `workspace/product/BRIEF.md`,
+`brand/messaging.md`, `knowledge/facts.md` and, for launches, `gtm/launches/README.md` in the same folder.
 
 ## 1. Scope it with the user (one short round)
 - Which outputs:
@@ -18,17 +18,17 @@ what's specific to this launch, kept identical across outputs. Start from `produ
 - Audience, the one CTA (and its URL; default: the product's primary action), language(s), deadline.
 - Spend: give a rough total (about $5 to $10 per content run, plus images) and confirm before starting.
 
-## 2. Write the master brief: `briefs/<YYYY-MM-DD>-<campaign>/brief.md`
+## 2. Write the master brief: `workspace/briefs/<YYYY-MM-DD>-<campaign>/brief.md`
 ```markdown
 # <campaign>
 Goal: <the one outcome>
 Audience: <who, their problem in their words>
 CTA: <action> → <URL>
 Core message: <one sentence>  ·  Supporting points: <3-5>
-Facts we can publish (with source): <new facts for this launch; product facts are in product/knowledge/facts.md>
+Facts we can publish (with source): <new facts for this launch; product facts are in workspace/product/knowledge/facts.md>
 Unknown → [X] (never invent customers, metrics, quotes)
-Tone & language: <only if it differs from product/brand/voice.md>
-Brand: the product's (product/). Name another brand only for client work, and pass it to every agent the same way.
+Tone & language: <only if it differs from workspace/product/brand/voice.md>
+Brand: the product's (workspace/product/). Name another brand only for client work, and pass it to every agent the same way.
 Assets: <files in ./assets>
 Outputs: <list with formats>
 ```
@@ -54,15 +54,15 @@ Run at most about 3 at once. Start each in the background, poll, and relay quest
   is plenty).
 
 ## 5. Record and hand over
-Write `briefs/<campaign>/README.md` with:
+Write `workspace/briefs/<campaign>/README.md` with:
 - each output and its path;
 - the spend per run and the total;
 - open placeholders and decisions;
 - suggested posting order and copy.
 
 When the launch is real (dates, prices, new offer), add it to the product folder too: a plan in
-`product/gtm/launches/YYYY-MM-DD-<name>.md` (template in that folder's README), new facts in
-`product/knowledge/facts.md` with their source, and the offer in `product/offerings/`. Then the next run of any agent
+`workspace/product/gtm/launches/YYYY-MM-DD-<name>.md` (template in that folder's README), new facts in
+`workspace/product/knowledge/facts.md` with their source, and the offer in `workspace/product/offerings/`. Then the next run of any agent
 knows about it.
 
 Don't publish or deploy anything yourself.

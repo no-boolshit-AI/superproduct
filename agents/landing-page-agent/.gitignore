@@ -7,3 +7,6 @@ template/.next
 template/out
 template/next-env.d.ts
 *.tsbuildinfo
+# Your briefs belong in the workspace (../../workspace); only the example lives here
+briefs/*
+!briefs/example.md

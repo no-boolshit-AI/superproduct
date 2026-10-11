@@ -1,10 +1,18 @@
 {
-  "$comment": "Registry of the agents in ./agents, read by scripts/agents.mjs and by the main agent (see CLAUDE.md). Paths are relative to this folder.",
+  "$comment": "Registry of the agents in ./agents, read by scripts/agents.mjs and by the main agent (see CLAUDE.md). Paths are relative to this folder, except outputs.dir, which is relative to the workspace; outputs.env names the variable that moves an agent's results elsewhere (VAR, or VAR/subfolder, resolved from the agent's folder).",
+  "workspace": {
+    "$comment": "Everything the agents make, and the product they work for, lives in the workspace: product/, products/, briefs/, out/<agent>/, sites/, dev/, references/<agent>/. The kit's .gitignore leaves it out; it is its own (private) git repository. Location: $SUPERPRODUCT_WORKSPACE (absolute, or relative to this folder), else workspace/, which may be a symlink. Keys stay in each agent's .env.",
+    "dir": "workspace",
+    "env": "SUPERPRODUCT_WORKSPACE",
+    "template": "templates/workspace",
+    "lib": "lib/workspace.mjs",
+    "cli": "node scripts/workspace.mjs"
+  },
   "product": {
-    "$comment": "Every agent works for the product described in the product folder: brand (design tokens, logo, fonts), voice, facts, offers. Agents find it with --product <dir|none>, else $PRODUCT_DIR, else the nearest product/ above them (dev only for repos listed in product.json → repos). Spec: templates/product/README.md (copied to product/README.md by init); loader: lib/product.mjs; per-agent settings: product.json → agents.<id>.",
-    "dir": "product",
-    "manifest": "product/product.json",
-    "brief": "product/BRIEF.md",
+    "$comment": "Every agent works for the product described in the product folder: brand (design tokens, logo, fonts), voice, facts, offers. Agents find it with --product <dir|id|none> (an id means workspace/products/<id>), else $PRODUCT_DIR, else workspace/product (dev only for repos listed in product.json → repos). Spec: templates/product/README.md (copied into the product folder by init); loader: lib/product.mjs; per-agent settings: product.json → agents.<id>.",
+    "dir": "workspace/product",
+    "manifest": "workspace/product/product.json",
+    "brief": "workspace/product/BRIEF.md",
     "template": "templates/product",
     "lib": "lib/product.mjs",
     "cli": "node scripts/product.mjs",
@@ -17,7 +25,7 @@
       "title": "LinkedIn carousel, consulting style",
       "summary": "Brief → 4-6 slide LinkedIn document carousel in the top-consulting-firm look (hero numbers, frosted-glass cover over a 3D render) in the product's brand (electric blue without a product folder). HTML slides + OpenAI imagery → PNGs, swipeable PDF, caption.",
       "command": "npm run generate --",
-      "example": "npm run generate -- --file ../../briefs/2026-10-07-q3-case.md --slides 5 --format portrait",
+      "example": "npm run generate -- --file ../../workspace/briefs/2026-10-07-q3-case.md --slides 5 --format portrait",
       "productFlag": "--product <dir|none>",
       "web": null,
       "install": ["npm install", "npm run setup"],
@@ -25,7 +33,7 @@
       "claudeAuth": "login-or-key",
       "env": { "required": [], "optional": ["OPENAI_API_KEY"] },
       "needs": ["chromium"],
-      "outputs": { "dir": "out", "depth": 1, "record": "run.json", "files": ["carousel.pdf", "png", "post.md"] },
+      "outputs": { "dir": "out/carousel", "env": "OUTPUT_DIR", "depth": 1, "record": "run.json", "files": ["carousel.pdf", "png", "post.md"] },
       "skill": "skills/carousel/SKILL.md"
     },
     {
@@ -34,7 +42,7 @@
       "title": "Collage social post (single post or carousel)",
       "summary": "Brief → editorial collage posts (1080×1350): cutouts, duotones, torn paper, bold type; the product's 'brand' palette, fonts and masthead (or nine stock palettes), seven layouts. GPT Image ingredients, public-domain Wikimedia photos for real people. PNGs, HTML, caption, zip.",
       "command": "npm run post --",
-      "example": "npm run post -- --file ../../briefs/2026-10-07-explorers.md --slides 5",
+      "example": "npm run post -- --file ../../workspace/briefs/2026-10-07-explorers.md --slides 5",
       "productFlag": "--product <dir|none>",
       "web": { "command": "npm run web", "url": "http://localhost:4747" },
       "install": ["npm install"],
@@ -42,7 +50,7 @@
       "claudeAuth": "key",
       "env": { "required": ["ANTHROPIC_API_KEY", "OPENAI_API_KEY"], "optional": ["WIKIMEDIA_CONTACT"] },
       "needs": ["chromium"],
-      "outputs": { "dir": "output", "depth": 1, "record": "job.json", "files": ["png", "caption.md", "index.html"] },
+      "outputs": { "dir": "out/collage-post", "env": "OUTPUT_DIR", "depth": 1, "record": "job.json", "files": ["png", "caption.md", "index.html"] },
       "skill": "skills/collage-post/SKILL.md"
     },
     {
@@ -51,7 +59,7 @@
       "title": "PDF deck (16:9) or A4 report, McKinsey-style available",
       "summary": "Brief + data files (CSV/XLSX/JSON/MD/PDF) → storyline with action titles, charts/diagrams/tables/KPIs from data, layout-QA'd pages → searchable PDF, page PNGs, exhibits, speaker notes. Five themes, each in the product's colours, fonts and logo; the product's house theme by default.",
       "command": "npm run deck --",
-      "example": "npm run deck -- --file ../../briefs/2026-10-07-board.md --format deck --pages 12 -i ../../briefs/2026-10-07-board/sales.csv",
+      "example": "npm run deck -- --file ../../workspace/briefs/2026-10-07-board.md --format deck --pages 12 -i ../../workspace/briefs/2026-10-07-board/sales.csv",
       "productFlag": "--product <dir|none>",
       "web": { "command": "npm run web", "url": "http://localhost:4848" },
       "install": ["npm install", "npm run setup"],
@@ -59,7 +67,7 @@
       "claudeAuth": "login-or-key",
       "env": { "required": [], "optional": ["OPENAI_API_KEY"] },
       "needs": ["chromium"],
-      "outputs": { "dir": "out", "depth": 1, "record": "job.json", "files": ["presentation.pdf", "report.pdf", "png", "storyline.md"] },
+      "outputs": { "dir": "out/deck", "env": "OUTPUT_DIR", "depth": 1, "record": "job.json", "files": ["presentation.pdf", "report.pdf", "png", "storyline.md"] },
       "skill": "skills/deck/SKILL.md"
     },
     {
@@ -68,7 +76,7 @@
       "title": "Explainer video (MP4), HyperFrames motion graphics",
       "summary": "Brief (+ images, clips, notes) → 30–90 s explainer video in the product's brand: HyperFrames' explainer workflow with every HyperFrames skill bundled (story, a frame preset remixed onto the brand, one frame-worker per frame, lint/check, contact sheet, local render). 4:5 portrait by default (9:16, 1:1, 16:9 on request); silent with on-screen text; pictures generated in the product's illustration style (OpenAI gpt-image-2.5, as cut-outs for the motion layers) when OPENAI_API_KEY is set; narration with word-timed captions (--voice), a composed music bed (--music auto|<mood>) and sound effects (--sfx) with ElevenLabs; --style vox-collage for a Vox-style paper collage (cut-outs in stop-motion, marker, stamps). MP4, contact sheet, caption, alt text.",
       "command": "npm run video --",
-      "example": "npm run video -- --file ../../briefs/2026-10-07-what-is-an-agent.md --length 45",
+      "example": "npm run video -- --file ../../workspace/briefs/2026-10-07-what-is-an-agent.md --length 45",
       "productFlag": "--product <dir|none>",
       "web": { "command": "npm run web", "url": "http://localhost:5050" },
       "install": ["npm install", "npm run setup"],
@@ -76,24 +84,24 @@
       "claudeAuth": "login-or-key",
       "env": { "required": [], "optional": ["OPENAI_API_KEY", "ELEVENLABS_API_KEY", "HEYGEN_API_KEY"] },
       "needs": ["node22", "ffmpeg", "hyperframes-chrome"],
-      "outputs": { "dir": "out", "depth": 1, "record": "job.json", "files": ["video.mp4", "contact-sheet.jpg", "post.md"] },
+      "outputs": { "dir": "out/explainer", "env": "OUTPUT_DIR", "depth": 1, "record": "job.json", "files": ["video.mp4", "contact-sheet.jpg", "post.md"] },
       "skill": "skills/explainer/SKILL.md"
     },
     {
       "id": "landing-page",
       "dir": "agents/landing-page-agent",
       "title": "Landing page (Next.js + Tailwind, static export)",
-      "summary": "Brief (+ assets) → a tested landing page in the product's brand (set_brand values, logos, actions, voice and facts from PRODUCT.md) on the Corporate Landing design system: planned sections, library + custom components, lint, build, interaction test, screenshots → static site in sites/<slug>/out.",
+      "summary": "Brief (+ assets) → a tested landing page in the product's brand (set_brand values, logos, actions, voice and facts from PRODUCT.md) on the Corporate Landing design system: planned sections, library + custom components, lint, build, interaction test, screenshots → static site in workspace/sites/<slug>/out.",
       "command": "npm run page --",
       "productFlag": "-p/--product <dir|none>",
-      "example": "npm run page -- -f ../../briefs/2026-10-07-launch.md -s launch-2026 -a ../../briefs/2026-10-07-launch/assets",
+      "example": "npm run page -- -f ../../workspace/briefs/2026-10-07-launch.md -s launch-2026 -a ../../workspace/briefs/2026-10-07-launch/assets",
       "web": { "command": "LPA_API_TOKEN=<token> npm run serve", "url": "http://localhost:8787" },
       "install": ["npm install", "npm run setup"],
       "test": "npm test",
       "claudeAuth": "login-or-key",
       "env": { "required": [], "optional": [] },
       "needs": ["chromium"],
-      "outputs": { "dir": "sites", "depth": 1, "record": ".lpa/result.json", "files": ["out/index.html", ".lpa/screens", "PLAN.md"], "ignore": ["node_modules", "package.json", "package-lock.json"] },
+      "outputs": { "dir": "sites", "env": "LPA_SITES_DIR", "depth": 1, "record": ".lpa/result.json", "files": ["out/index.html", ".lpa/screens", "PLAN.md"], "ignore": ["node_modules", "package.json", "package-lock.json"] },
       "skill": "skills/landing-page/SKILL.md"
     },
     {
@@ -110,7 +118,7 @@
       "claudeAuth": "token-or-key",
       "env": { "required": [], "optional": ["GITHUB_TOKEN", "CONTEXT7_API_KEY"] },
       "needs": ["docker"],
-      "outputs": { "dir": "runs", "depth": 2, "record": "run.json", "files": ["PRD.md", "PLAN.md", "NOTES.md"] },
+      "outputs": { "dir": "dev/runs", "env": "DEVAGENT_HOME/runs", "depth": 2, "record": "run.json", "files": ["PRD.md", "PLAN.md", "NOTES.md"] },
       "skill": "skills/dev-agent/SKILL.md"
     }
   ]

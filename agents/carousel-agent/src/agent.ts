@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { query, type SDKMessage } from "@anthropic-ai/claude-agent-sdk";
-import { createRunDir, DEFAULT_BRAND_FILE, loadBrand, type Brand, type Format, type RunContext } from "./config.js";
+import { createRunDir, DEFAULT_BRAND_FILE, defaultOutDir, loadBrand, type Brand, type Format, type RunContext } from "./config.js";
 import { brandFromProduct, productContext, resolveProduct, type Product } from "./product.js";
 import { buildSystemPrompt } from "./prompt.js";
 import { createCarouselServer, SERVER_NAME, TOOL_NAMES } from "./tools.js";
@@ -15,7 +15,7 @@ export interface CarouselRequest {
   outDir?: string;
   /** Brand file; beats the product folder's brand. */
   brandPath?: string;
-  /** Product folder (--product): a path, or "none" to run without one. Default: PRODUCT_DIR, else the nearest product/. */
+  /** Product folder (--product): a path, the id of one in the workspace's products/, or "none". Default: PRODUCT_DIR, else the workspace's product/. */
   product?: string;
   assets?: string[]; // user files copied into assets/ (photos, product shots, logos)
   model?: string;
@@ -70,7 +70,7 @@ function brandFileUsed(req: Pick<CarouselRequest, "brandPath">, product: Product
 export async function runCarouselAgent(req: CarouselRequest): Promise<CarouselRun> {
   const format = req.format ?? "square";
   const { brand, product } = resolveBrand(req);
-  const dir = createRunDir(req.outDir ?? "out", req.brief.split(/\s+/).slice(0, 6).join(" "));
+  const dir = createRunDir(req.outDir ?? defaultOutDir(), req.brief.split(/\s+/).slice(0, 6).join(" "));
   const ctx: RunContext = { dir, format, brand, product: product ? { dir: product.dir, name: product.name, context: productContext(product) } : undefined };
 
   const copied: string[] = [];

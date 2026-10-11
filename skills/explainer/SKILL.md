@@ -34,7 +34,7 @@ slow, so if setup reports a Chrome timeout, run it once more). Optional keys in 
 (pictures), `ELEVENLABS_API_KEY` (narration, music, effects); without ElevenLabs, narration uses `HEYGEN_API_KEY` or
 the free local voice (`npm run setup:voice`). `npm run setup` reports which are set up.
 
-## Brief template (`briefs/YYYY-MM-DD-<slug>.md`)
+## Brief template (`workspace/briefs/YYYY-MM-DD-<slug>.md`)
 
 ```markdown
 # <Title: what the video explains>
@@ -53,14 +53,14 @@ Facts and numbers to use (with sources): <…>
 Length: <30–90> seconds. Narration: <none | yes, voice: …>
 ```
 
-Facts: only what the brief, the attached files and `product/knowledge/facts.md` say. Missing facts become visible
+Facts: only what the brief, the attached files and `workspace/product/knowledge/facts.md` say. Missing facts become visible
 placeholders (`[X]`) listed in `post.md`.
 
 ## Running it
 
 ```bash
 cd agents/explainer-agent
-npm run video -- --file ../../briefs/<brief>.md [--format portrait|vertical|square|landscape] [--length 45] \
+npm run video -- --file ../../workspace/briefs/<brief>.md [--format portrait|vertical|square|landscape] [--length 45] \
   [--style default|vox-collage] [--no-images] \
   [--voice [--voice-id <id>]] [--music bed.mp3|auto|"<mood>"] [--sfx] [-i image.png -i notes.pdf …] \
   [--audience "…"] [--lang ro] [--quality draft|standard|high] [--budget 15]
@@ -86,9 +86,9 @@ npm run video -- --file ../../briefs/<brief>.md [--format portrait|vertical|squa
 - Time: expect 10–30 minutes for a 45-second video (more with narration). Cost grows with the number of frames and
   depends on the model; the cap is `--budget` / `MAX_BUDGET_USD` (15). A 13-frame, 100-second vox-collage video ran past
   the $15 cap and needed a `--revise` to finish: for long videos, raise `--budget` (ask first) or cut beats. Run it in the background
-  and follow `out/<job>/events.jsonl`. OpenAI and ElevenLabs bill separately, outside `--budget`.
+  and follow `workspace/out/explainer/<job>/events.jsonl`. OpenAI and ElevenLabs bill separately, outside `--budget`.
 
-## Outputs (`out/<job-id>/`)
+## Outputs (`workspace/out/explainer/<job-id>/`)
 
 - `video.mp4`, `contact-sheet.jpg` (one still per frame), `post.md` (title, caption, alt text, frames, placeholders)
 - `job.json` (status, product used, HyperFrames versions, steps, cost, warnings, `media`: every generated picture and
@@ -114,7 +114,7 @@ warnings in `job.json`.
 - "--music auto … composes the music with ElevenLabs" → `ELEVENLABS_API_KEY`, or a music file.
 - No pictures: the CLI's first lines say `Images: off (no OPENAI_API_KEY)`; add the key to the agent's `.env`.
 - Skills/CLI version mismatch → `npm run skills:update -- <version>` then `npm install`.
-- The brand comes from `product/` (colours by role, the product's font files, logo, CTA, the illustration style for
+- The brand comes from the product folder, `workspace/product/` (colours by role, the product's font files, logo, CTA, the illustration style for
   pictures); `--product none` uses a HyperFrames preset palette and a neutral illustration style. Per-product
   settings: `product.json → agents.explainer` (ground, colors, fonts, preset, style, voice, cta, notes, images
   {style, references}, profiles).

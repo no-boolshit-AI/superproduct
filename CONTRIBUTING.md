@@ -5,8 +5,10 @@ Thanks for helping. Bug reports, fixes, new layouts and themes, and new agents a
 ## Before you open a pull request
 
 - **No product data.** Never commit a real product folder, briefs, agent outputs, `.env` files, tokens or keys. They
-  are git-ignored; keep it that way. Examples and tests use the fictional product in `lib/fixtures/acme` or made-up
-  content (Acme, Northwind and the like).
+  live in the workspace (`workspace/`, git-ignored here and a repository of its own) and in each agent's `.env`; keep
+  it that way. Examples and tests use the fictional product in `lib/fixtures/acme` or made-up content (Acme, Northwind
+  and the like), and tests never write into the workspace (`OUTPUT_DIR`, `DEVAGENT_HOME`, `LPA_SITES_DIR` to a
+  temporary folder).
 - **No third-party material.** Only add images, fonts and text you are allowed to redistribute under the repository's
   terms: your own work, public domain, or open licences such as the SIL Open Font License. Credit sources next to the
   files (see `agents/collage-post-agent/design/samples/CREDITS.txt`). Screenshots of other people's posts or sites stay
@@ -20,6 +22,7 @@ Thanks for helping. Bug reports, fixes, new layouts and themes, and new agents a
 node scripts/agents.mjs install <agent>   # npm install + setup steps
 node scripts/agents.mjs test <agent>      # the agent's zero-cost tests (mock Claude API, no spend)
 node --test lib/product.test.mjs          # the product folder loader
+node --test lib/workspace.test.mjs        # the workspace and the migration from the old layout
 ```
 
 - Work inside one agent at a time and follow its README and conventions (TypeScript, Claude Agent SDK, one output

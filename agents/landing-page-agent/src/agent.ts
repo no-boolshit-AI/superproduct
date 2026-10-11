@@ -8,6 +8,7 @@ import { lintSite, type LintReport } from "./lint.js";
 import { buildSystemPrompt, buildUserPrompt } from "./prompt.js";
 import { resolveProduct } from "./product.js";
 import { scaffoldSite, slugify } from "./scaffold.js";
+import { ensureSiteDeps } from "./site-deps.js";
 import { SITE_TOOL_NAMES, createSiteTools } from "./tools.js";
 
 export type PageRequest = {
@@ -19,7 +20,7 @@ export type PageRequest = {
   maxTurns?: number;
   /** Replace an existing sites/<slug> instead of creating <slug>-2. */
   replace?: boolean;
-  /** Product folder (brand, voice, facts): a path, or "none". Default: LPA_PRODUCT_DIR / PRODUCT_DIR, then the nearest product/. */
+  /** Product folder (brand, voice, facts): a path, or "none". Default: LPA_PRODUCT_DIR / PRODUCT_DIR, then the workspace's product/. */
   product?: string;
 };
 
@@ -127,6 +128,8 @@ export async function buildLandingPage(
   const product = resolveProduct(req.product);
   const site = scaffoldSite({ slug: slugify(req.slug ?? firstLine), brief: req.brief, assets: req.assets, overwrite: req.replace && Boolean(req.slug), product });
   emit({ type: "scaffolded", slug: site.slug, dir: site.dir });
+  // the packages the site builds with sit next to the sites; install them before Claude starts, not in its first build
+  await ensureSiteDeps();
 
   const abortController = opts.abortController ?? new AbortController();
   let summary = "";

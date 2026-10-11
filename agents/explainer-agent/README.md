@@ -7,7 +7,7 @@ Brief in, explainer video out. A Claude Agent SDK agent that drives [HyperFrames
 - **4:5 portrait by default** (1080×1350, the LinkedIn/Instagram feed); `--format vertical | square | landscape` for 9:16, 1:1 and 16:9.
 - **Generated pictures in the house style**: with `OPENAI_API_KEY`, Claude has a tool that makes characters, props, illustrated interface elements and scenes with OpenAI `gpt-image-2.5-flare`, in the product's illustration style (a style description plus reference illustrations sent with every request), as transparent cut-outs ready to animate.
 - **Silent by default**: the on-screen text carries the story. `--voice` adds narration and word-timed captions; with `ELEVENLABS_API_KEY` Claude voices it with ElevenLabs (exact word timings), composes a music bed (`--music auto`) and designs sound effects for the video (`--sfx`). Without it, HyperFrames' own chain narrates (HeyGen → the free local Kokoro voice).
-- **Brand from the product folder**: colours, fonts, logo, call to action, voice and facts (`../../product`), like the other agents.
+- **Brand from the product folder**: colours, fonts, logo, call to action, voice and facts (the workspace's `product/`), like the other agents.
 - **CLI and a local web UI** (http://localhost:5050) with live progress, the video, the contact sheet and the LinkedIn post text.
 
 ## Quick start (macOS)
@@ -25,7 +25,7 @@ Needs Node 22 or newer, FFmpeg (`brew install ffmpeg`) and Claude: your Claude C
 
 ## What a run produces
 
-`out/<job-id>/`:
+`workspace/out/explainer/<job-id>/` (`OUTPUT_DIR` to change it; see [`lib/workspace.mjs`](../../lib/workspace.mjs)):
 
 | File | What it is |
 |---|---|
@@ -59,7 +59,8 @@ npm run video -- [brief text] [options]
       --quality <q>        draft | standard | high (default high)
       --workflow <w>       faceless-explainer (default) | general-video | motion-graphics | product-launch-video
       --url <url>          Website to capture (with --workflow product-launch-video)
-      --product <dir>      Product folder, or "none" (default: $PRODUCT_DIR, then ../../product)
+      --product <dir|id>   Product folder, the id of one in workspace/products, or "none" (default: $PRODUCT_DIR,
+                           then the workspace's product/)
   -m, --model <id>         Claude model
       --budget <usd>       Stop when Claude spend reaches this (default $MAX_BUDGET_USD)
       --revise <job-id>    Revise a job; the brief text is the change request
@@ -70,9 +71,9 @@ Examples:
 
 ```bash
 npm run video -- "Explain what RAG is to a finance team in 45 seconds" --audience "CFOs"
-npm run video -- --file briefs/launch.md -i screenshots/app.png -i notes.pdf --format vertical --voice
-npm run video -- --file briefs/launch.md --style vox-collage --length 30
-npm run video -- --file briefs/launch.md --voice --music "dry upright piano, brushed snare, 90 bpm" --sfx
+npm run video -- --file ../../workspace/briefs/launch.md -i screenshots/app.png -i notes.pdf --format vertical --voice
+npm run video -- --file ../../workspace/briefs/launch.md --style vox-collage --length 30
+npm run video -- --file ../../workspace/briefs/launch.md --voice --music "dry upright piano, brushed snare, 90 bpm" --sfx
 npm run video -- --revise 20261007-141500-what-an-ai-agent-actually-is "Frame 3 is too fast; make the CTA bigger"
 npm run render -- 20261007-141500-what-an-ai-agent-actually-is --format mov   # ProRes 4444 for DaVinci Resolve
 ```
@@ -81,7 +82,7 @@ A good brief says what the video should explain, to whom, the one message, and w
 
 ## How it works
 
-1. **Before Claude starts** (no cost if something is missing): the product folder, Node, FFmpeg, Chrome, the bundled skills against the CLI version, and the voice provider when `--voice` is on are checked. Then `hyperframes init` creates `out/<job>/project`, and the brief, your files and the brand are put where the workflow expects them.
+1. **Before Claude starts** (no cost if something is missing): the product folder, Node, FFmpeg, Chrome, the bundled skills against the CLI version, and the voice provider when `--voice` is on are checked. Then `hyperframes init` creates `<job>/project` in the output folder, and the brief, your files and the brand are put where the workflow expects them.
 2. **Claude runs the HyperFrames workflow** (Agent SDK with the Claude Code preset, the HyperFrames plugin, the `faceless-explainer` workflow in autonomous mode):
    `BRIEF.md` → `build-frame.mjs` (a HyperFrames frame preset remixed onto the brand) → `STORYBOARD.md` (+ `SCRIPT.md` with `--voice`) → pictures (`generate_images`) → audio (`generate_narration`, music, effects) → frame packets → **one frame-worker subagent per frame, in parallel** → `assemble-index` → transitions → `hyperframes lint`, `check` and `snapshot` → Claude looks at the contact sheet and fixes what's broken → `hyperframes render` → `deliver` (video, contact sheet, caption, alt text, placeholders).
 3. **The harness around it**: appends the Brand kit to `frame.md` after build-frame, serves GSAP from a local copy (renders work offline), maps `npx hyperframes@…` and the plugin launcher onto the installed CLI, keeps the session open while the frame workers run in the background (their completion notices start Claude's next turn; a turn that ends with nothing running and nothing delivered gets up to two nudges to carry on), records every step, and — if Claude stops early — renders and collects what exists.
@@ -121,7 +122,7 @@ A product can make it its default: `"style": "vox-collage"` in `product.json →
 
 ## Brand
 
-With a product folder (default `../../product`), the video uses its design tokens:
+With a product folder (default: the workspace's `product/`), the video uses its design tokens:
 
 - **Colours by role**: the background is the ground, text is the ink, the accent is the highlight. An accent that can't be read as text on the ground (a lime or yellow on paper) is used only as a fill, with the product's `accentText` colour for text and thin lines.
 - **Fonts**: the product's font files, with their weight and unicode ranges, so accented characters render in the brand face too.
@@ -163,7 +164,7 @@ With `OPENAI_API_KEY` in `.env`, Claude gets `generate_images`: pictures for the
 - Claude plans the pictures in the storyboard, generates them before the frame workers start (up to 8 per call, in parallel), sees a preview of each, and regenerates what's off. Workers place the PNGs and animate them like any layer; in `vox-collage` they become cut-out clippings on the paper board.
 - `MAX_IMAGES` (24) caps new pictures per run; an identical request reuses the earlier file for free (also across revisions). `OPENAI_IMAGE_QUALITY`: `high` by default (`low` … `max`). `IMAGE_MOCK=1` makes placeholders instead (layout runs, tests), and `post.md` flags them. `--no-images` turns the tool off for one run.
 
-For No Boolshit AI the style is the hero illustration's: a 1950s commercial illustration, ink and gouache with print texture, muted blues and browns (`product/assets/images/univac-operator.png` as the reference).
+For example, a product whose hero is a 1950s commercial illustration (ink and gouache with print texture, muted blues and browns) sets that style in `product.json → agents.explainer.images` with the hero image as its reference, and every picture follows it.
 
 ## Sound
 

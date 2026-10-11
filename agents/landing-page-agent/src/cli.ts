@@ -49,8 +49,8 @@ Options:
   -s, --slug <name>        Folder name under sites/ (default: from the brief's first line)
       --replace            Overwrite sites/<slug> if it exists (with --slug)
   -a, --assets <path>      File or folder copied into public/assets (repeatable)
-  -p, --product <dir>      Product folder (brand, voice, facts), or "none" (default: $PRODUCT_DIR, then the
-                           nearest product/ folder above the agent)
+  -p, --product <dir|id>   Product folder (brand, voice, facts), the id of one in workspace/products, or "none"
+                           (default: $PRODUCT_DIR, then workspace/product)
   -m, --model <id|alias>   Model (default: ${config.model})
       --budget <usd>       Max spend for this run (default: ${config.maxBudgetUsd})
       --max-turns <n>      Max agent turns (default: ${config.maxTurns})

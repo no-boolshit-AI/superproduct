@@ -6,7 +6,7 @@ import path from "node:path";
 import type { AddressInfo } from "node:net";
 
 process.env.OUTPUT_DIR = fs.mkdtempSync(path.join(os.tmpdir(), "deck-web-"));
-process.env.PRODUCT_DIR = "none"; // hermetic: ignore the repo's product/ folder (test/product.test.ts covers it)
+process.env.PRODUCT_DIR = "none"; // hermetic: ignore the workspace's product/ folder (test/product.test.ts covers it)
 process.env.EXPORT_DPI = "100";
 const m = await import("./mock-claude.js");
 const mock = await m.startMockClaude();

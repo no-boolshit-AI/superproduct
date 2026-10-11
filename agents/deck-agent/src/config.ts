@@ -2,11 +2,13 @@ import "./env.js";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { outputDir } from "../../../lib/workspace.mjs";
 
 export const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 export const SRC_DIR = path.join(ROOT, "src");
 export const DESIGN_DIR = path.join(SRC_DIR, "design");
-export const OUTPUT_DIR = path.resolve(process.env.OUTPUT_DIR || path.join(ROOT, "out"));
+/** Where jobs go: $OUTPUT_DIR, else the workspace's out/deck (see lib/workspace.mjs). */
+export const OUTPUT_DIR = path.resolve(process.env.OUTPUT_DIR || outputDir("deck"));
 
 /** Page formats. CSS px are 96 dpi, so 1 px = 0.75 pt in the PDF. */
 export type FormatId = "deck" | "report";

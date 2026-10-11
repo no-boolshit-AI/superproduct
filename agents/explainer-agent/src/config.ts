@@ -2,9 +2,11 @@ import "./env.js";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { outputDir } from "../../../lib/workspace.mjs";
 
 export const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-export const OUTPUT_DIR = path.resolve(process.env.OUTPUT_DIR || path.join(ROOT, "out"));
+/** Where jobs go: $OUTPUT_DIR, else the workspace's out/explainer (see lib/workspace.mjs). */
+export const OUTPUT_DIR = path.resolve(process.env.OUTPUT_DIR || outputDir("explainer"));
 /** The HyperFrames Claude Code plugin (all published HyperFrames skills), pinned to the CLI version in package.json. */
 export const PLUGIN_DIR = path.join(ROOT, "vendor", "hyperframes");
 export const NODE_BIN = path.join(ROOT, "node_modules", ".bin");

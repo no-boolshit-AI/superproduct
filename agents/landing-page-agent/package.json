@@ -9,7 +9,7 @@
     "node": ">=20.9"
   },
   "scripts": {
-    "setup": "npm install --prefix sites --no-audit --no-fund && npx playwright install chromium",
+    "setup": "tsx src/site-deps.ts && npx playwright install chromium",
     "page": "tsx src/cli.ts",
     "serve": "tsx src/server.ts",
     "check": "tsx src/cli.ts --check",

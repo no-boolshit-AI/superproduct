@@ -1,12 +1,14 @@
 # What stays out of the public superproduct repository.
 
-# Your product and your work are private by default. To version them in a private copy,
-# delete these lines there (never in a pull request to the public repository).
+# Your product and your work live in the workspace: its own (private) git repository, never part of this one.
+# See templates/workspace/README.md; never send its contents in a pull request.
+/workspace/
+
+# Where they lived before the workspace (node scripts/workspace.mjs migrate moves them into it)
 /product/
 /products/
 /products-archive/
-/briefs/*
-!/briefs/README.md
+/briefs/
 
 # Secrets
 .env

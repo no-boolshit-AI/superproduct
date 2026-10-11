@@ -20,7 +20,8 @@ Options
   --slides <n|auto>     number of slides (default: auto)
   --palette <name|auto> ${PALETTE_NAMES.join(", ")} (default: auto)
   --brand <text>        masthead text (default: the product's wordmark, else $BRAND_NAME or "Your Brand")
-  --product <dir>       product folder (default: $PRODUCT_DIR, else the nearest product/); "none" to ignore it
+  --product <dir|id>    product folder, or the id of one in workspace/products (default: $PRODUCT_DIR, else
+                        workspace/product); "none" to ignore it
   --model <name>        Claude model for the agent (default: $AGENT_MODEL or "opus")
   --image-model <id>    gpt-image-2.5-flare (default) | gpt-image-2.5-sunburst | …
   --quality <q>         image quality low|medium|high|xhigh|max|auto (default: medium)

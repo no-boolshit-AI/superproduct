@@ -7,7 +7,7 @@ import path from "node:path";
 
 await import("../src/env.js"); // .env first, so the overrides below win
 process.env.OUTPUT_DIR = fs.mkdtempSync(path.join(os.tmpdir(), "explainer-web-"));
-process.env.PRODUCT_DIR = "none"; // hermetic: ignore the repo's product/ folder (pipeline.test.ts covers a product)
+process.env.PRODUCT_DIR = "none"; // hermetic: ignore the workspace's product/ folder (pipeline.test.ts covers a product)
 // the mock run asks for one picture: placeholders, never a paid API from a test
 process.env.IMAGE_MOCK = "1";
 for (const k of ["OPENAI_API_KEY", "ELEVENLABS_API_KEY", "MAX_IMAGES"]) delete process.env[k];

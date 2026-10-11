@@ -12,7 +12,7 @@ It writes every slide as HTML on a fixed design system (a saturated or dark canv
 rules, a frosted-glass cover over a monochrome 3D render). OpenAI images are only background material, never text.
 It checks the layout itself, then exports PNGs and a swipeable PDF.
 
-**Product folder.** The agent reads `product/` by itself: the canvas, accent, glass, fonts and logo come from the
+**Product folder.** The agent reads the product folder (`workspace/product/`) by itself: the canvas, accent, glass, fonts and logo come from the
 product's design tokens (`product.json → agents.carousel` overrides them), and the product context (brief, voice,
 messaging, facts) is in its system prompt. So don't restate the brand in the brief, and don't pass `--brand` unless the
 user wants a different brand (e.g. a client's) for this post. `--product none` gives the classic electric-blue look.
@@ -22,24 +22,24 @@ user wants a different brand (e.g. a client's) for this post. `--product none` g
 - Claude auth is the Claude Code login on your computer, or `ANTHROPIC_API_KEY` / `CLAUDE_CODE_OAUTH_TOKEN` in its `.env`.
 - `OPENAI_API_KEY` is optional. Without it, or with `IMAGE_MOCK=1`, the art is placeholder art; tell the user.
 
-## Brief (`briefs/YYYY-MM-DD-<slug>.md`)
+## Brief (`workspace/briefs/YYYY-MM-DD-<slug>.md`)
 ```markdown
 # <working title>
 Audience: <who scrolls past this on LinkedIn>
 Goal / CTA: <what they should do or think; link if any>
 Story: <the one idea; 3-5 points in order>
-Numbers (verified): <hero numbers with source: the user, product/knowledge/facts.md, a file>; anything unknown → [X]
+Numbers (verified): <hero numbers with source: the user, workspace/product/knowledge/facts.md, a file>; anything unknown → [X]
 Tone: <e.g. plain, confident, no hype>
 Language: <en/ro/…>
 ```
 The agent writes the copy in the product's voice; you supply the facts for this post. Finished copy is used verbatim
-if you say so. The product context includes the product's main action (`product/BRIEF.md`, "The one action"); name the
+if you say so. The product context includes the product's main action (`workspace/product/BRIEF.md`, "The one action"); name the
 CTA in the brief when this post needs a different one.
 
 ## Run
 ```bash
 cd agents/carousel-agent
-npm run generate -- --file ../../briefs/<brief>.md --slides 5 --format portrait
+npm run generate -- --file ../../workspace/briefs/<brief>.md --slides 5 --format portrait
 ```
 
 | Option | |
@@ -48,11 +48,11 @@ npm run generate -- --file ../../briefs/<brief>.md --slides 5 --format portrait
 | `-n, --slides` | exact slide count (default: the agent picks 4 to 6) |
 | `--format` | `square` (1080², default) or `portrait` (1080×1350, more screen space on mobile) |
 | `-a, --asset <img>` | the user's own photos/product shots (repeatable) |
-| `--product <dir\|none>` | product folder (default: `$PRODUCT_DIR`, else `product/`); `none` = classic look, no product context |
+| `--product <dir\|id\|none>` | product folder, or the id of one in `workspace/products/` (default: `$PRODUCT_DIR`, else `workspace/product/`); `none` = classic look, no product context |
 | `--brand <file>` | brand JSON that overrides the product's brand (e.g. a client); the product context still applies |
 | `-o, --out <dir>`, `-m, --model`, `--budget <usd>`, `-q` | output root, model, spend cap, quiet |
 
-## Output: `out/<timestamp>-<slug>/`
+## Output: `workspace/out/carousel/<timestamp>-<slug>/`
 - `carousel.pdf`: upload to LinkedIn as a document post.
 - `png/slide-NN.png`: 2160px slides.
 - `post.md`: caption and alt text per slide. Give the user the caption.
@@ -64,7 +64,8 @@ Look at 1 or 2 PNGs, or the contact sheet in `preview/`. Read `post.md`. Check t
 or list them for the user.
 
 ## Revise
-- **Small copy fixes:** edit `out/<run>/slides/slide-NN.html`, then run `npm run render -- out/<run>`. No Claude cost.
+- **Small copy fixes:** edit `workspace/out/carousel/<run>/slides/slide-NN.html`, then run `npm run render -- <run>`. No
+  Claude cost.
 - **Bigger changes:** run again with an updated brief.
 
 ## Pitfalls

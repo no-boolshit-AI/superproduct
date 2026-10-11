@@ -1,7 +1,7 @@
 /**
  * Product folder → landing page.
  *
- * The product folder (../../product by default; see lib/product.mjs and product/README.md) is the source of truth for
+ * The product folder (the workspace's product/ by default; see lib/product.mjs and its README.md) is the source of truth for
  * the brand, voice and facts. For a site it becomes:
  * - PRODUCT.md in the site folder: the set_brand values, logo files, the main actions, and the compiled product context
  *   (BRIEF.md of the product plus the content and design profiles). Read-only for the agent.
@@ -27,7 +27,7 @@ export interface LandingProductConfig {
   assets?: string[];
 }
 
-/** --product <dir|none> → PRODUCT_DIR → the nearest product/ above this agent. Null when there is none. */
+/** --product <dir|id|none> → PRODUCT_DIR → the workspace's product/ (see lib/product.mjs). Null when there is none. */
 export function resolveProduct(explicit?: string): Product | null {
   const dir = findProductDir({ explicit, from: ROOT });
   return dir ? loadProduct(dir) : null;

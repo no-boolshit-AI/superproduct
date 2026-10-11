@@ -1,9 +1,12 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { outputDir } from "../../../lib/workspace.mjs";
 
 export const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 export const DESIGN_DIR = path.join(ROOT, "src", "design");
+/** Where runs go without --out: $OUTPUT_DIR, else the workspace's out/carousel (read when a run starts, after .env). */
+export const defaultOutDir = () => path.resolve(process.env.OUTPUT_DIR || outputDir("carousel"));
 
 export type Format = "square" | "portrait";
 export const FORMATS: Record<Format, { width: number; height: number; label: string }> = {

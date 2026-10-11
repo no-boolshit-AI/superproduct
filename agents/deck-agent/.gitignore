@@ -2,3 +2,8 @@ node_modules/
 out/
 .env
 .DS_Store
+# Your briefs and brand files belong in the workspace (../../workspace); only the examples live here
+briefs/*
+!briefs/example-*.md
+brands/*
+!brands/example-*.json

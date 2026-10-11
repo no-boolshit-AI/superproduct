@@ -1,7 +1,7 @@
 {
   "name": "corporate-landing-sites",
   "private": true,
-  "description": "Shared node_modules for generated sites. Each site in this folder resolves dependencies from here.",
+  "description": "The packages generated sites build with, installed next to the sites (the workspace's sites/ by default; see src/site-deps.ts). Each site resolves its dependencies from there.",
   "dependencies": {
     "@fontsource-variable/crimson-pro": "^5.3.0",
     "@fontsource-variable/dm-sans": "^5.3.0",

@@ -2,7 +2,7 @@
 /**
  * Builds the sample deck and report without Claude:
  * `npm run demo [-- --theme corporate] [--only deck|report] [--no-export] [--brand brands/x.json] [--product <dir>|none]`
- * The brand comes from the product folder when there is one (see ../../product), like a real job.
+ * The brand comes from the product folder when there is one (the workspace's product/), like a real job.
  */
 import { parseArgs } from "node:util";
 import { closeBrowser } from "../src/render/renderer.js";

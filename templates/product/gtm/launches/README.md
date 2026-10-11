@@ -8,7 +8,7 @@ review: quarterly
 # Launches and campaigns
 
 One file per launch or campaign plan: `YYYY-MM-DD-<name>.md`. The plan says what and why; the agent briefs that
-produce the material live in `../../briefs/` (the campaign skill writes them) and link back here.
+produce the material live in the workspace's `briefs/` (`../../../briefs/` from here; the campaign skill writes them) and link back here.
 
 ```markdown
 ---
@@ -26,7 +26,7 @@ Core message: <one sentence from brand/messaging.md>
 Facts we'll use: <ids or lines from knowledge/facts.md>; unknowns → [X]
 Outputs: landing page · carousel · collage post · deck · product change (dev)
 Dates: <prep, launch, follow-up>
-Briefs: ../../briefs/YYYY-MM-DD-<campaign>/
+Briefs: ../../../briefs/YYYY-MM-DD-<campaign>/
 Results: <filled in after the launch>
 ```
 

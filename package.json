@@ -2,7 +2,7 @@
   "name": "superproduct",
   "version": "0.1.0",
   "private": true,
-  "description": "Product-aware AI agents on the Claude Agent SDK: one product folder (brand tokens, voice, facts, offers, GTM) drives LinkedIn carousels, collage posts, decks and reports, landing pages and GitHub features. Swap the folder to switch brands.",
+  "description": "Product-aware AI agents on the Claude Agent SDK: one product folder (brand tokens, voice, facts, offers, GTM) drives LinkedIn carousels, collage posts, decks and reports, explainer videos, landing pages and GitHub features. Swap the folder to switch brands.",
   "license": "AGPL-3.0-or-later",
   "repository": {
     "type": "git",
@@ -35,6 +35,8 @@
     "test:agents": "node scripts/agents.mjs test all",
     "product": "node scripts/product.mjs",
     "product:check": "node scripts/product.mjs check",
-    "test:product": "node --test lib/product.test.mjs && node scripts/product.mjs check --product lib/fixtures/acme"
+    "workspace": "node scripts/workspace.mjs",
+    "test:product": "node --test lib/product.test.mjs && node scripts/product.mjs check --product lib/fixtures/acme",
+    "test:workspace": "node --test lib/workspace.test.mjs"
   }
 }

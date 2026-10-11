@@ -28,7 +28,9 @@ export function jobDirFor(id: string): string {
 
 export async function readJob(id: string): Promise<JobRecord | null> {
   try {
-    return JSON.parse(await readFile(path.join(jobDirFor(id), "job.json"), "utf8"));
+    const job = JSON.parse(await readFile(path.join(jobDirFor(id), "job.json"), "utf8")) as JobRecord;
+    job.dir = jobDirFor(id); // where the job folder is now, if it moved since it was created
+    return job;
   } catch {
     return null;
   }

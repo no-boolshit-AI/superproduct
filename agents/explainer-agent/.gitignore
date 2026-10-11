@@ -3,3 +3,6 @@ out/
 .env
 .venv/
 .DS_Store
+# Your briefs belong in the workspace (../../workspace); only the examples live here
+briefs/*
+!briefs/example-*.md

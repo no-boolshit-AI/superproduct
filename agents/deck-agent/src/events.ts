@@ -24,7 +24,7 @@ export interface JobOptions {
   maxBudgetUsd?: number;
   maxTurns?: number;
   brandPath?: string;
-  /** Product folder for brand, voice and facts: a path, or "none". Default: PRODUCT_DIR, then the nearest product/. */
+  /** Product folder for brand, voice and facts: a path, the id of one in workspace/products, or "none". Default: PRODUCT_DIR, then the workspace's product/. */
   product?: string;
   inputs?: string[]; // absolute paths of user files (data, documents, images)
 }

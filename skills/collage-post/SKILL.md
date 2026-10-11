@@ -13,7 +13,7 @@ It writes slides as HTML: type, duotones, torn edges, tilts and grain. GPT Image
 textures, objects). For real, named people it uses public-domain photos from Wikimedia Commons and never generates
 their faces.
 
-**Product folder.** The agent reads `product/` by itself: a `brand` palette built from the product's colours (or
+**Product folder.** The agent reads the product folder (`workspace/product/`) by itself: a `brand` palette built from the product's colours (or
 `product.json → agents.collage-post.brandPalette`) is the default, the product's fonts replace the collage fonts, the
 masthead is the product's wordmark, and `PRODUCT.md` (brief, voice, messaging, facts) goes into the job folder. These
 beat `PALETTE` and `BRAND_NAME` in `.env`; flags beat everything. `--product none` gives the stock palettes and masthead.
@@ -30,7 +30,7 @@ diacritics are fine.
 ## Run
 ```bash
 cd agents/collage-post-agent
-npm run post -- --file ../../briefs/<brief>.md --slides 5
+npm run post -- --file ../../workspace/briefs/<brief>.md --slides 5
 npm run post -- --revise <job-id> "slide 3: shorter headline; use the newsprint palette"
 ```
 
@@ -40,7 +40,7 @@ npm run post -- --revise <job-id> "slide 3: shorter headline; use the newsprint 
 | `--slides <n\|auto>` | auto: 1 for a single post, 5 to 7 for a carousel |
 | `--palette` | `brand` (the product's; the default with a product folder), `auto`, or one of the palettes below |
 | `--brand <text>` | masthead text (default: the product's wordmark) |
-| `--product <dir\|none>` | product folder (default: `$PRODUCT_DIR`, else `product/`) |
+| `--product <dir\|id\|none>` | product folder, or the id of one in `workspace/products/` (default: `$PRODUCT_DIR`, else `workspace/product/`) |
 | `--cc-by` | also allow CC BY / BY-SA photos (credits go to CREDITS.md) |
 | `--scale 2` | 2160×2700 export |
 | `--budget`, `--model`, `--max-images`, `--quality`, `--image-model` | spend cap, model and image settings |
@@ -57,7 +57,7 @@ Palettes:
 - `newsprint`: journalistic;
 - `graphite`: serious.
 
-## Output: `output/<job-id>/`
+## Output: `workspace/out/collage-post/<job-id>/`
 - `png/slide-NN.png`;
 - `slide-NN.html`;
 - `caption.md` (caption, alt text, sources);

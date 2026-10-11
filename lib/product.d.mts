@@ -9,11 +9,14 @@ export declare const DEFAULT_PROFILES: Record<string, string[]>;
 export declare class ProductError extends Error {}
 
 export interface FindOptions {
-  /** A CLI value such as --product <dir>; "none" disables the product. */
+  /** A CLI value such as --product <dir> (or the name of a product in the workspace's products/); "none" disables the product. */
   explicit?: string | null;
+  /** Where PRODUCT_DIR is read from (default process.env). */
   env?: Record<string, string | undefined>;
-  /** Where to start walking up looking for product/product.json (usually the agent's own folder). */
+  /** Where to start walking up looking for product/product.json, the layout before the workspace (usually the agent's own folder). */
   from?: string;
+  /** The workspace whose product/ and products/ are used (default: lib/workspace.mjs → workspaceDir()). */
+  workspace?: string;
 }
 export declare function findProductDir(opts?: FindOptions): string | null;
 export declare function tryLoadProduct(opts?: FindOptions): Product | null;

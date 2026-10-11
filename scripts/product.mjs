@@ -9,15 +9,16 @@
  *   node scripts/product.mjs index                    refresh the file index at the end of product/README.md
  *   node scripts/product.mjs fetch [--dry-run]        download the assets listed in assets/manifest.json that are missing and have a source URL
  *   node scripts/product.mjs init [--name "Acme"] [--id acme] [--website https://…] [--archive]
- *                                                     start a new product from templates/product (--archive moves the current one to products-archive/)
+ *                                                     start a new product from templates/product (--archive moves the current one to workspace/products-archive/)
  *
- * Options: --product <dir> (default: $PRODUCT_DIR, else ./product).
- * The product folder spec is in product/README.md; a blank copy lives in templates/product/.
+ * Options: --product <dir|id> (default: $PRODUCT_DIR, else workspace/product; a bare id means workspace/products/<id>).
+ * The product folder spec is in its README.md; a blank copy lives in templates/product/.
  */
 import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, renameSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { checkProduct, contrast, findProductDir, listDocs, loadProduct, parseFrontmatter, ProductError, tokensToCss } from "../lib/product.mjs";
+import { checkProduct, contrast, DEFAULT_PROFILES, findProductDir, listDocs, loadProduct, parseFrontmatter, ProductError, tokensToCss } from "../lib/product.mjs";
+import { createWorkspace, workspaceDir } from "../lib/workspace.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const TEMPLATE = path.join(ROOT, "templates", "product");
@@ -121,7 +122,7 @@ switch (cmd) {
   case "context": {
     const p = load();
     if (!arg) die("context <agent id | profile[,profile…]>, e.g. context carousel or context content,sales");
-    const known = new Set(["carousel", "collage-post", "deck", "landing-page", "dev", ...Object.keys(p.manifest.agents ?? {})]);
+    const known = new Set([...Object.keys(DEFAULT_PROFILES), ...Object.keys(p.manifest.agents ?? {})]);
     const target = known.has(arg) ? arg : arg.split(",");
     process.stdout.write(p.context(target, { maxChars: Number(opt("--max")) || 24000 }));
     break;
@@ -139,7 +140,7 @@ switch (cmd) {
   case "index": {
     const p = load();
     const readme = p.resolve("README.md");
-    if (!existsSync(readme)) die("product/README.md is missing");
+    if (!existsSync(readme)) die(`${path.relative(process.cwd(), readme)} is missing`);
     const rows = listDocs(p.dir)
       .filter((rel) => rel !== "README.md" && !rel.startsWith("knowledge/sources/legacy/"))
       .map((rel) => {
@@ -200,12 +201,19 @@ switch (cmd) {
 
   case "init": {
     if (!existsSync(TEMPLATE)) die(`Template missing: ${TEMPLATE}`);
-    const target = path.resolve(opt("--product") ?? process.env.PRODUCT_DIR ?? path.join(ROOT, "product"));
+    const ws = workspaceDir();
+    const chosen = opt("--product") ?? process.env.PRODUCT_DIR;
+    // a bare id is a product in the workspace's products/, as with the agents' --product
+    const target = chosen ? (/^[\w-][\w.-]*$/.test(chosen) ? path.join(ws, "products", chosen) : path.resolve(chosen)) : path.join(ws, "product");
+    // a new workspace/product would take over from the real one, still in the layout before the workspace
+    if (!chosen && existsSync(path.join(ROOT, "product", "product.json")) && !existsSync(path.join(target, "product.json")))
+      die("Your product is still in product/ (the layout before the workspace). Move it first: node scripts/workspace.mjs migrate");
+    if (target === ws || target.startsWith(ws + path.sep)) createWorkspace({ dir: ws });
     if (existsSync(path.join(target, "product.json"))) {
-      if (!flag("--archive")) die(`${path.relative(process.cwd(), target)} already holds a product. Use --archive to move it to products-archive/ first, or --product <new dir>.`);
+      if (!flag("--archive")) die(`${path.relative(process.cwd(), target)} already holds a product. Use --archive to move it to ${path.relative(process.cwd(), path.join(ws, "products-archive"))}/ first, or --product <new dir>.`);
       const old = JSON.parse(readFileSync(path.join(target, "product.json"), "utf8"));
       const stamp = new Date().toISOString().slice(0, 16).replace(/[-:T]/g, "");
-      const dest = path.join(ROOT, "products-archive", `${old.id ?? "product"}-${stamp}`);
+      const dest = path.join(ws, "products-archive", `${old.id ?? "product"}-${stamp}`);
       mkdirSync(path.dirname(dest), { recursive: true });
       renameSync(target, dest);
       console.log(yellow(`! moved the current product to ${path.relative(process.cwd(), dest)}`));

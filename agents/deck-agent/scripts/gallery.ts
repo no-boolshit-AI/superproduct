@@ -1,7 +1,7 @@
 #!/usr/bin/env tsx
 /**
  * Renders the demo deck and report in every theme and writes overview sheets to docs/: `npm run gallery`.
- * Shows the themes' own look; `npm run gallery -- --product ../../product` shows them in a product's brand instead
+ * Shows the themes' own look; `npm run gallery -- --product ../../workspace/product` shows them in a product's brand instead
  * (written to docs/themes-*-product.jpg).
  */
 import fs from "node:fs";

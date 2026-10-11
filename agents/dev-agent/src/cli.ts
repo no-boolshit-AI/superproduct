@@ -43,7 +43,7 @@ Runs:
   npm run agent -- projects | doctor
 
 Relay mode (for an orchestrating agent; no terminal needed):
-  npm run agent -- setup acme/shop --relay        questions/approvals go to ask/*.pending.json
+  npm run agent -- setup acme/shop --relay        questions/approvals go to workspace/dev/ask/*.pending.json
   npm run agent -- pending                        list open questions (JSON)
   npm run agent -- answer <id> --json '{"pr": "Draft PR"}'
   npm run agent -- answer <id> --decision approve | revise --feedback "…" | cancel
@@ -55,9 +55,10 @@ Options
   --no-pr                push the branch only     --keep-workspace  leave the container running afterwards
   --budget <usd>         max Claude spend         --model <name>    opus | sonnet | full model id
   --runtime <r>          docker | local           --unattended      never ask questions (approval pauses)
-  --relay                relay questions/approvals through files (--ask-dir <dir>, default ./ask)
-  --product <dir|none>   product folder (context: terms, voice, design tokens); with setup it is saved in the
-                         profile. Default: the profile's, else a product folder whose product.json lists the repo
+  --relay                relay questions/approvals through files (--ask-dir <dir>, default workspace/dev/ask)
+  --product <dir|id|none>  product folder, or the id of one in workspace/products (context: terms, voice, design
+                         tokens); with setup it is saved in the profile. Default: the profile's, else a product folder
+                         whose product.json lists the repo
   -h, --help
 `;
 

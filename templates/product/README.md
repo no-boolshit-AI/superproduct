@@ -10,7 +10,8 @@ review: quarterly
 Everything that is specific to the product lives here: what it is, who it is for, what it sells, how it sounds and
 looks, what we may claim, how we take it to market and how it is built. The agents in `agents/` are generic. They read
 this folder at run time, so swapping this folder swaps the brand of every carousel, collage post, deck, landing page
-and PRD they produce.
+and PRD they produce. It lives in the workspace (`workspace/product/`, next to the briefs and results), which the
+kit's repository leaves out.
 
 Currently: **{{name}}** ({{website}}).
 
@@ -84,7 +85,8 @@ consequences), so the next person knows why.
 
 ## How the agents use it
 
-`lib/product.mjs` finds the folder (`--product <dir>` → `PRODUCT_DIR` → the nearest `product/` above the agent),
+`lib/product.mjs` finds the folder (`--product <dir|id>` → `PRODUCT_DIR` → `workspace/product/`; an id names a folder
+in `workspace/products/`),
 validates it and compiles a context for each agent: `BRIEF.md` plus the files of the agent's profiles in
 `product.json → context`, each tagged with its status, within a size budget.
 
@@ -126,11 +128,12 @@ node scripts/product.mjs fetch      # download assets listed in assets/manifest.
 node scripts/product.mjs init --name "Acme" --website https://acme.example --archive
 ```
 
-`--archive` moves the current folder to `products-archive/<id>-<date>/`. The new `product/` comes from
+`--archive` moves the current folder to `workspace/products-archive/<id>-<date>/`. The new `workspace/product/` comes from
 `templates/product/`. Then ask the main agent to fill it from the product's links and documents (skill `product`): it
 captures the sources, extracts facts, offers, voice and design tokens, marks inferences as drafts and lists open
-questions. Keeping several products side by side also works: put each in its own folder and point `PRODUCT_DIR` (or
-`--product`) at the one you want.
+questions. Keeping several products side by side also works: put each in `workspace/products/<id>/` (`init --product
+<id>`) and pass `--product <id>` (or set `PRODUCT_DIR`), or give each one a workspace of its own
+(`SUPERPRODUCT_WORKSPACE`).
 
 ## Why it is organised this way
 

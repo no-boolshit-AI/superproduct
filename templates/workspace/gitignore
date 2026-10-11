@@ -1,0 +1,27 @@
+# What stays out of this workspace's repository (copied from the kit's templates/workspace/gitignore).
+
+# Secrets: keys live in each agent's .env in the kit, never here
+.env
+.env.*
+secrets.env
+
+# Rebuildable or specific to this computer
+.DS_Store
+*.log
+node_modules/
+.next/
+*.tsbuildinfo
+next-env.d.ts
+/sites/*/out/
+/dev/cache/
+/dev/ask/
+/dev/projects/*/mirror.git/
+/dev/projects/*/image/
+/dev/projects/*/setup/
+/dev/runs/*/*/repo/
+/dev/runs/*/*/git/
+/dev/runs/*/*/home/
+/dev/runs/*/*/logs/
+
+# Results: PDFs, PNGs and videos add up fast. Delete this line to version them too (Git LFS helps with videos).
+/out/

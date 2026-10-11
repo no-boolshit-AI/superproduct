@@ -30,21 +30,41 @@ budget cap. Each agent is self-contained, with its own README, `.env.example` an
 
 ```
 you ──► Claude in this folder (CLAUDE.md + skills/)
-          │  picks the agent, writes briefs/<date>-<slug>.md, runs it, relays questions, checks the output
+          │  picks the agent, writes workspace/briefs/<date>-<slug>.md, runs it, relays questions, checks the output
           ▼
-        agents/<agent> ──reads──► product/   brand tokens · logo · fonts · voice · facts · offers · GTM
+        agents/<agent> ──reads──► workspace/product/   brand tokens · logo · fonts · voice · facts · offers · GTM
           │
           ▼
-        PDFs, PNGs, videos, static sites, branches and pull requests (in each agent's output folder)
+        workspace/out/, sites/, dev/   PDFs, PNGs, videos, static sites, branches and pull requests
 ```
+
+### The kit and your workspace
+
+This repository is the kit: agents, skills, templates and docs, all public. Everything that is yours lives in one
+folder inside it, `workspace/`, which the kit's `.gitignore` leaves out and which is a git repository of its own:
+
+```
+workspace/
+├─ product/            the product the agents work for (below)
+├─ products/           other products or clients (--product <id>)
+├─ briefs/             what was asked, per job and per campaign
+├─ out/<agent>/        carousels, collage posts, decks, videos
+├─ sites/              landing pages
+├─ dev/                dev-agent's repository setups and runs
+└─ references/         your reference images
+```
+
+Pushing the kit can't publish your work, pulling a new version of the kit can't touch it, and the workspace can have a
+private remote of its own ([`templates/workspace/README.md`](templates/workspace/README.md)). Keys stay in each agent's
+`.env`. `SUPERPRODUCT_WORKSPACE` points the kit at another workspace, for example one per client.
 
 ### The product folder
 
-`product/` is the single source of truth. The agents never hard-code a brand: they load the folder at run time through
-[`lib/product.mjs`](lib/product.mjs), a zero-dependency loader.
+`workspace/product/` is the single source of truth. The agents never hard-code a brand: they load the folder at run
+time through [`lib/product.mjs`](lib/product.mjs), a zero-dependency loader.
 
 ```
-product/
+workspace/product/
 ├─ BRIEF.md          one page every agent reads first
 ├─ product.json      identity, links, main action, offers, brand files, repositories, per-agent settings
 ├─ brand/            design.tokens.json (W3C DTCG, semantic colour roles), tokens.css, guidelines, voice, messaging
@@ -60,8 +80,8 @@ product/
   as direction, and turn unknowns into visible placeholders such as `[X]` instead of inventing numbers.
 - **Precedence.** Command-line flags (`--product`, `--brand`, `--palette`, …), then the product folder, then each
   agent's `.env`, then built-in defaults. `--product none` runs an agent without it.
-- **Several products.** Keep one folder per product or client (`products/<id>/`) and pass `--product`, or switch
-  `product/` over with `init --archive`.
+- **Several products.** Keep one folder per product or client (`workspace/products/<id>/`) and pass `--product <id>`,
+  switch `product/` over with `init --archive`, or give each client a workspace of its own.
 
 The full spec, with the reasons behind the layout, is [`templates/product/README.md`](templates/product/README.md). A
 complete fictional example is in [`lib/fixtures/acme`](lib/fixtures/acme).
@@ -74,7 +94,7 @@ and FFmpeg for the explainer agent.
 ```bash
 git clone https://github.com/no-boolshit-AI/superproduct.git
 cd superproduct
-node scripts/agents.mjs init            # links skills/ into .claude/skills and adds .claude/settings.json
+node scripts/agents.mjs init            # links skills/ into .claude/skills, adds .claude/settings.json, creates workspace/
 node scripts/agents.mjs install all     # npm install, Chromium and setup steps for every agent
 node scripts/agents.mjs test all        # zero-cost self-tests against a mock Claude API
 ```
@@ -91,7 +111,7 @@ node scripts/agents.mjs status          # installed? keys set (names only)? Chro
 node scripts/product.mjs init --name "Acme" --website https://acme.example
 ```
 
-This creates `product/` from the template. Open Claude in this folder and ask it to fill the folder in:
+This creates `workspace/product/` from the template. Open Claude in this folder and ask it to fill the folder in:
 
 > Set up the product folder from acme.example, our pitch deck and our LinkedIn page.
 
@@ -122,7 +142,7 @@ To try the agents before your own product is ready, point them at the fictional 
 > We changed our prices: \<link\>. Update the product folder.
 
 Every agent also runs by hand from its folder; its README lists the commands, for example
-`cd agents/deck-agent && npm run deck -- --file ../../briefs/2026-10-07-board.md`.
+`cd agents/deck-agent && npm run deck -- --file ../../workspace/briefs/2026-10-07-board.md`.
 
 ## Keys
 
@@ -139,8 +159,8 @@ Keys go in each agent's own `.env`, which is git-ignored. `status` reports which
 
 Cowork's shell is a Linux VM that sees this folder but not your computer's Chromium, Docker or `node_modules`, so the
 agents always run on your computer. In Cowork, Claude writes the briefs, gives you the command to paste into a
-terminal, and follows the run through its output files. `status`, `outputs`, the dev-agent relay (`pending`, `answer`)
-and `scripts/product.mjs` work from the VM.
+terminal, and follows the run through its output files. `status`, `outputs`, the dev-agent relay (`pending`, `answer`),
+`scripts/product.mjs` and `scripts/workspace.mjs` work from the VM.
 
 ## Repository layout
 
@@ -150,21 +170,27 @@ and `scripts/product.mjs` work from the VM.
 ├─ agents/               the six agents
 ├─ skills/               one skill per agent, plus product and campaign (multi-agent work)
 ├─ lib/product.mjs       product folder loader: find, validate, tokens to colours and fonts, compiled context
+├─ lib/workspace.mjs     where the workspace is and what goes where (+ workspace-migrate.mjs from the old layout)
 ├─ lib/fixtures/acme/    fictional example product, used by the tests
 ├─ schemas/              JSON Schema for product.json
 ├─ scripts/agents.mjs    init · list · status · outputs · install · test · run · web · pending · answer
 ├─ scripts/product.mjs   init · show · check · context · tokens · index · fetch
+├─ scripts/workspace.mjs show · init · migrate
 ├─ templates/product/    blank product folder and its spec
-├─ briefs/               briefs the main Claude writes (git-ignored)
-└─ product/              your product (created by init, git-ignored)
+├─ templates/workspace/  what a new workspace starts with (README, .gitignore, briefs/)
+└─ workspace/            your product, briefs and results (created by init; git-ignored, its own repository)
 ```
 
-## Your data stays out of this repository
+## Your work stays out of this repository
 
-`product/`, `products/`, `briefs/`, the agents' outputs and every `.env` are git-ignored, so your brand, facts, strategy
-and work never end up in a public fork by accident. To version your product, keep a private copy (a private repository
-cloned from this one) and delete the `/product/` and `/briefs/*` lines from its `.gitignore`. Don't open pull requests
-against this repository from a branch that contains them.
+Your product, briefs and results live in `workspace/`, and your keys in each agent's `.env`. The kit's `.gitignore`
+leaves both out, and the workspace is a git repository of its own, so nothing in it can be committed to the kit by
+accident. To version your work, give the workspace a private remote (`cd workspace && git remote add origin <url>`);
+updating the kit is a `git pull` that never touches it.
+
+Coming from the earlier layout, with `product/` and `briefs/` at the top and results inside each agent's folder? Run
+`node scripts/workspace.mjs migrate --dry-run` to see the moves, then the same without `--dry-run`. It moves everything
+into the workspace, never overwrites, and copies Claude's sessions along so `--revise` keeps working on old jobs.
 
 ## Adding an agent
 

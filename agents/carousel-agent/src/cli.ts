@@ -16,14 +16,15 @@ const HELP = `Usage: npm run generate -- [brief text] [options]
   -a, --asset <path>      Your own image to use (photo, product shot). Repeatable.
       --brand <path>      Brand file; overrides the product folder's brand (default: the product's, else $BRAND_FILE,
                           else ./brand.json)
-      --product <dir>     Product folder (default: $PRODUCT_DIR, else the nearest product/); "none" to ignore it
-  -o, --out <dir>         Output root (default: ./out)
+      --product <dir|id>  Product folder, or the id of one in workspace/products (default: $PRODUCT_DIR, else
+                          workspace/product); "none" to ignore it
+  -o, --out <dir>         Output root (default: $OUTPUT_DIR, else workspace/out/carousel)
   -m, --model <id>        Claude model (default: $CLAUDE_MODEL or the SDK default)
       --budget <usd>      Stop when the run's Claude spend reaches this (default: $MAX_BUDGET_USD)
   -q, --quiet             Only print the final summary
 
 Example:
-  npm run generate -- --file briefs/reckitt.md --slides 5 --format portrait
+  npm run generate -- --file ../../workspace/briefs/reckitt.md --slides 5 --format portrait
 `;
 
 const { values, positionals } = parseArgs({

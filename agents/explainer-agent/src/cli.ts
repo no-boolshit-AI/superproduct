@@ -5,7 +5,7 @@ import path from "node:path";
 import { parseArgs } from "node:util";
 import type { SDKMessage } from "@anthropic-ai/claude-agent-sdk";
 import { describeAuth, readJob, runJob } from "./agent.js";
-import { DEFAULT_FORMAT, DEFAULT_LENGTH_SEC, FORMAT_IDS, STYLES, WORKFLOWS, isFormat, isQuality, isStyle, isWorkflow, pluginInfo } from "./config.js";
+import { DEFAULT_FORMAT, DEFAULT_LENGTH_SEC, FORMAT_IDS, OUTPUT_DIR, STYLES, WORKFLOWS, isFormat, isQuality, isStyle, isWorkflow, pluginInfo } from "./config.js";
 import type { JobOptions } from "./events.js";
 import { soundSettings } from "./media/elevenlabs.js";
 import { imageSettings } from "./media/images.js";
@@ -34,8 +34,8 @@ const HELP = `Usage: npm run video -- [brief text] [options]
       --workflow <w>       ${WORKFLOWS.join(" | ")} (default faceless-explainer)
       --url <url>          Website to capture (with --workflow product-launch-video)
       --quality <q>        draft | standard | high (default high)
-      --product <dir>      Product folder for brand, voice and facts, or "none" (default: $PRODUCT_DIR, then the
-                           nearest product/ folder above the agent)
+      --product <dir|id>   Product folder for brand, voice and facts, the id of one in workspace/products, or "none"
+                           (default: $PRODUCT_DIR, then workspace/product)
   -m, --model <id>         Claude model (default $CLAUDE_MODEL / SDK default)
       --budget <usd>       Stop when Claude spend reaches this (default $MAX_BUDGET_USD)
       --revise <job-id>    Revise an existing job; the brief text becomes the change request
@@ -44,7 +44,7 @@ const HELP = `Usage: npm run video -- [brief text] [options]
 Examples:
   npm run video -- --file briefs/example-what-is-an-agent.md
   npm run video -- "Explain RAG to a finance team in 45 seconds" --format vertical --voice
-  npm run video -- --file briefs/launch.md --style vox-collage --length 30
+  npm run video -- --file ../../workspace/briefs/launch.md --style vox-collage --length 30
   npm run video -- --revise 20261007-141500-what-an-ai-agent-actually-is "Slow down frame 3 and make the CTA bigger"
   npm run render -- 20261007-141500-what-an-ai-agent-actually-is --format mov    (ProRes 4444 for DaVinci Resolve)
 `;
@@ -139,7 +139,7 @@ const options: JobOptions = {
   maxBudgetUsd: values.budget ? Number(values.budget) : undefined,
   inputs: (values.input ?? []).map((f) => path.resolve(f)),
 };
-if (values.revise && !readJob(values.revise)) throw new Error(`No job ${values.revise} in out/`);
+if (values.revise && !readJob(values.revise)) throw new Error(`No job ${values.revise} in ${OUTPUT_DIR}`);
 
 const job = await runJob({
   options,

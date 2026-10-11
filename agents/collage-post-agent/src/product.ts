@@ -1,7 +1,7 @@
 /**
  * Product folder → collage defaults: masthead, a `brand` palette, optional brand fonts and the prompt context.
  *
- * The product folder (../../product by default; see lib/product.mjs and product/README.md) defines the brand as design
+ * The product folder (the workspace's product/ by default; see lib/product.mjs and its README.md) defines the brand as design
  * tokens with semantic colour roles. product.json → agents["collage-post"] can pin the palette colours (`brandPalette`),
  * the default palette (`palette`, e.g. "brand"), the masthead and whether slides use the brand fonts (`fonts: "brand"`).
  */
@@ -32,7 +32,7 @@ export interface ActiveProduct {
   brandFonts: boolean;
 }
 
-/** --product <dir|none> → PRODUCT_DIR → the nearest product/ above this agent. */
+/** --product <dir|id|none> → PRODUCT_DIR → the workspace's product/ (see lib/product.mjs). */
 export function resolveProduct(explicit?: string): Product | null {
   const dir = findProductDir({ explicit, from: ROOT });
   return dir ? loadProduct(dir) : null;
@@ -77,7 +77,7 @@ export function brandPaletteFor(p: Product): PaletteBase {
 let cache: { key: string; value: ActiveProduct | null } | undefined;
 
 /**
- * The product for this process (PRODUCT_DIR, else the nearest product/), with its `brand` palette registered.
+ * The product for this process (PRODUCT_DIR, else the workspace's product/), with its `brand` palette registered.
  * Cached per PRODUCT_DIR value; the CLI sets PRODUCT_DIR from --product before reading defaults.
  */
 export function activeProduct(): ActiveProduct | null {

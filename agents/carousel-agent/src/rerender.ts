@@ -1,21 +1,26 @@
 // Re-render and re-export an existing run after editing slides/*.html by hand.
-//   npm run render -- out/2026-10-06-12-00-my-carousel
+//   npm run render -- 2026-10-06-12-00-my-carousel        (a run in the output root, workspace/out/carousel)
+//   npm run render -- path/to/2026-10-06-12-00-my-carousel
 import "dotenv/config";
 import fs from "node:fs";
 import path from "node:path";
-import { listSlides, loadBrand, type Format, type RunContext } from "./config.js";
+import { defaultOutDir, listSlides, loadBrand, type Format, type RunContext } from "./config.js";
 import { brandFromProduct, resolveProduct } from "./product.js";
 import { exportCarousel, renderSlide } from "./slides.js";
 import { closeBrowser } from "./render/renderer.js";
 
-const dir = path.resolve(process.argv[2] ?? "");
-if (!process.argv[2] || !fs.existsSync(path.join(dir, "slides"))) {
-  console.log("Usage: npm run render -- <run folder>");
+const arg = process.argv[2] ?? "";
+const dir = [path.resolve(arg), path.join(defaultOutDir(), arg)].find((d) => arg && fs.existsSync(path.join(d, "slides")));
+if (!dir) {
+  console.log("Usage: npm run render -- <run id in the output root, or run folder>");
   process.exit(1);
 }
 const run = fs.existsSync(path.join(dir, "run.json")) ? JSON.parse(fs.readFileSync(path.join(dir, "run.json"), "utf8")) : {};
-// Same brand as the original run: its brand file, else its product folder (if still there), else the default.
-const product = !run.brand && run.product && fs.existsSync(path.join(run.product, "product.json")) ? resolveProduct(run.product) : null;
+// Same brand as the original run: its brand file, else its product folder (the current one if that folder has moved,
+// e.g. into the workspace), else the default.
+const recorded = run.product && fs.existsSync(path.join(run.product, "product.json"));
+if (!run.brand && run.product && !recorded) console.log(`The run's product folder ${run.product} is gone; using the current product folder.`);
+const product = !run.brand && run.product ? resolveProduct(recorded ? run.product : undefined) : null;
 const ctx: RunContext = { dir, format: (run.format ?? "square") as Format, brand: run.brand ? loadBrand(run.brand) : product ? brandFromProduct(product) : loadBrand() };
 const manifest = fs.existsSync(path.join(dir, "manifest.json")) ? JSON.parse(fs.readFileSync(path.join(dir, "manifest.json"), "utf8")) : {};
 

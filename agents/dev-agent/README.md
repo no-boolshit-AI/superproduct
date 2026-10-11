@@ -22,6 +22,9 @@ Every run then gets **its own folder and its own Docker container** (plus MySQL/
 └──────────────────────────────────────────────┘   └───────────────────────────────────────────────────────────────┘
 ```
 
+`projects/` and `runs/` live in the workspace's `dev/` folder (`../../workspace/dev`, see
+[`lib/workspace.mjs`](../../lib/workspace.mjs); `DEVAGENT_HOME` to change it), with your other work, never in the kit.
+
 ## Quick start
 
 ```bash
@@ -80,9 +83,9 @@ and review session gets that context next to `PROJECT.md` (profiles `development
 
 dev-agent works on many repositories, so it only uses a product folder that is meant for the repository:
 
-1. `--product <dir|none>` on a run;
+1. `--product <dir|id|none>` on a run (an id names a product in the workspace's `products/`);
 2. `"product"` in the project profile (`setup … --product <dir>` saves it);
-3. `$PRODUCT_DIR` or the nearest `product/` above this agent, if its `product.json → repos` lists the repository
+3. `$PRODUCT_DIR` or the workspace's `product/`, if its `product.json → repos` lists the repository
    (`owner/name` or its URL).
 
 `show <run-id>` and `run.json` say which product a run used and why (`flag`, `profile`, `env` or `nearest`).
@@ -159,7 +162,7 @@ npm run agent -- clean <run-id> | --finished   # drop repo/, git/ and home/, kee
 ```
 
 Options: `--approve` / `--no-approve`, `--no-pr`, `--budget <usd>`, `--model opus|sonnet|<id>`, `--runtime docker|local`,
-`--keep-workspace`, `--unattended`, `--relay` (see below), `--product <dir|none>` (see "The product folder").
+`--keep-workspace`, `--unattended`, `--relay` (see below), `--product <dir|id|none>` (see "The product folder").
 
 ## Relay mode (driven by another agent)
 
@@ -174,7 +177,7 @@ npm run agent -- "Add CSV export" --relay --approve &
 npm run agent -- answer 7d01e9aa --decision approve   # or: --decision revise --feedback "…" | --decision cancel
 ```
 
-- Files live in `ask/` (`--ask-dir` or `DEVAGENT_ASK_DIR` to change): `<id>.pending.json`, then `<id>.answer.json`.
+- Files live in `ask/` in the agent's home, the workspace's `dev/` (`--ask-dir` or `DEVAGENT_ASK_DIR` to change): `<id>.pending.json`, then `<id>.answer.json`.
   `history.jsonl` keeps a log with secrets redacted.
 - **Secrets never go through answers.** For a question with `secretEnv`, the user adds `NAME=value` to the project's
   `secrets.env` (the pending item names the file), and the answer is `"__in_secrets_file__"`. `answer` refuses
@@ -251,10 +254,10 @@ npm run agent -- answer 7d01e9aa --decision approve   # or: --decision revise --
 | `APPROVE_PLAN` | 0 | Default for new projects (the interview asks) |
 | `COMMAND_TIMEOUT_MIN` | 20 | Per bootstrap/verify command |
 | `PORT` | 4949 | Web UI |
-| `DEVAGENT_HOME` | this folder | Where `projects/`, `runs/`, `cache/` live |
+| `DEVAGENT_HOME` | the workspace's `dev/` | Where `projects/`, `runs/`, `cache/` and `ask/` live |
 | `DEVAGENT_AUTHOR_NAME` / `_EMAIL` | dev-agent | Commit author default |
 | `CONTEXT7_API_KEY` | | Optional, for the Context7 MCP |
-| `PRODUCT_DIR` | nearest `product/` | Product folder; used only for repositories its `product.json → repos` lists. `none` turns it off |
+| `PRODUCT_DIR` | the workspace's `product/` | Product folder; used only for repositories its `product.json → repos` lists. `none` turns it off |
 
 ## Tests
 

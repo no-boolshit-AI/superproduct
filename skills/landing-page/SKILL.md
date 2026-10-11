@@ -14,7 +14,7 @@ Then it:
 - composes sections from a library of 40, adapted or new (at least two must be new or adapted);
 - lints, builds, clicks through every interactive element, screenshots the page and fixes what it sees.
 
-**Product folder.** The agent reads `product/` by itself: the scaffold writes `PRODUCT.md` into the site (the
+**Product folder.** The agent reads the product folder (`workspace/product/`) by itself: the scaffold writes `PRODUCT.md` into the site (the
 `set_brand` values, logo files, the main actions from `product.json → cta`, the brand guidelines, voice and verified
 facts) and copies the logos into `public/assets/brand/` (the mark becomes the favicon). The agent uses those brand
 values unless the brief has its own Brand section, and the brief wins where the two disagree. `-p none` turns it off.
@@ -24,10 +24,10 @@ values unless the brief has its own Brand section, and the brief wins where the 
 - Claude auth is the Claude Code login on your computer, or `ANTHROPIC_API_KEY` in its `.env`.
 - Zero-cost smoke test: `npm run page -- --dry-run`.
 
-## Brief (`briefs/YYYY-MM-DD-<slug>.md`, assets in `briefs/YYYY-MM-DD-<slug>/assets/`)
+## Brief (`workspace/briefs/YYYY-MM-DD-<slug>.md`, assets in `workspace/briefs/YYYY-MM-DD-<slug>/assets/`)
 With the product folder, the brief is about **this page**: what it is for (one offer, a launch, an event), the
 audience, the single main action and its URL if it differs from the product's, the 3 to 6 points it must make, and any
-publishable numbers, customers, quotes or integrations that aren't in `product/knowledge/facts.md`. The product name,
+publishable numbers, customers, quotes or integrations that aren't in `workspace/product/knowledge/facts.md`. The product name,
 brand, voice and general facts come from `PRODUCT.md`.
 
 For a page about something else (a client's product, without a product folder), the brief needs everything: the product
@@ -48,20 +48,20 @@ Run that one with `-p none` (or `-p <the client's product folder>`). Anything mi
 ## Run
 ```bash
 cd agents/landing-page-agent
-npm run page -- -f ../../briefs/<brief>.md -s <slug> -a ../../briefs/<brief>/assets
-npm run page -- -f ../../briefs/<brief>.md -s <slug> --replace     # rebuild the same site (overwrites!)
+npm run page -- -f ../../workspace/briefs/<brief>.md -s <slug> -a ../../workspace/briefs/<brief>/assets
+npm run page -- -f ../../workspace/briefs/<brief>.md -s <slug> --replace     # rebuild the same site (overwrites!)
 npm run check -- <slug>                                          # re-verify after hand edits (no model)
 ```
 
 | Option | |
 |---|---|
-| `-s, --slug` | folder under `sites/` |
-| `--replace` | overwrite `sites/<slug>`; confirm with the user first |
+| `-s, --slug` | folder under `workspace/sites/` |
+| `--replace` | overwrite `workspace/sites/<slug>`; confirm with the user first |
 | `-a, --assets <path>` | screenshots, photos, extra logos, copied to `public/assets` (repeatable) |
-| `-p, --product <dir\|none>` | product folder (default: `$PRODUCT_DIR`, else `product/`) |
+| `-p, --product <dir\|id\|none>` | product folder, or the id of one in `workspace/products/` (default: `$PRODUCT_DIR`, else `workspace/product/`) |
 | `-m, --model`, `--budget`, `--max-turns`, `-q` | model, spend cap, turn cap, quiet |
 
-## Output: `sites/<slug>/`
+## Output: `workspace/sites/<slug>/`
 - `out/`: the static site, ready for any static host;
 - `.lpa/screens/`: the screenshots the agent reviewed;
 - `.lpa/result.json`: lint, build and interaction results;
@@ -69,7 +69,7 @@ npm run check -- <slug>                                          # re-verify aft
 - `PRODUCT.md`: what the agent got from the product folder;
 - the editable Next.js source.
 
-Preview: `npx serve sites/<slug>/out`, or open `out/index.html`. Show the user a screenshot from `.lpa/screens/`.
+Preview: `npx serve ../../workspace/sites/<slug>/out` (from the agent folder), or open `out/index.html`. Show the user a screenshot from `.lpa/screens/`.
 
 ## Check, then report
 A run counts as success only if lint, build and the interaction test all pass (see `result.json`). List the

@@ -2,9 +2,11 @@ import "./env.js";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { workspacePath } from "../../../lib/workspace.mjs";
 
 export const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-export const HOME = path.resolve(process.env.DEVAGENT_HOME || ROOT);
+/** Where projects/, runs/, cache/ and ask/ live: $DEVAGENT_HOME, else the workspace's dev/ (see lib/workspace.mjs). */
+export const HOME = path.resolve(process.env.DEVAGENT_HOME || workspacePath("dev"));
 export const PROJECTS_DIR = path.join(HOME, "projects");
 export const RUNS_DIR = path.join(HOME, "runs");
 export const CACHE_DIR = path.join(HOME, "cache");

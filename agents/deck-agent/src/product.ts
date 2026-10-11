@@ -1,7 +1,7 @@
 /**
  * Product folder → deck brand + prompt context.
  *
- * The product folder (../../product by default; see lib/product.mjs and product/README.md) holds the brand as design
+ * The product folder (the workspace's product/ by default; see lib/product.mjs and its README.md) holds the brand as design
  * tokens with semantic colour roles. They map onto the theme variables, so every theme takes the product's colours,
  * fonts and logo and keeps its own layout character. A light accent (one that can't be read as text on the page, like
  * a lime) stays a fill: text, icons and thin lines use the product's accent-text colour, and ==highlights== become a
@@ -49,7 +49,7 @@ export interface ResolvedBrand {
   houseTheme?: ThemeId;
 }
 
-/** --product <dir|none> → PRODUCT_DIR → the nearest product/ above this agent. Null when there is none. */
+/** --product <dir|id|none> → PRODUCT_DIR → the workspace's product/ (see lib/product.mjs). Null when there is none. */
 export function resolveProduct(explicit?: string): Product | null {
   const dir = findProductDir({ explicit, from: ROOT });
   return dir ? loadProduct(dir) : null;

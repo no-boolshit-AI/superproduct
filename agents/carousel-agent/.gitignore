@@ -1,3 +1,8 @@
 node_modules/
 out/
 .env
+# Your briefs and brand files belong in the workspace (../../workspace); never commit them here
+briefs/*
+!briefs/README.md
+brands/*
+!brands/README.md

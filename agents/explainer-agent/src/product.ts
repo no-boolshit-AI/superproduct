@@ -1,7 +1,7 @@
 /**
  * Product folder → the video's brand kit.
  *
- * The product folder (../../product by default; see lib/product.mjs and product/README.md) holds the brand as design
+ * The product folder (the workspace's product/ by default; see lib/product.mjs and its README.md) holds the brand as design
  * tokens with semantic colour roles. HyperFrames' explainer workflow remixes one of its frame presets onto brand
  * colours and fonts from capture/extracted/tokens.json (Step 2, build-frame.mjs), so the kit becomes:
  *  - tokens.json: the colours in roles (ground, ink, accent, readable accent) and the display/body family;
@@ -85,7 +85,7 @@ export interface BrandKit {
   warnings: string[];
 }
 
-/** --product <dir|none> → PRODUCT_DIR → the nearest product/ above this agent. Null when there is none. */
+/** --product <dir|id|none> → PRODUCT_DIR → the workspace's product/ (see lib/product.mjs). Null when there is none. */
 export function resolveProduct(explicit?: string): Product | null {
   const dir = findProductDir({ explicit, from: ROOT });
   return dir ? loadProduct(dir) : null;

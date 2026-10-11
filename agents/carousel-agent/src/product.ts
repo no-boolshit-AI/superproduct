@@ -1,7 +1,7 @@
 /**
  * Product folder → carousel brand + prompt context.
  *
- * The product folder (../../product by default; see lib/product.mjs and product/README.md) holds the brand as design
+ * The product folder (the workspace's product/ by default; see lib/product.mjs and its README.md) holds the brand as design
  * tokens with semantic colour roles. The consulting look needs a canvas that carries light type, so the canvas is the
  * primary colour when white reads on it, otherwise the product's dark inverse colour, with the primary as the accent.
  * product.json → agents.carousel can set every colour explicitly.
@@ -33,7 +33,7 @@ export interface CarouselProductConfig {
 const DEFAULT_SANS = "Inter Tight";
 const DEFAULT_SERIF = "Source Serif 4";
 
-/** --product <dir|none> → PRODUCT_DIR → the nearest product/ above this agent. Null when there is none. */
+/** --product <dir|id|none> → PRODUCT_DIR → the workspace's product/ (see lib/product.mjs). Null when there is none. */
 export function resolveProduct(explicit?: string): Product | null {
   const dir = findProductDir({ explicit, from: ROOT });
   return dir ? loadProduct(dir) : null;

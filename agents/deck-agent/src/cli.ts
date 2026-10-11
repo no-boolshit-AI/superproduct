@@ -5,6 +5,7 @@ import path from "node:path";
 import { parseArgs } from "node:util";
 import type { SDKMessage } from "@anthropic-ai/claude-agent-sdk";
 import { describeAuth, readJob, runJob } from "./agent.js";
+import { OUTPUT_DIR } from "./config.js";
 import type { JobOptions } from "./events.js";
 import { imagesEnabled, isMockMode } from "./images.js";
 import { resolveBrand } from "./product.js";
@@ -20,8 +21,8 @@ const HELP = `Usage: npm run deck -- [brief text] [options]
   -i, --input <path>      A file for the agent: data (csv/xlsx/json), documents (md/txt/pdf), images. Repeatable.
       --audience <text>   Who will read/see it
       --lang <code>       Output language, e.g. en, de, ro
-      --product <dir>     Product folder for brand, voice and facts, or "none" (default: $PRODUCT_DIR, then the
-                          nearest product/ folder above the agent)
+      --product <dir|id>  Product folder for brand, voice and facts, the id of one in workspace/products, or "none"
+                          (default: $PRODUCT_DIR, then workspace/product)
       --brand <path>      Brand file; overrides the product folder's brand (default: product folder, then
                           $BRAND_FILE, then ./brand.json)
   -m, --model <id>        Claude model (default $CLAUDE_MODEL / SDK default)
@@ -30,7 +31,7 @@ const HELP = `Usage: npm run deck -- [brief text] [options]
   -q, --quiet             Only print the final summary
 
 Examples:
-  npm run deck -- --file briefs/board-strategy.md --theme strategy --pages 14
+  npm run deck -- --file ../../workspace/briefs/board-strategy.md --theme strategy --pages 14
   npm run deck -- "Market entry assessment for e-bikes in Romania" --format report -i data/market.xlsx
   npm run deck -- --revise 20261006-142233-market-entry "Make page 4 a waterfall and add an appendix with the raw data"
 `;
@@ -105,7 +106,7 @@ const options: JobOptions = {
   maxBudgetUsd: values.budget ? Number(values.budget) : undefined,
   inputs: (values.input ?? []).map((f) => path.resolve(f)),
 };
-if (values.revise && !readJob(values.revise)) throw new Error(`No job ${values.revise} in out/`);
+if (values.revise && !readJob(values.revise)) throw new Error(`No job ${values.revise} in ${OUTPUT_DIR}`);
 
 try {
   const job = await runJob({

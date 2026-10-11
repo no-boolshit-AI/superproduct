@@ -59,21 +59,22 @@ The CLI prints which credential it used at start-up. Subscription runs count aga
 ```bash
 npm run generate -- "Reckitt reset its portfolio, operating model and cost base at once: three moves, >8% operating profit growth in year one, ~250 bps margin path, five management layers to three, one transformation office."
 
-npm run generate -- --file briefs/q3-case.md --slides 5 --format portrait
+npm run generate -- --file ../../workspace/briefs/q3-case.md --slides 5 --format portrait
 npm run generate -- --file brief.md --asset product.jpg --asset team.jpg   # your own images
-npm run generate -- --file brief.md --brand clients/acme/brand.json --budget 3
-npm run generate -- --file brief.md --product ~/clients/acme/product     # another product's brand, voice and facts
+npm run generate -- --file brief.md --brand ../../workspace/brands/acme.json --budget 3
+npm run generate -- --file brief.md --product acme                      # another product (workspace/products/acme)
 npm run generate -- --file brief.md --product none                       # the classic electric-blue look
 ```
 
-Each run writes to `out/<timestamp>-<slug>/`:
+Each run writes to `<timestamp>-<slug>/` in the workspace's `out/carousel/` (`--out` or `OUTPUT_DIR` to change it; see
+[`lib/workspace.mjs`](../../lib/workspace.mjs)):
 
 | path | what |
 |---|---|
 | `png/slide-NN.png` | final slides, 2160×2160 or 2160×2700 (`EXPORT_SCALE`) |
 | `carousel.pdf` | upload as a LinkedIn document post for the swipeable carousel |
 | `post.md` | caption and alt text per slide |
-| `slides/slide-NN.html` | the editable fragments; tweak by hand, then `npm run render -- out/<run>` |
+| `slides/slide-NN.html` | the editable fragments; tweak by hand, then `npm run render -- <run>` |
 | `assets/` | generated images (+ `.cache.json`) |
 | `preview/`, `build/` | 1× previews and the composed HTML used for rendering |
 | `product-context.md`, `run.json` | the product context the agent got, and which brand/product the run used |
@@ -85,7 +86,7 @@ Without `OPENAI_API_KEY` (or with `IMAGE_MOCK=1`) the agent still runs end to en
 The brand comes from the first of:
 
 1. `--brand <file>`: a brand file (format below);
-2. **the product folder** (`--product <dir>`, else `$PRODUCT_DIR`, else the nearest `product/` above this agent; see
+2. **the product folder** (`--product <dir|id>`, else `$PRODUCT_DIR`, else the workspace's `product/`; see
    [`templates/product/README.md`](../../templates/product/README.md));
 3. `$BRAND_FILE`, then `./brand.json` (the classic electric-blue look).
 

@@ -1,6 +1,7 @@
 import { existsSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { workspacePath } from "../../../lib/workspace.mjs";
 
 export const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -24,7 +25,8 @@ export const config = {
   root: ROOT,
   styleguideDir: path.join(ROOT, "styleguide"),
   templateDir: path.join(ROOT, "template"),
-  sitesDir: path.resolve(process.env.LPA_SITES_DIR ?? path.join(ROOT, "sites")),
+  /** Where pages are generated: $LPA_SITES_DIR, else the workspace's sites/ (see lib/workspace.mjs). */
+  sitesDir: path.resolve(process.env.LPA_SITES_DIR || workspacePath("sites")),
   /** Model alias or full ID passed to the Agent SDK. */
   model: process.env.LPA_MODEL ?? "opus",
   maxBudgetUsd: num(process.env.LPA_MAX_BUDGET_USD, 8),

@@ -29,15 +29,16 @@ The setup agent:
   policy local or commit, database, secrets, autonomy, budget, conventions);
 - builds the Docker image (a few minutes the first time);
 - runs bootstrap and tests until a fresh workspace passes;
-- saves `projects/<slug>/project.json` and `PROJECT.md`.
+- saves `workspace/dev/projects/<slug>/project.json` and `PROJECT.md`.
 
 `node scripts/agents.mjs status dev` doesn't list projects. Use `npm run agent -- projects`.
 
 **The product folder.** If the repository is the product's own code (its website or app), runs should get the product
 context (glossary, architecture notes, voice, brand guidelines and design tokens). dev-agent only uses a product folder
 meant for the repo:
-- add the repo to `product/product.json → repos` (`"owner/name"`), which covers every project on that repo; or
-- pass `--product ../../product` to `setup` (saved in the project profile) or to a single run.
+- add the repo to `workspace/product/product.json → repos` (`"owner/name"`), which covers every project on that repo; or
+- pass `--product ../../workspace/product` (or the id of a product in `workspace/products/`) to `setup` (saved in the
+  project profile) or to a single run.
 The setup summary and `show <run-id>` print which product a run uses; `--product none` turns it off.
 
 ## 2. Features
@@ -45,11 +46,11 @@ The setup summary and `show <run-id>` print which product a run uses; `--product
 cd agents/dev-agent
 npm run agent -- "<feature request>" --project <slug> --relay              # background it
 npm run agent -- --project <slug> --issue 123 --relay                     # a GitHub issue as the request
-npm run agent -- --project <slug> --file ../../briefs/<brief>.md --relay --approve   # pause for plan approval
+npm run agent -- --project <slug> --file ../../workspace/briefs/<brief>.md --relay --approve   # pause for plan approval
 ```
 Steps: clone → container → PRD + plan → (approval) → one session per milestone, committing only when the verify
 commands pass → review → fix milestone → final checks → push branch and draft PR. Follow along with
-`npm run agent -- show <run-id>`, or read `runs/<project>/<run-id>/run.json` and `events.jsonl`.
+`npm run agent -- show <run-id>`, or read `workspace/dev/runs/<project>/<run-id>/run.json` and `events.jsonl`.
 
 Other commands:
 - `list`;

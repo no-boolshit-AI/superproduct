@@ -13,7 +13,7 @@ It plans a storyline (answer first, action titles), turns data into specs for ch
 composes pages from 15 deck or 14 report layouts, and QAs every page (cut-off text, overlaps, missing sources). The
 result is a searchable PDF.
 
-**Product folder.** The agent reads `product/` by itself: every theme takes the product's colours, fonts and logo
+**Product folder.** The agent reads the product folder (`workspace/product/`) by itself: every theme takes the product's colours, fonts and logo
 (light accents stay fills; text and lines use the product's accent-text colour), the house theme
 (`product.json → agents.deck.theme`) is the default unless the brief asks for a style, the confidentiality line comes
 from the product, and the product context (brief, voice, messaging, facts, offers, sales pitch) is in the system prompt.
@@ -25,7 +25,7 @@ Its verified facts count as sources for documents about the product. `--product 
 - Claude auth is the Claude Code login on your computer or a key/token in `.env`.
 - `OPENAI_API_KEY` is optional, for photos/illustrations.
 
-## Brief (`briefs/YYYY-MM-DD-<slug>.md`, data in `briefs/YYYY-MM-DD-<slug>/`)
+## Brief (`workspace/briefs/YYYY-MM-DD-<slug>.md`, data in `workspace/briefs/YYYY-MM-DD-<slug>/`)
 ```markdown
 # <deck title>
 Purpose / decision needed: <what the audience must decide or believe>
@@ -41,8 +41,8 @@ Language: <en/ro/de…>
 ## Run
 ```bash
 cd agents/deck-agent
-npm run deck -- --file ../../briefs/<brief>.md --format deck --pages 12 -i ../../briefs/<brief>/data.xlsx
-npm run deck -- --file ../../briefs/<brief>.md --theme strategy          # McKinsey-style method and look, in the brand
+npm run deck -- --file ../../workspace/briefs/<brief>.md --format deck --pages 12 -i ../../workspace/briefs/<brief>/data.xlsx
+npm run deck -- --file ../../workspace/briefs/<brief>.md --theme strategy          # McKinsey-style method and look, in the brand
 npm run deck -- --revise <job-id> "Turn page 6 into a waterfall and add an appendix"
 npm run rerender -- <job-id> --theme corporate --dpi 300      # restyle without Claude
 ```
@@ -54,7 +54,7 @@ npm run rerender -- <job-id> --theme corporate --dpi 300      # restyle without 
 | `-t, --theme` | `auto`, or one of the themes below |
 | `-n, --pages` | target page count |
 | `-i, --input <file>` | CSV/XLSX/JSON data, MD/TXT/PDF documents, images (repeatable; not `.docx`, convert to PDF/MD first) |
-| `--product <dir\|none>` | product folder (default: `$PRODUCT_DIR`, else `product/`) |
+| `--product <dir\|id\|none>` | product folder, or the id of one in `workspace/products/` (default: `$PRODUCT_DIR`, else `workspace/product/`) |
 | `--brand <brand.json>` | a brand file that overrides the product's brand (e.g. a client deck); the product context stays |
 | `--audience`, `--lang`, `--model`, `--budget` | audience, language, model, spend cap |
 | `--revise <job-id>` | change request on an existing job (the same session resumes) |
@@ -70,7 +70,7 @@ Themes (layout character; colours and fonts come from the product):
 wordmark and colours, and pass `--brand brands/<client>.json`. If the client has a product folder, pass `--product
 <its folder>` instead: that also switches the context.
 
-## Output: `out/<job-id>/`
+## Output: `workspace/out/deck/<job-id>/`
 - `presentation.pdf` or `report.pdf`;
 - `png/page-NN.png`;
 - `exhibits/` (single charts as PNG, handy for posts);
