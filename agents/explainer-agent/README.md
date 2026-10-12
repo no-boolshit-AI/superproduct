@@ -185,7 +185,7 @@ Without ElevenLabs, `--voice` uses HyperFrames' chain: **HeyGen** (`HEYGEN_API_K
 
 ## Safety
 
-Claude works only inside the job's project folder. Its shell runs HyperFrames commands, the bundled skill scripts, FFmpeg and basic file tools; network tools, other interpreters and scripts, nested shells, `.env` files and anything outside the job are refused with a reason. `hyperframes preview`, `publish`, `auth login`, `skills` and cloud rendering are off; nothing is uploaded or published. Frame workers can only read and write files. Spend stops at `--budget` / `MAX_BUDGET_USD`.
+Claude works only inside the job's project folder. Its shell runs HyperFrames commands, the bundled skill scripts, FFmpeg and basic file tools; network tools, other interpreters and scripts, nested shells, `.env` files and anything outside the job are refused with a reason. The guard compares paths with symlinks resolved, as Claude Code reports them, so an `OUTPUT_DIR` behind a symlink works and a link out of the project doesn't. `hyperframes preview`, `publish`, `auth login`, `skills` and cloud rendering are off; nothing is uploaded or published. Frame workers can only read and write files. Spend stops at `--budget` / `MAX_BUDGET_USD`.
 
 The picture and sound tools run inside the agent's own process: the OpenAI and ElevenLabs keys never reach Claude or its shell, the tools write only into the project's `assets/` folders, and a tool exists in a run only when its key is set and the job asked for that kind of media.
 
@@ -203,7 +203,7 @@ npm test
 
 Zero cost: a mock Claude API plays the agent, everything else is real.
 
-- `units`, `guard`, `product`: prompts, milestones, the shell and file policy, the brand kit (on `lib/fixtures/acme`)
+- `units`, `guard`, `product`: prompts, milestones, the shell and file policy (also on a job folder behind a symlink), the brand kit (on `lib/fixtures/acme`)
 - `session`: the prompt stream that stays open while background workers run, closes on delivery or a run limit, and nudges a stalled agent
 - `media`: the picture and sound tools against a mock of OpenAI's image API and ElevenLabs: the edit endpoint with the style and consistency references, sizes, transparency, the cache and the per-run limit, placeholders, narration with word timings, effects and music, and the workflow's own audio passes (`sync-durations`, `fetch-sfx`) keeping them
 - `pipeline`: the real HyperFrames workflow scripts, lint, check, snapshot and a render in the acme brand, without Claude

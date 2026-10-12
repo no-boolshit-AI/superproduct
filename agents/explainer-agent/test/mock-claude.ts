@@ -4,6 +4,7 @@
  * end to end at zero cost. The main agent is recognised by the deliver tool in its tool list, a frame worker by its
  * system prompt; anything else (small housekeeping calls) gets a plain text answer.
  */
+import fs from "node:fs";
 import http from "node:http";
 import type { AddressInfo } from "node:net";
 import path from "node:path";
@@ -59,9 +60,16 @@ interface Dirs {
   plugin: string;
 }
 
+/**
+ * The project as Claude Code shows the model its working directory: symlinks resolved (on macOS the temp folder is
+ * /private/var/…). The system prompt names it as OUTPUT_DIR spells it; the scripts use both.
+ */
+const realProject = (d: Dirs) => fs.realpathSync.native(d.project);
+
 function mainScript(d: Dirs): Block[][] {
   const S = (file: string) => path.join(d.plugin, "skills", "faceless-explainer", "scripts", file);
   const P = (rel: string) => path.join(d.project, rel);
+  const R = (rel: string) => path.join(realProject(d), rel);
   const worker = (id: string) =>
     tu("Agent", {
       description: `Frame ${id}`,
@@ -73,16 +81,16 @@ function mainScript(d: Dirs): Block[][] {
     // reading outside the working directory: the plugin's own files and the job folder above the project
     [
       tu("Read", { file_path: path.join(d.plugin, "skills", "faceless-explainer", "SKILL.md") }),
-      tu("Read", { file_path: path.join(path.dirname(d.project), "brief.md") }),
+      tu("Read", { file_path: path.join(path.dirname(realProject(d)), "brief.md") }),
       tu("Grep", { pattern: "frame-packets", path: path.join(d.plugin, "skills", "faceless-explainer"), output_mode: "files_with_matches" }),
       tu("Glob", { pattern: "*.md", path: path.join(d.plugin, "skills", "hyperframes-creative", "frame-presets", "cobalt-grid") }),
     ],
-    [tu("Write", { file_path: P("BRIEF.md"), content: BRIEF_MD })],
+    [tu("Write", { file_path: R("BRIEF.md"), content: BRIEF_MD })],
     [tu("Bash", { command: `node "${S("build-frame.mjs")}" --preset cobalt-grid --hyperframes .`, description: "Build frame.md from the cobalt-grid preset" })],
     [tu("Write", { file_path: P("STORYBOARD.md"), content: STORYBOARD })],
     [tu("mcp__explainer__generate_images", { images: [{ name: "Loaf", prompt: "A crusty sourdough loaf on a wooden board, seen from the side", kind: "cutout", aspect: "square" }] })],
     [tu("Bash", { command: `node "${S("audio.mjs")}" --script ./SCRIPT.md --storyboard ./STORYBOARD.md --hyperframes . --out ./audio_meta.json`, description: "Audio step (silent project)" })],
-    [tu("Bash", { command: `node "${path.join(d.plugin, "skills", "hyperframes", "scripts", "plugin-cli.mjs")}" --script "${S("frame-packets.mjs")}" --project "${d.project}" --storyboard "${P("STORYBOARD.md")}"`, description: "Frame packets" })],
+    [tu("Bash", { command: `node "${path.join(d.plugin, "skills", "hyperframes", "scripts", "plugin-cli.mjs")}" --script "${S("frame-packets.mjs")}" --project "${realProject(d)}" --storyboard "${P("STORYBOARD.md")}"`, description: "Frame packets" })],
     [worker("01-hook"), worker("02-answer")],
     // the turn ends while the workers run in the background, as a real run does: their notices (or the harness's
     // nudge) start the next turn
@@ -96,7 +104,7 @@ function mainScript(d: Dirs): Block[][] {
     [tu("Bash", { command: "curl -s https://example.com", description: "Fetch" }), tu("Bash", { command: "npx hyperframes preview", description: "Preview" }), tu("Read", { file_path: "/etc/hosts" })],
     [tu("Bash", { command: "npx --yes hyperframes@0.0.0-not-published --version && npx hyperframes lint", description: "Lint" })],
     [tu("Bash", { command: "hyperframes snapshot --at 1.2,3.2", description: "Contact sheet" })],
-    [tu("Read", { file_path: P("snapshots/contact-sheet.jpg") })],
+    [tu("Read", { file_path: R("snapshots/contact-sheet.jpg") })],
     [tu("Bash", { command: "hyperframes render --skill=faceless-explainer --quality draft --output renders/video.mp4", description: "Render", timeout: 600000 })],
     [tu("mcp__explainer__deliver", DELIVER)],
     [{ type: "text", text: "Delivered a 4-second explainer; one placeholder to fill: [X] hours." }],
@@ -105,7 +113,7 @@ function mainScript(d: Dirs): Block[][] {
 
 function revisionScript(d: Dirs): Block[][] {
   return [
-    [tu("Write", { file_path: path.join(d.project, "compositions/frames/02-answer.html"), content: answerFrame(NEUTRAL, "Slow yeast, better bread. We wait for you.") })],
+    [tu("Write", { file_path: path.join(realProject(d), "compositions/frames/02-answer.html"), content: answerFrame(NEUTRAL, "Slow yeast, better bread. We wait for you.") })],
     [tu("Bash", { command: "hyperframes lint && hyperframes render --skill=faceless-explainer --quality draft --output renders/video.mp4", description: "Re-render", timeout: 600000 })],
     [tu("mcp__explainer__deliver", { ...DELIVER, title: "Why sourdough takes time (v2)", placeholders: [] })],
     [{ type: "text", text: "Rewrote frame 2's line and rendered again." }],

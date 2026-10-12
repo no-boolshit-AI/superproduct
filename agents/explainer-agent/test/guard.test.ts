@@ -1,5 +1,6 @@
 /** The Bash and file policy: what a HyperFrames run needs is allowed, everything risky is refused with a reason. */
 import assert from "node:assert/strict";
+import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { checkBash, checkFileTool, localCli, parseShell, rootsFor } from "../src/guard.js";
@@ -129,4 +130,77 @@ assert.match(ft("Edit", { file_path: "/Users/someone/notes.md" }) ?? "", /outsid
 assert.equal(ft("Grep", { pattern: "data-start", path: "compositions" }), null);
 assert.match(ft("Glob", { pattern: "/etc/**" }) ?? "", /outside/);
 
-console.log(`✓ guard OK: ${allowed.length} allowed, ${denied.length} denied`);
+// real paths: Claude Code reports the paths it works on with symlinks resolved (relative ones against its real working
+// directory). A job in os.tmpdir(), which is behind a symlink on macOS:
+const tmpJob = fs.mkdtempSync(path.join(os.tmpdir(), "explainer-guard-"));
+fs.mkdirSync(path.join(tmpJob, "project"));
+const tr = rootsFor(tmpJob, path.join(tmpJob, "project"), plugin, agent);
+assert.ok(tr.tmp.includes(fs.realpathSync.native(os.tmpdir())), `temp roots are real paths: ${tr.tmp.join(", ")}`);
+assert.equal(checkFileTool("Write", { file_path: path.join(fs.realpathSync.native(path.join(tmpJob, "project")), "a.txt") }, tr), null);
+fs.rmSync(tmpJob, { recursive: true });
+
+// A job folder and plugin reached through a symlink (an OUTPUT_DIR behind one), on any OS: without the temp roots,
+// which would allow these test folders anyway
+const base = fs.realpathSync.native(fs.mkdtempSync(path.join(os.tmpdir(), "explainer-guard-")));
+const realJob = path.join(base, "real", "job");
+const realProject = path.join(realJob, "project");
+const realPlugin = path.join(base, "real", "plugin");
+fs.mkdirSync(path.join(realProject, "compositions"), { recursive: true });
+fs.mkdirSync(path.join(realPlugin, "skills", "demo", "scripts"), { recursive: true });
+fs.mkdirSync(path.join(base, "elsewhere"));
+fs.writeFileSync(path.join(realJob, ".env"), "");
+fs.symlinkSync(path.join(base, "real"), path.join(base, "link"));
+const linked = (...p: string[]) => path.join(base, "link", ...p);
+// links inside: out of the project, into the plugin, to a secrets file, and out of the plugin
+fs.symlinkSync(path.join(base, "elsewhere"), path.join(realProject, "out"));
+fs.symlinkSync(path.join(realPlugin, "skills"), path.join(realProject, "skills"));
+fs.symlinkSync(path.join(realJob, ".env"), path.join(realProject, "keys.txt"));
+fs.symlinkSync(path.join(base, "elsewhere"), path.join(realPlugin, "skills", "ext"));
+const lr = { ...rootsFor(linked("job"), linked("job", "project"), linked("plugin"), agent), tmp: [] };
+assert.deepEqual([lr.job, lr.project, lr.plugin], [realJob, realProject, realPlugin], "roots resolved through the link");
+const lf = (tool: string, input: Record<string, unknown>) => checkFileTool(tool, input, lr);
+const lb = (cmd: string) => checkBash(cmd, lr);
+
+// by the real path, through the link, or relative to the real working directory: allowed
+assert.equal(lf("Write", { file_path: path.join(realProject, "compositions", "01-hook.html") }), null, "a new file by its real path");
+assert.equal(lf("Edit", { file_path: linked("job", "project", "compositions", "01-hook.html") }), null, "the same file through the link");
+assert.equal(lf("Write", { file_path: "STORYBOARD.md" }), null);
+assert.equal(lf("Read", { file_path: path.join(realJob, "brief.md") }), null);
+assert.equal(lf("Grep", { pattern: "x", path: path.join(realPlugin, "skills") }), null);
+for (const cmd of [
+  `touch "${path.join(realProject, "compositions", "02-answer.html")}"`,
+  `cd "${realProject}" && ls compositions > "${linked("job", "project", "list.txt")}"`,
+  `node "${path.join(realPlugin, "skills", "demo", "scripts", "tool.mjs")}" --project "${realProject}"`,
+  `python3 "${linked("plugin", "skills", "demo", "scripts", "tool.py")}"`,
+  "cat skills/demo/scripts/tool.mjs",
+]) {
+  const res = lb(cmd);
+  assert.equal(res.ok, true, `should allow: ${cmd}\n  → ${res.reason}`);
+}
+
+// the job stays read-only and the plugin too, by any path; a link out of the project leads outside it
+assert.match(lf("Write", { file_path: path.join(realJob, "job.json") }) ?? "", /limited to the HyperFrames project/);
+assert.match(lf("Write", { file_path: path.join(realPlugin, "skills", "demo", "SKILL.md") }) ?? "", /read-only/);
+assert.match(lf("Write", { file_path: path.join(realProject, "out", "x.txt") }) ?? "", /limited to the HyperFrames project/, "a link out of the project");
+assert.match(lf("Read", { file_path: linked("job", "project", "out", "x.txt") }) ?? "", /outside/);
+assert.match(lf("Read", { file_path: "keys.txt" }) ?? "", /secrets/, "a link to a .env file");
+const linkDenied: [string, RegExp][] = [
+  ["cat out/x.txt", /outside/],
+  ["ls > out/list.txt", /redirect/],
+  ["cp compositions/01-hook.html out/", /outside/],
+  ["cd out && ls", /outside/],
+  ["cd skills && touch ../x.txt", /read-only/], // touch resolves .. from the link's target, in the plugin
+  [`rm -rf "${realProject}"`, /whole project/],
+  [`rm -rf "${linked("job", "project")}"`, /whole project/],
+  ["node out/tool.mjs", /isn't one/],
+  [`node "${path.join(realPlugin, "skills", "ext", "tool.mjs")}"`, /isn't one/],
+  [`python3 "${linked("plugin", "skills", "ext", "tool.py")}"`, /isn't one/],
+];
+for (const [cmd, re] of linkDenied) {
+  const res = lb(cmd);
+  assert.equal(res.ok, false, `should deny: ${cmd}`);
+  assert.match(res.reason ?? "", re, `reason for ${cmd}: ${res.reason}`);
+}
+fs.rmSync(base, { recursive: true });
+
+console.log(`✓ guard OK: ${allowed.length} allowed, ${denied.length} denied; real paths through a symlinked job (${linkDenied.length} link refusals)`);

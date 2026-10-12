@@ -110,6 +110,9 @@ const denied = events.filter((e) => e.type === "denied").map((e) => (e as { reas
 assert.ok(denied.some((r) => /network/.test(r)), `curl refused: ${denied.join(" | ")}`);
 assert.ok(denied.some((r) => /headless/.test(r)), "preview refused");
 assert.ok(denied.some((r) => /outside/.test(r)), "/etc/hosts refused");
+// the mock reaches the project and the job by their real paths and as OUTPUT_DIR spells them (on macOS os.tmpdir() is
+// behind a symlink)
+assert.deepEqual(denied.filter((r) => !/network|headless|\/etc\/hosts/.test(r)), [], "nothing else refused");
 const bashErrors = results("Bash").filter((r) => r.isError && !/curl|preview|network|headless/.test(r.text));
 assert.deepEqual(bashErrors.map((r) => r.text.slice(0, 300)), [], "HyperFrames commands succeed");
 

@@ -6,11 +6,15 @@
  *  - Bash: an allow-list of programs; hyperframes subcommands that open browsers/apps, publish, sign in or change
  *    versions are refused; node/python only run the bundled skill scripts; no network tools, nested shells or
  *    command substitution; every path argument and redirect must stay inside the roots above.
+ * Paths are compared with symlinks resolved on both sides, as Claude Code reports them: a link counts as where it
+ * points.
  * It is an accident guard for an agent working on our own briefs, not a sandbox against a hostile one.
  */
+import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
+/** Every root is a real path (see realPath). */
 export interface Roots {
   /** job folder: brief, records, project (read) */
   job: string;
@@ -22,11 +26,32 @@ export interface Roots {
   agent: string;
   /** temp dirs (read + write) */
   tmp: string[];
+  /** system fonts and /dev/null (read-only) */
+  system: string[];
 }
 
+/**
+ * p with symlinks resolved, through the real path of its nearest existing ancestor (the rest may not exist yet).
+ * Claude Code reports the paths it works on that way (relative ones against its real working directory; on macOS
+ * /var/folders/… is /private/var/folders/…); the native call also gives the on-disk letter case, as Claude Code's
+ * working directory has.
+ */
+export function realPath(p: string): string {
+  const missing: string[] = [];
+  for (let dir = path.resolve(p); ; dir = path.dirname(dir)) {
+    try {
+      return path.join(fs.realpathSync.native(dir), ...missing);
+    } catch {
+      if (path.dirname(dir) === dir) return path.resolve(p);
+      missing.unshift(path.basename(dir));
+    }
+  }
+}
+
+/** The roots, resolved once per job; each requested path is resolved per call. */
 export function rootsFor(jobDir: string, projectDir: string, pluginDir: string, agentDir: string): Roots {
-  const tmp = [...new Set([os.tmpdir(), "/tmp", "/private/tmp", "/var/folders"].map((p) => path.resolve(p)))];
-  return { job: path.resolve(jobDir), project: path.resolve(projectDir), plugin: path.resolve(pluginDir), agent: path.resolve(agentDir), tmp };
+  const tmp = [...new Set([os.tmpdir(), "/tmp", "/private/tmp", "/var/folders"].map(realPath))];
+  return { job: realPath(jobDir), project: realPath(projectDir), plugin: realPath(pluginDir), agent: realPath(agentDir), tmp, system: SYSTEM_READ.map(realPath) };
 }
 
 export const isInside = (p: string, root: string) => {
@@ -37,23 +62,30 @@ export const isInside = (p: string, root: string) => {
 const SYSTEM_READ = ["/usr/share/fonts", "/Library/Fonts", "/System/Library/Fonts", path.join(os.homedir(), "Library", "Fonts"), "/dev/null"];
 const DEV_WRITE = new Set(["/dev/null", "/dev/stdout", "/dev/stderr"]);
 
-const readRoots = (r: Roots) => [r.job, r.plugin, r.agent, ...r.tmp, ...SYSTEM_READ];
+const readRoots = (r: Roots) => [r.job, r.plugin, r.agent, ...r.tmp, ...r.system];
 const writeRoots = (r: Roots) => [r.project, ...r.tmp];
 
 const isSecret = (p: string) => /^\.env(\.|$)/.test(path.basename(p)) || /(^|\/)secrets?\.env$/.test(p);
 
+// Both take an absolute path as requested and compare its real path; a secrets file is refused by either name (a link
+// to a .env file, or a .env that links elsewhere).
 function checkReadPath(abs: string, r: Roots): string | null {
-  if (isSecret(abs)) return `${path.basename(abs)} holds secrets and is off limits`;
-  if (readRoots(r).some((root) => isInside(abs, root))) return null;
-  return `${abs} is outside the job folder and the HyperFrames skills`;
+  const real = realPath(abs);
+  const secret = [abs, real].find(isSecret);
+  if (secret) return `${path.basename(secret)} holds secrets and is off limits`;
+  if (readRoots(r).some((root) => isInside(real, root))) return null;
+  return `${real} is outside the job folder and the HyperFrames skills`;
 }
 
 function checkWritePath(abs: string, r: Roots): string | null {
+  // before resolving: on macOS /dev/stdout is a link to /dev/fd/1
   if (DEV_WRITE.has(abs)) return null;
-  if (isSecret(abs)) return `${path.basename(abs)} holds secrets and is off limits`;
-  if (isInside(abs, r.plugin)) return "the HyperFrames skills are read-only; write into the project instead";
-  if (writeRoots(r).some((root) => isInside(abs, root))) return null;
-  return `writing is limited to the HyperFrames project (${r.project}); ${abs} is outside it`;
+  const real = realPath(abs);
+  const secret = [abs, real].find(isSecret);
+  if (secret) return `${path.basename(secret)} holds secrets and is off limits`;
+  if (isInside(real, r.plugin)) return "the HyperFrames skills are read-only; write into the project instead";
+  if (writeRoots(r).some((root) => isInside(real, root))) return null;
+  return `writing is limited to the HyperFrames project (${r.project}); ${real} is outside it`;
 }
 
 const expandHome = (p: string) => (p === "~" ? os.homedir() : p.startsWith("~/") ? path.join(os.homedir(), p.slice(2)) : p);
@@ -312,6 +344,7 @@ export function checkBash(command: string, r: Roots, cwd = r.project): BashCheck
   let dir = cwd;
   let renders = false;
   const absOf = (w: string) => path.resolve(dir, expandHome(w));
+  const realOf = (w: string) => realPath(absOf(w));
   const read = (w: string) => (looksLikePath(w) ? checkReadPath(absOf(w), r) : null);
   const write = (w: string) => (looksLikePath(w) || !w.startsWith("-") ? checkWritePath(absOf(w), r) : null);
 
@@ -352,7 +385,8 @@ export function checkBash(command: string, r: Roots, cwd = r.project): BashCheck
         const abs = absOf(target);
         const why = checkReadPath(abs, r);
         if (why) return { ok: false, reason: `cd ${target}: ${why}` };
-        dir = abs;
+        // the directory the next programs resolve their relative paths in (and Claude Code's cwd after the command)
+        dir = realPath(abs);
         continue;
       }
       case "export":
@@ -385,12 +419,12 @@ export function checkBash(command: string, r: Roots, cwd = r.project): BashCheck
         const k = args.findIndex((a) => !a.startsWith("-"));
         const bad = args.slice(0, k < 0 ? args.length : k).find((a) => /^(-e|--eval|-p|--print|-i|--interactive|-r|--require|--import|--loader|--experimental-loader)$/.test(a));
         if (bad || k < 0) return { ok: false, reason: "node may only run the bundled HyperFrames skill scripts (no -e/--eval, no REPL)" };
-        const script = absOf(args[k]);
+        const script = realOf(args[k]);
         if (!isInside(script, r.plugin)) return { ok: false, reason: `node may only run scripts from the bundled HyperFrames skills (${r.plugin}); ${args[k]} isn't one` };
         const rest = args.slice(k + 1);
         if (/[/\\]plugin-cli\.mjs$/.test(script)) {
           if (rest[0] === "--script") {
-            const inner = rest[1] ? absOf(rest[1]) : "";
+            const inner = rest[1] ? realOf(rest[1]) : "";
             if (!inner || !isInside(inner, r.plugin)) return { ok: false, reason: "plugin-cli --script may only run bundled skill scripts" };
           } else hfArgs = rest;
         }
@@ -406,7 +440,7 @@ export function checkBash(command: string, r: Roots, cwd = r.project): BashCheck
         if (args.length === 1 && /^(--version|-V)$/.test(args[0])) break;
         const k = args.findIndex((a) => !a.startsWith("-"));
         if (k < 0 || args.slice(0, k).some((a) => a === "-c" || a === "-m")) return { ok: false, reason: "python may only run the bundled HyperFrames skill scripts" };
-        if (!isInside(absOf(args[k]), r.plugin)) return { ok: false, reason: `python may only run scripts from the bundled HyperFrames skills; ${args[k]} isn't one` };
+        if (!isInside(realOf(args[k]), r.plugin)) return { ok: false, reason: `python may only run scripts from the bundled HyperFrames skills; ${args[k]} isn't one` };
         break;
       }
       case "kill":
@@ -449,7 +483,7 @@ export function checkBash(command: string, r: Roots, cwd = r.project): BashCheck
         const why = checkWritePath(absOf(t), r);
         if (why) return { ok: false, reason: `${prog} ${t}: ${why}` };
       }
-      if (prog === "rm" && positional.some((t) => path.resolve(dir, expandHome(t)) === r.project)) return { ok: false, reason: "don't delete the whole project" };
+      if (prog === "rm" && positional.some((t) => realOf(t) === r.project)) return { ok: false, reason: "don't delete the whole project" };
       continue;
     }
     if (prog === "cp" || prog === "mv") {

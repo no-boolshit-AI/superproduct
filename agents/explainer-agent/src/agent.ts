@@ -5,7 +5,7 @@ import { DEFAULT_STYLE, FORMATS, NODE_BIN, OUTPUT_DIR, PLUGIN_DIR, QUALITIES, RO
 import type { Emit, JobEvent, JobOptions, JobRecord, StepId } from "./events.js";
 import { STEPS } from "./events.js";
 import { applyExtensions } from "./extensions.js";
-import { checkBash, checkFileTool, isInside, localCli, rootsFor, type Roots } from "./guard.js";
+import { checkBash, checkFileTool, isInside, localCli, realPath, rootsFor, type Roots } from "./guard.js";
 import { failureText, findVideo, hf, hfEnv, localizeGsap, preflight, type Preflight } from "./hyperframes.js";
 import { memoryStore } from "./media/common.js";
 import { soundSettings } from "./media/elevenlabs.js";
@@ -199,7 +199,9 @@ function buildHooks(roots: Roots, emit: Emit, act: HookActions): Options["hooks"
   const pre: HookCallback = async (input) => {
     if (input.hook_event_name !== "PreToolUse") return {};
     const ti = (input.tool_input ?? {}) as Record<string, unknown>;
-    const cwd = input.cwd && isInside(path.resolve(input.cwd), roots.job) ? path.resolve(input.cwd) : roots.project;
+    // Claude Code's working directory, compared as a real path like the roots
+    const real = input.cwd ? realPath(input.cwd) : "";
+    const cwd = real && isInside(real, roots.job) ? real : roots.project;
     if (input.tool_name === "Bash") {
       const refused = act.refuse?.(String(ti.command ?? ""));
       if (refused) {
