@@ -1,6 +1,6 @@
 /**
  * One-time machine setup (after npm install): checks Node and FFmpeg, lays explainer-agent's skill extensions
- * (vox-collage) over the bundled HyperFrames skills and checks them against the CLI, downloads the Chrome that
+ * (clear-explainer, editorial, vox-collage) over the bundled HyperFrames skills and checks them against the CLI, downloads the Chrome that
  * HyperFrames renders with, and reports what `hyperframes doctor` sees.
  *   npm run setup
  */

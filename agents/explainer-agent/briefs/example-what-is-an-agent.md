@@ -2,6 +2,7 @@
 
 Audience: founders and team leads at small companies who keep hearing "agents" and can't tell them from chatbots.
 
+The question: what does an AI agent do that a chatbot doesn't?
 The one message: an agent is a model that uses tools in a loop until a job is done, and you decide which tools it gets.
 
 Beats:

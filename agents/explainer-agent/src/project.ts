@@ -27,7 +27,7 @@ export interface ProjectSetup {
   staged: Staged[];
   /** project-relative logo paths that exist */
   logos: { light?: string; dark?: string; mark?: string };
-  /** project-relative folder of the style's kit (vox-collage: assets/collage), when the style has one */
+  /** project-relative folder of the style's kit (editorial: assets/editorial, vox-collage: assets/collage), when the style has one */
   kit?: string;
   /** the product's reference illustrations for generated pictures, copied to assets/style/ (project-relative) */
   styleRefs: string[];
@@ -198,13 +198,17 @@ export function stageInputs(projectDir: string, o: JobOptions): Staged[] {
   return out;
 }
 
-/** The BRIEF.md frontmatter values fixed by the job's options (the agent adds message, angle and the body). */
+/**
+ * The BRIEF.md frontmatter values fixed by the job's options (the agent adds message, angle and the body).
+ * `storyboard: yes` when the person reviews the plan and the sketch sheet before the build (the default); the review
+ * happens between runs, so the workflow's other questions are answered by the system prompt.
+ */
 export function lockedBriefFields(o: JobOptions, workflow: Workflow, voiceId?: string): Record<string, string> {
   const f = FORMATS[o.format];
   const fields: Record<string, string> = {
     workflow,
     flow: "automation",
-    storyboard: "no",
+    storyboard: o.storyboard === false ? "no" : "yes",
     destination: f.destination,
     aspect: `${f.width}x${f.height}`,
     language: o.language || "en",

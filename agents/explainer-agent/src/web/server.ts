@@ -1,7 +1,7 @@
 /**
  * Local web UI: http://localhost:5050 (127.0.0.1 only).
- * Start a video from a brief (+ files), follow the HyperFrames workflow step by step, watch the MP4, copy the post,
- * request revisions.
+ * Start a video from a brief (+ files), review its storyboard (approve it, or ask for changes), follow the HyperFrames
+ * workflow step by step, watch the MP4, copy the post, request revisions.
  */
 import "../env.js";
 import http from "node:http";
@@ -9,7 +9,7 @@ import { createReadStream, existsSync, mkdirSync, readdirSync, readFileSync, sta
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { describeAuth, jobDirFor, newJobId, readJob, runJob, type RunArgs } from "../agent.js";
-import { DEFAULT_FORMAT, DEFAULT_LENGTH_SEC, DEFAULT_STYLE, FORMATS, FORMAT_IDS, OUTPUT_DIR, STYLES, STYLE_SPECS, WORKFLOWS, cliVersion, isFormat, isQuality, isStyle, isWorkflow, pluginInfo } from "../config.js";
+import { DEFAULT_FORMAT, DEFAULT_LENGTH_SEC, DEFAULT_STORYBOARD, DEFAULT_STYLE, FORMATS, FORMAT_IDS, LOOKS, LOOK_LABELS, OUTPUT_DIR, STYLES, STYLE_SPECS, WORKFLOWS, cliVersion, isFormat, isQuality, isStyle, isWorkflow, lookOf, pluginInfo } from "../config.js";
 import type { JobEvent, JobOptions, JobRecord } from "../events.js";
 import { STEPS } from "../events.js";
 import { preflight, type Preflight } from "../hyperframes.js";
@@ -170,6 +170,9 @@ function optionsFrom(b: any): JobOptions {
   if (isQuality(b.quality)) o.quality = b.quality;
   if (isWorkflow(b.workflow)) o.workflow = b.workflow;
   if (isStyle(b.style)) o.style = b.style;
+  const look = lookOf(b.look);
+  if (look && look !== "auto") o.look = look;
+  o.storyboard = typeof b.storyboard === "boolean" ? b.storyboard : DEFAULT_STORYBOARD;
   if (b.url) {
     const url = String(b.url).trim();
     if (!/^https?:\/\/[^\s]+$/i.test(url)) throw new Error("The website must be an http(s) URL.");
@@ -188,11 +191,13 @@ async function meta() {
   let brand = "none";
   let product: string | null = null;
   let style = DEFAULT_STYLE;
+  let look: string = "auto";
   try {
     const p = resolveProduct(undefined);
     const kit = brandKit(p);
     brand = kit.source;
     style = kit.style ?? DEFAULT_STYLE;
+    look = kit.look ?? "auto";
     product = p?.name ?? null;
   } catch (e) {
     brand = `error: ${(e as Error).message}`;
@@ -215,8 +220,9 @@ async function meta() {
     formats: FORMAT_IDS.map((id) => ({ id, label: FORMATS[id].label })),
     workflows: WORKFLOWS,
     styles: STYLES.map((id) => ({ id, label: STYLE_SPECS[id].label })),
+    looks: LOOKS.map((id) => ({ id, label: LOOK_LABELS[id] })),
     steps: STEPS,
-    defaults: { format: DEFAULT_FORMAT, style, length: DEFAULT_LENGTH_SEC, budget: Number(process.env.MAX_BUDGET_USD || 15) },
+    defaults: { format: DEFAULT_FORMAT, style, look, storyboard: DEFAULT_STORYBOARD, length: DEFAULT_LENGTH_SEC, budget: Number(process.env.MAX_BUDGET_USD || 15) },
     maxBudget: MAX_UI_BUDGET,
   };
 }
@@ -234,7 +240,7 @@ function listJobs() {
       status: j.status,
       format: j.options.format,
       durationSec: j.durationSec,
-      thumb: j.contactSheet,
+      thumb: j.contactSheet ?? j.storyboard?.sheet,
       createdAt: j.createdAt,
       running: live.has(j.id) && j.status === "running",
     }));
@@ -273,10 +279,12 @@ export const server = http.createServer(async (req, res) => {
         const job = readJob(id);
         if (!job) return send(res, 404, { error: "Not found" });
         let post: string | null = null;
+        let storyboardReview: string | null = null;
         try {
           if (job.post) post = readFileSync(path.join(jobDirFor(job.id), job.post), "utf8");
+          if (job.storyboard?.review) storyboardReview = readFileSync(path.join(jobDirFor(job.id), job.storyboard.review), "utf8");
         } catch {}
-        return send(res, 200, { ...job, post, running: live.has(id) && job.status === "running" });
+        return send(res, 200, { ...job, post, storyboardReview, running: live.has(id) && job.status === "running" });
       }
       if (req.method === "GET" && action === "/events") {
         res.writeHead(200, { "Content-Type": "text/event-stream", "Cache-Control": "no-store", Connection: "keep-alive" });
@@ -313,6 +321,19 @@ export const server = http.createServer(async (req, res) => {
           return send(res, 400, { error: (e as Error).message });
         }
         start(id, { options: o, reviseJobId: id, instructions });
+        return send(res, 202, { id });
+      }
+      if (req.method === "POST" && action === "/approve") {
+        const b = await body(req);
+        const cur = live.get(id);
+        if (cur && !cur.events.some((e) => e.type === "done")) return send(res, 409, { error: "This job is still running." });
+        const job = readJob(id);
+        if (!job) return send(res, 404, { error: "Not found" });
+        if (job.status !== "storyboard") return send(res, 409, { error: "This job has no storyboard waiting for approval." });
+        const o: JobOptions = { brief: "approval", format: DEFAULT_FORMAT };
+        if (isQuality(b.quality)) o.quality = b.quality;
+        if (b.budget) o.maxBudgetUsd = Math.min(MAX_UI_BUDGET, Math.max(0.5, Number(b.budget) || 15));
+        start(id, { options: o, approveJobId: id, instructions: String(b.notes ?? "").trim() });
         return send(res, 202, { id });
       }
       if (req.method === "POST" && action === "/cancel") {

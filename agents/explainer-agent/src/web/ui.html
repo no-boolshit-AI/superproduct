@@ -33,7 +33,7 @@ button.ghost{background:transparent;color:var(--ink);border:1px solid var(--line
 .job:hover,.job.sel{border-color:var(--line);background:var(--bg)}.job img,.job .ph{width:72px;height:48px;object-fit:cover;border-radius:4px;background:var(--line);display:block}
 .job b{display:block;font-size:13px;line-height:1.3;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}.job small{color:var(--muted)}
 .badge{display:inline-block;border-radius:999px;padding:1px 8px;font-size:11.5px;font-weight:600;background:var(--line)}
-.badge.done{background:color-mix(in srgb,var(--ok) 18%,transparent);color:var(--ok)}.badge.error,.badge.cancelled{background:color-mix(in srgb,var(--err) 18%,transparent);color:var(--err)}.badge.running{background:color-mix(in srgb,var(--accent) 18%,transparent);color:var(--accent)}
+.badge.done{background:color-mix(in srgb,var(--ok) 18%,transparent);color:var(--ok)}.badge.storyboard{background:color-mix(in srgb,var(--warn) 20%,transparent);color:var(--warn)}.badge.error,.badge.cancelled{background:color-mix(in srgb,var(--err) 18%,transparent);color:var(--err)}.badge.running{background:color-mix(in srgb,var(--accent) 18%,transparent);color:var(--accent)}
 .top{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px}.top h2{margin:0;font-size:19px;letter-spacing:-.01em}
 .top .sp{flex:1}.cost{color:var(--muted);font-size:12.5px}.top a{color:var(--accent);font-weight:600;text-decoration:none;font-size:13px}
 .steps{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 16px}.steps span{font-size:12px;border:1px solid var(--line);border-radius:999px;padding:3px 10px;color:var(--muted)}
@@ -53,6 +53,14 @@ button.ghost{background:transparent;color:var(--ink);border:1px solid var(--line
 .log .t{color:var(--ink)}.log .e{color:var(--err)}.log .s{color:var(--ok)}
 .revise{margin-top:18px;display:grid;gap:8px;max-width:760px}.revise textarea{min-height:80px}
 .empty{color:var(--muted);padding:60px 0;text-align:center}
+.sb{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(300px,1fr);gap:20px;align-items:start}
+.sb .sheet img{width:100%;display:block;border-radius:6px;box-shadow:0 1px 6px rgba(0,0,0,.18);cursor:zoom-in}
+.sb .sheet .wait{border:1.5px dashed var(--line);border-radius:6px;color:var(--muted);padding:80px 20px;text-align:center}
+.review{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:12px 16px;max-height:76vh;overflow:auto}
+.review h1{font-size:17px;margin:4px 0 10px}.review h2{font-size:13px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin:16px 0 6px}
+.review h3{font-size:14px;margin:12px 0 4px}.review p{margin:6px 0}.review ul,.review ol{margin:4px 0;padding-left:20px}.review code{font-size:12px;background:var(--bg);padding:1px 4px;border-radius:4px}
+.decide{margin-top:16px;display:grid;grid-template-columns:1fr 1fr;gap:16px;max-width:1100px}.decide>div{display:grid;gap:8px}.decide textarea{min-height:70px}
+@media (max-width:1100px){.sb,.decide{grid-template-columns:1fr}}
 .summary{white-space:pre-wrap;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:12px 14px;margin:14px 0;max-width:900px}
 @media (max-width:1100px){.stage{grid-template-columns:1fr}}
 @media (max-width:860px){main{grid-template-columns:1fr}aside,section{max-height:none}}
@@ -76,7 +84,15 @@ button.ghost{background:transparent;color:var(--ink);border:1px solid var(--line
     <div><label for="format">Format</label><select id="format"></select></div>
     <div><label for="length">Length (seconds)</label><input id="length" type="number" min="3" max="300"></div>
   </div>
-  <div><label for="style">Style</label><select id="style"></select></div>
+  <div class="row">
+    <div><label for="style">Style</label><select id="style"></select></div>
+    <div id="lookRow"><label for="look">Look</label><select id="look"></select></div>
+  </div>
+  <div class="hint" id="styleHint" style="margin-top:-8px"></div>
+  <div>
+    <label class="check"><input type="checkbox" id="storyboard" checked> Review a storyboard before building</label>
+    <div class="hint">You approve the plan (frames, words, look) before pictures, sound and frames are made.</div>
+  </div>
   <div>
     <label class="check"><input type="checkbox" id="voice"> Narration (voiceover + captions)</label>
     <input id="voiceId" placeholder="Voice id (optional)" disabled style="margin-top:6px">
@@ -107,10 +123,10 @@ button.ghost{background:transparent;color:var(--ink);border:1px solid var(--line
     </div>
     <div id="urlRow" hidden><label for="url">Website</label><input id="url" placeholder="https://…"></div>
   </details>
-  <button id="go">Create video</button>
+  <button id="go">Create storyboard</button>
   <div><label>Videos</label><div class="jobs" id="jobs"></div></div>
 </aside>
-<section id="view"><div class="empty">Write a brief and press “Create video”, or open an earlier one.</div></section>
+<section id="view"><div class="empty">Write a brief and press “Create storyboard”, or open an earlier one.</div></section>
 </main>
 <script>
 const $ = (s, el = document) => el.querySelector(s);
@@ -137,6 +153,8 @@ drop.ondragleave = () => drop.classList.remove("over");
 drop.ondrop = (e) => { e.preventDefault(); drop.classList.remove("over"); files.push(...e.dataTransfer.files); renderFiles(); };
 $("#voice").onchange = () => { $("#voiceId").disabled = !$("#voice").checked; };
 $("#workflow").onchange = () => { $("#urlRow").hidden = $("#workflow").value !== "product-launch-video"; };
+$("#style").onchange = () => { $("#lookRow").style.visibility = $("#style").value === "editorial" ? "visible" : "hidden"; };
+$("#storyboard").onchange = () => { $("#go").textContent = $("#storyboard").checked ? "Create storyboard" : "Create video"; };
 
 async function loadMeta() {
   meta = await api("/api/meta");
@@ -145,7 +163,12 @@ async function loadMeta() {
   $("#meta").innerHTML = `Claude: ${esc(meta.auth)} · brand: ${esc(meta.brand)} · HyperFrames ${esc(hf.cli ?? "missing")} · ${hf.skillCount} skills${bad}`;
   $("#format").innerHTML = meta.formats.map((f) => `<option value="${f.id}" title="${esc(f.label)}"${f.id === meta.defaults.format ? " selected" : ""}>${esc(f.label.split(" · ")[0])}</option>`).join("");
   $("#workflow").innerHTML = meta.workflows.map((w) => `<option value="${w}">${esc(w)}</option>`).join("");
-  $("#style").innerHTML = meta.styles.map((s) => `<option value="${s.id}"${s.id === meta.defaults.style ? " selected" : ""}>${esc(s.label)}</option>`).join("");
+  $("#style").innerHTML = meta.styles.map((s) => `<option value="${s.id}" title="${esc(s.label)}"${s.id === meta.defaults.style ? " selected" : ""}>${esc(s.label.split(" · ")[0])}</option>`).join("");
+  $("#look").innerHTML = meta.looks.map((l) => `<option value="${l.id}" title="${esc(l.label)}"${l.id === meta.defaults.look ? " selected" : ""}>${esc(l.label.split(" · ")[0])}</option>`).join("");
+  const hint = () => { const st = meta.styles.find((x) => x.id === $("#style").value), lk = meta.looks.find((x) => x.id === $("#look").value); $("#styleHint").textContent = [st?.label.split(" · ")[1], $("#style").value === "editorial" ? lk?.label.split(" · ")[1] : ""].filter(Boolean).join(" — "); };
+  $("#style").addEventListener("change", hint); $("#look").addEventListener("change", hint); hint();
+  $("#style").onchange();
+  $("#storyboard").checked = meta.defaults.storyboard !== false; $("#storyboard").onchange();
   $("#length").value = meta.defaults.length;
   $("#budget").value = meta.defaults.budget; $("#budget").max = meta.maxBudget;
   $("#voiceHint").textContent = meta.voice ? `Voice: ${meta.voice}` : "No voice set up: add HEYGEN_API_KEY or ELEVENLABS_API_KEY to .env, or run npm run setup:voice";
@@ -168,7 +191,8 @@ $("#go").onclick = async () => {
     const r = await api("/api/jobs", { method: "POST", body: JSON.stringify({
       brief, format: $("#format").value, length: $("#length").value, voice: $("#voice").checked, voiceId: $("#voiceId").value,
       audience: $("#audience").value, language: $("#language").value, quality: $("#quality").value, budget: $("#budget").value,
-      workflow: $("#workflow").value, style: $("#style").value, url: $("#url").value, sfx: $("#sfx").checked,
+      workflow: $("#workflow").value, style: $("#style").value, look: $("#style").value === "editorial" ? $("#look").value : undefined,
+      storyboard: $("#storyboard").checked, url: $("#url").value, sfx: $("#sfx").checked,
       images: $("#images").checked, musicPrompt: $("#musicPrompt").disabled ? "" : $("#musicPrompt").value, files: await pack(files) }) });
     files = []; renderFiles();
     open(r.id);
@@ -194,7 +218,43 @@ function playerHtml() {
   const [w, h] = SIZES[job.options?.format] ?? [1080, 1350];
   const box = `aspect-ratio:${w}/${h};height:min(72vh,${Math.round((h / w) * 640)}px)`;
   if (job.video) return `<div class="player"><video controls playsinline preload="metadata" style="${box}" src="/out/${esc(job.id)}/${esc(job.video)}?t=${esc(job.updatedAt)}"></video></div>`;
-  return `<div class="player"><div class="wait" style="${box}">${job.running ? "Rendering when the frames are ready…" : "No video"}</div></div>`;
+  const waiting = job.phase === "storyboard" ? "Planning the storyboard…" : "Rendering when the frames are ready…";
+  return `<div class="player"><div class="wait" style="${box}">${job.running ? waiting : "No video"}</div></div>`;
+}
+
+/** A small, safe markdown → HTML for storyboard.md (headings, lists, bold, code; images left out). */
+function md(text) {
+  const inline = (t) => esc(t).replace(/`([^`]+)`/g, "<code>$1</code>").replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>").replace(/(^|\s)_([^_]+)_(?=\s|$)/g, "$1<i>$2</i>");
+  const out = []; let list = null;
+  const close = () => { if (list) { out.push(`</${list}>`); list = null; } };
+  for (const raw of String(text ?? "").split("\n")) {
+    const line = raw.trimEnd();
+    if (/^!\[/.test(line)) continue;
+    let m;
+    if ((m = line.match(/^(#{1,3})\s+(.*)$/))) { close(); out.push(`<h${m[1].length}>${inline(m[2])}</h${m[1].length}>`); }
+    else if ((m = line.match(/^\s*[-*]\s+(.*)$/))) { if (list !== "ul") { close(); out.push("<ul>"); list = "ul"; } out.push(`<li>${inline(m[1])}</li>`); }
+    else if ((m = line.match(/^\s*\d+\.\s+(.*)$/))) { if (list !== "ol") { close(); out.push("<ol>"); list = "ol"; } out.push(`<li>${inline(m[1])}</li>`); }
+    else if (!line.trim()) close();
+    else { close(); out.push(`<p>${inline(line)}</p>`); }
+  }
+  close();
+  return out.join("");
+}
+
+function storyboardHtml() {
+  const sb = job.storyboard ?? {};
+  const t = esc(job.updatedAt);
+  const sheet = sb.sheet
+    ? `<a href="/out/${esc(job.id)}/${esc(sb.html ?? sb.sheet)}" target="_blank" rel="noopener" title="Open the sheet"><img src="/out/${esc(job.id)}/${esc(sb.sheet)}?t=${t}" alt="Storyboard sheet"></a>`
+    : sb.html ? `<div class="wait">The sheet couldn't be photographed. <a href="/out/${esc(job.id)}/${esc(sb.html)}" target="_blank" rel="noopener">Open it</a></div>` : `<div class="wait">No sheet</div>`;
+  return `<div class="sb"><div class="sheet">${sheet}</div><div class="review">${md(job.storyboardReview)}</div></div>`;
+}
+
+function decideHtml() {
+  return `<div class="decide">
+    <div><label for="notes">Approve and build</label><textarea id="notes" placeholder="Optional last notes, e.g. 'Make frame 03 a bit shorter.'"></textarea><div><button id="approve">Approve &amp; build the video</button></div></div>
+    <div><label for="rev">Change the storyboard</label><textarea id="rev" placeholder="E.g. 'Use a kitchen analogy in frame 02; drop frame 05; make it 30 seconds.'"></textarea><div><button class="ghost" id="revgo">Revise storyboard</button></div></div>
+  </div>`;
 }
 
 function postHtml() {
@@ -216,6 +276,7 @@ function postHtml() {
 function render() {
   if (!job) return;
   const status = job.running ? "running" : job.status;
+  const review = !job.running && job.status === "storyboard";
   const links = job.video ? `<a href="/out/${esc(job.id)}/${esc(job.video)}?download">Download MP4</a>${job.post ? ` <a href="/out/${esc(job.id)}/post.md?download">post.md</a>` : ""}` : "";
   const dur = job.durationSec ? ` · ${job.width}×${job.height} · ${job.durationSec.toFixed(1)} s` : "";
   $("#view").innerHTML = `
@@ -224,13 +285,14 @@ function render() {
       ${job.running ? `<button class="ghost small" id="cancel">Cancel</button>` : ""}</div>
     ${stepsHtml()}
     ${job.error ? `<div class="summary" style="border-color:var(--err)">${esc(job.error)}</div>` : ""}
-    <div class="stage">${playerHtml()}${postHtml()}</div>
-    ${job.summary ? `<div class="summary">${esc(job.summary)}</div>` : ""}
-    ${!job.running && job.sessionId ? `<div class="revise"><label for="rev">Request changes</label><textarea id="rev" placeholder="E.g. 'Frame 3 is too fast; make the CTA bigger; use a darker ground.'"></textarea><div><button id="revgo">Revise video</button></div></div>` : ""}
+    ${review ? storyboardHtml() : `<div class="stage">${playerHtml()}${postHtml()}</div>`}
+    ${job.summary && !review ? `<div class="summary">${esc(job.summary)}</div>` : ""}
+    ${review ? decideHtml() : !job.running && job.sessionId ? `<div class="revise"><label for="rev">Request changes</label><textarea id="rev" placeholder="E.g. 'Frame 3 is too fast; make the CTA bigger; use a darker ground.'"></textarea><div><button id="revgo">Revise video</button></div></div>` : ""}
     <div class="log" id="log"></div>`;
   for (const line of logLines) appendLog(line, false);
   $("#cancel")?.addEventListener("click", () => api(`/api/jobs/${job.id}/cancel`, { method: "POST", body: "{}" }));
   $("#revgo")?.addEventListener("click", revise);
+  $("#approve")?.addEventListener("click", approve);
   for (const b of document.querySelectorAll("[data-copy]")) b.onclick = () => navigator.clipboard.writeText(sections(job.post)[b.dataset.copy] ?? "").then(() => { b.textContent = "Copied"; setTimeout(() => (b.textContent = "Copy"), 1200); });
 }
 
@@ -258,6 +320,7 @@ function onEvent(e) {
   else if (e.type === "denied") appendLog({ text: `✗ refused (${e.tool}): ${e.reason}`, cls: "e" });
   else if (e.type === "error") appendLog({ text: `! ${e.message}`, cls: "e" });
   else if (e.type === "video") { job.video = e.path; job.updatedAt = String(Date.now()); render(); }
+  else if (e.type === "storyboard") appendLog({ text: `■ Storyboard v${e.version} ready for review`, cls: "s" });
   else if (e.type === "cost") { job.costUsd = e.usd; }
   else if (e.type === "done") { es?.close(); es = null; refresh(); }
 }
@@ -278,6 +341,14 @@ async function open(id) {
   es = new EventSource(`/api/jobs/${id}/events`);
   es.onmessage = (m) => onEvent(JSON.parse(m.data));
   es.onerror = () => { es?.close(); es = null; };
+}
+
+async function approve() {
+  $("#approve").disabled = true;
+  try {
+    await api(`/api/jobs/${job.id}/approve`, { method: "POST", body: JSON.stringify({ notes: $("#notes").value.trim() }) });
+    open(job.id);
+  } catch (err) { alert(err.message); $("#approve").disabled = false; }
 }
 
 async function revise() {

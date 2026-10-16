@@ -1,6 +1,6 @@
 # Storyboard guide — vox-collage
 
-How to write `STORYBOARD.md` (Steps 3–4 of faceless-explainer) for the collage style. Everything in `faceless-explainer/references/visual-design.md` still applies; this adds the collage specifics.
+How to write `STORYBOARD.md` (Steps 3–4 of faceless-explainer) for the collage style. Everything in `faceless-explainer/references/visual-design.md` and `hyperframes:clear-explainer` (the teaching method, the storyboard sheet) still applies; this adds the collage specifics.
 
 ## Video direction (write once, at the top)
 
@@ -9,11 +9,15 @@ How to write `STORYBOARD.md` (Steps 3–4 of faceless-explainer) for the collage
 
 - **Look**: vox-collage. A paper board seen from above in every frame: paper ground + tone, grain over
   everything, cut paper with soft shadows. Palette by role from frame.md: board = paper, pieces = card /
-  newsprint, type + marker + the one contrast band = ink, the accent ONLY as a highlighter fill (one swipe
-  per frame) and the CTA sticker.
+  newsprint, type + marker + the one contrast band = ink, the accent as a highlighter fill (one swipe
+  per frame), the CTA sticker and the torn colour fields behind printed subjects.
+- **Teaching spine**: the question "[…]", the answer "[message]", main points ① […] ② […] ③ […];
+  the recurring picture: [the one metaphor that returns]; the recap frame: [n].
+- **Pictures**: [file → what it shows → treatment (B&W halftone / print colour)] — subjects printed in B&W
+  on torn colour fields; drawings (FIG.) for diagrams.
 - **Motion grammar**: pieces move on twos (slap, slide, tape, stamp, highlight, marker draw); held pieces
-  boil; the camera is smooth (slow push + parallax; station pans in frame N). Reveals in reading order on
-  the beat they are read; annotation after the read. Render 24 fps.
+  boil; the camera is smooth (slow push + parallax over three layers; station pans in frame N). Reveals in
+  reading order on the beat they are read; annotation after the read. Render 24 fps.
 - **Rhythm**: [which frames are busy, which are held reads — e.g. frame 2 is the held breather before
   the turn; the CTA holds ≥ 1.5 s].
 - **Openers**: hard cuts between frames; frame [k] and the CTA open with a tear-away.
@@ -44,7 +48,7 @@ Scene 3 (3.0–3.45s): highlighter swipe behind "changed".
 Scene 4 (3.45–5.5s): held read; boil; push continues.
 ```
 
-- `rules:` **always** starts with `collage-kit` — the frame worker's packet only contains the files named there (or mentioned in the block).
+- `rules:` **always** starts with `collage-kit` — the frame worker's packet only contains the files named there (or mentioned in the block). A frame with a printed picture cites `collage-halftone-figure` and names the picture's file, size and treatment.
 - Name kit moves in the Scene lines with the rules' words: *slaps in*, *slides in from the right*, *tear-away*, *highlighter swipe*, *a loop draws around*, *an arrow draws to*, *strike-through*, *tick draws*, *tape pins*, *stamp thumps*, *camera moves to station 2*, *pull back*, *lifts off*. Never px / eases / ms (the rules carry them).
 - Give each frame a `focal` piece and keep the piece count honest (3–8).
 
@@ -57,6 +61,18 @@ The text on screen carries the story, so timing is reading time:
 - One idea per frame; 3.5–6.5 s per frame; a 30 s video is 5–7 frames.
 - Put the verdict word in the highlighter; the eye goes there first.
 - The last frame holds ≥ 1.5 s after its final move.
+
+## A 45-second lesson for newcomers (example arc)
+
+| # | beat (clear-explainer) | blueprint | seconds |
+|---|---|---|---|
+| 1 | the question, over the subject | collage-portrait-field | 5.5 |
+| 2 | the everyday picture (analogy) | collage-figure-plate | 5.5 |
+| 3 | name it: the term + its plain meaning | collage-clipping-highlight | 5 |
+| 4 | how it works ① ② (one board, two stations) | collage-board-pan | 7 |
+| 5 | why it matters (one number, compared; `C.count`) | collage-poster-build | 5.5 |
+| 6 | recap: the main points, ticked | collage-checklist | 6 |
+| 7 | the call | collage-stamp-title-card | 4.5 |
 
 ## Choosing frames for a launch / announcement (example arc, 30 s)
 

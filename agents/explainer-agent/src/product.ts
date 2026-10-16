@@ -15,7 +15,7 @@
  */
 import path from "node:path";
 import { contrast, findProductDir, loadProduct, mix, readableOn, withContrast, type Product } from "../../../lib/product.mjs";
-import { ROOT, isStyle, type Style } from "./config.js";
+import { ROOT, isStyle, lookOf, type Look, type Style } from "./config.js";
 
 export type { Product };
 
@@ -30,8 +30,10 @@ export interface ExplainerProductConfig {
   fonts?: { display?: string; body?: string; accent?: string };
   /** HyperFrames frame preset to prefer (a folder name in hyperframes-creative/frame-presets). */
   preset?: string;
-  /** Default visual style for this product's videos ("default" | "vox-collage"); --style overrides it. */
+  /** Default visual style for this product's videos ("editorial" | "vox-collage" | "default"); --style overrides it. */
   style?: string;
+  /** The editorial style's look for this product ("colour-field" | "paper-data" | "documentary" | "duotone"); --look overrides it. */
+  look?: string;
   /** Narration voice id used when --voice is on and no --voice-id is given. */
   voice?: string;
   /** Which product.json → cta entry closes the video (default: primary). */
@@ -77,6 +79,8 @@ export interface BrandKit {
   preset?: string;
   /** the product's default style, when product.json names a known one */
   style?: Style;
+  /** the product's editorial look, when product.json names a known one */
+  look?: Look;
   voice?: string;
   notes?: string;
   imageStyle?: string;
@@ -168,6 +172,7 @@ export function brandKit(p: Product | null): BrandKit {
     onBand: ground === "dark" ? r.text : r.onInverse,
   };
   if (cfg.style && !isStyle(cfg.style)) warnings.push(`agents.explainer.style "${cfg.style}" isn't a style this agent knows; using the default`);
+  if (cfg.look && !lookOf(cfg.look)) warnings.push(`agents.explainer.look "${cfg.look}" isn't a look this agent knows; the agent picks one`);
   if (chroma(accent) <= 40) warnings.push(`the accent ${accent} is nearly grey, so HyperFrames keeps its preset accent; set agents.explainer.colors.accent`);
 
   const display = familyWithFiles(p, cfg.fonts?.display ?? typographyFamily(p, ["display", "heading", "title", "h1", "h2"]) ?? "sans");
@@ -222,6 +227,7 @@ export function brandKit(p: Product | null): BrandKit {
     cta: cta ? { label: cta.label, url: cta.url } : undefined,
     preset: cfg.preset,
     style: isStyle(cfg.style) ? cfg.style : undefined,
+    look: lookOf(cfg.look),
     voice: cfg.voice,
     notes: cfg.notes,
     imageStyle: p.imageStyle || undefined,

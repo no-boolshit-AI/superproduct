@@ -1,7 +1,7 @@
 /**
  * explainer-agent's own additions to the HyperFrames skills, kept in extensions/hyperframes/ and laid over the vendored
- * plugin (vendor/hyperframes/) so the agent loads them like the rest (hyperframes:vox-collage, collage-* rules and
- * blueprints, the vox-collage frame preset):
+ * plugin (vendor/hyperframes/) so the agent loads them like the rest (hyperframes:clear-explainer, hyperframes:editorial
+ * and hyperframes:vox-collage, their rules and blueprints, the editorial and vox-collage frame presets):
  *   - every file mirrors its path in the plugin and is copied as is;
  *   - <name>.append.md is appended to <name>.md between markers, once (rules/blueprints indexes, the style list).
  * applyExtensions() is idempotent. npm run setup and npm run skills:update apply it, and every job applies it before
@@ -87,7 +87,7 @@ function apply(pluginDir: string, extDir: string, write: boolean): ExtensionRepo
 }
 
 /**
- * Stage a style's kit into the project (vox-collage: the collage kit → assets/collage/), from the plugin copy of its
+ * Stage a style's kit into the project (editorial → assets/editorial/, vox-collage → assets/collage/), from the plugin copy of its
  * skill. Returns the project-relative folder, or null when the style has no kit.
  */
 export function stageStyleKit(projectDir: string, style: Style | undefined, pluginDir = PLUGIN_DIR): string | null {

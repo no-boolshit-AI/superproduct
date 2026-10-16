@@ -15,12 +15,17 @@ import type { SDKMessage, SDKUserMessage } from "@anthropic-ai/claude-agent-sdk"
 
 export const NUDGE =
   "Nobody can answer questions in this run, so don't wait for a reply: decide and continue. The video isn't delivered yet. Carry on from where the project stands (frames, assembly, checks, the render) and call mcp__explainer__deliver.";
+/** The nudge while the storyboard is being made: the turn may only end once it has been presented. */
+export const STORYBOARD_NUDGE =
+  "Nobody can answer questions in this run, so don't wait for a reply: decide and continue. The storyboard hasn't been presented yet. Finish STORYBOARD.md and the sketch sheet (storyboard.html) and call mcp__explainer__present_storyboard; the person reviews it after this run.";
 
 const user = (text: string): SDKUserMessage => ({ type: "user", message: { role: "user", content: text }, parent_tool_use_id: null });
 
 export interface TurnKeeperOptions {
-  /** true once the video has been handed over */
+  /** true once the run's result has been handed over (the video, or the storyboard) */
   delivered: () => boolean;
+  /** what a nudge says (default NUDGE) */
+  nudge?: string;
   maxNudges?: number;
   /** after a result with nothing running, how long to wait for the session to report idle before settling anyway */
   settleMs?: number;
@@ -106,7 +111,7 @@ export class TurnKeeper {
     this.nudges++;
     this.o.onNudge?.(this.nudges);
     this.turnEnded = false;
-    this.queue.push(user(NUDGE));
+    this.queue.push(user(this.o.nudge ?? NUDGE));
     this.wake?.();
   }
 

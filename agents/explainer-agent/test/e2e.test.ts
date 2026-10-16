@@ -32,31 +32,85 @@ if (!pf.browser.ok || !pf.ffmpeg) {
 }
 
 const t0 = Date.now();
-const events: JobEvent[] = [];
-const job = await runJob({
-  options: { brief: "# Why sourdough takes time\n\nFour seconds for home bakers: wild yeast is slow, so a loaf takes [X] hours.", format: "portrait", lengthSec: 4, quality: "draft" },
-  emit: (e) => events.push(e),
-});
-const took = ((Date.now() - t0) / 1000).toFixed(0);
-const P = path.join(job.dir, "project");
 const results = (name: string) => toolResults.filter((r) => r.name === name);
-const fail = () => `\n${JSON.stringify({ status: job.status, error: job.error, warnings: job.warnings, results: toolResults.filter((r) => r.isError).map((r) => `${r.name}: ${r.text.slice(0, 300)}`) }, null, 2)}`;
+const fail = (job: { status: string; error?: string; warnings?: string[] }) =>
+  `\n${JSON.stringify({ status: job.status, error: job.error, warnings: job.warnings, results: toolResults.filter((r) => r.isError).map((r) => `${r.name}: ${r.text.slice(0, 300)}`) }, null, 2)}`;
+const stepsOf = (events: JobEvent[]) => events.filter((e) => e.type === "step").map((e) => (e as { step: string }).step);
+const deniedOf = (events: JobEvent[]) => events.filter((e) => e.type === "denied").map((e) => (e as { reason: string }).reason);
 
-// ── the run ─────────────────────────────────────────────────────────────────
-assert.equal(job.status, "done", `job finished${fail()}`);
-assert.equal(job.video, "video.mp4");
-assert.equal(job.width, 1080);
-assert.equal(job.height, 1350);
-assert.ok(job.durationSec && Math.abs(job.durationSec - 4) < 0.6, `about 4 s (${job.durationSec})`);
-assert.deepEqual(job.placeholders, ["[X] hours — frame 1"]);
-assert.equal(job.frames, 2);
-assert.equal(job.product, null);
-assert.equal(job.workflow, "faceless-explainer");
-assert.equal(job.hyperframes?.skills, pluginInfo().version);
-assert.ok(job.sessionId, "session id saved for revisions");
-for (const f of ["video.mp4", "contact-sheet.jpg", "post.md", "brief.md", "job.json", "events.jsonl"]) assert.ok(fs.existsSync(path.join(job.dir, f)), f);
+// ── run 1: the storyboard, for review; nothing is built ──────────────────────
+const sbEvents: JobEvent[] = [];
+const job = await runJob({
+  options: { brief: "# Why sourdough takes time\n\nFour seconds for home bakers: wild yeast is slow, so a loaf takes [X] hours.", format: "portrait", lengthSec: 4, quality: "draft", style: "default" },
+  emit: (e) => sbEvents.push(e),
+});
+const P = path.join(job.dir, "project");
+assert.equal(job.status, "storyboard", `the run stops at the storyboard${fail(job)}`);
+assert.equal(job.phase, "storyboard");
+assert.equal(job.storyboard?.version, 1);
+assert.equal(job.storyboard?.frames, 2);
+assert.equal(job.storyboard?.review, "storyboard.md");
+assert.equal(job.storyboard?.sheet, "storyboard.jpg", "the sheet was photographed");
+assert.ok(job.sessionId, "session id saved for the approval");
+assert.equal(job.video, undefined);
+assert.deepEqual(stepsOf(sbEvents), ["setup", "brief", "design", "storyboard", "review"]);
+assert.match(fs.readFileSync(path.join(job.dir, "storyboard.md"), "utf8"), /# Why sourdough takes time — storyboard v1[\s\S]*\*\*Main points\*\*[\s\S]*## Placeholders to fill\n\n- \[X\] hours — frame 01/);
+assert.ok(fs.statSync(path.join(job.dir, "storyboard.jpg")).size > 5_000);
+assert.ok(!fs.existsSync(path.join(P, ".hyperframes", "frame-packets")), "no frame packets before approval");
+assert.ok(!fs.existsSync(path.join(P, "compositions", "frames", "01-hook.html")), "no frames before approval");
+const sbDenied = deniedOf(sbEvents);
+assert.equal(sbDenied.filter((r) => /isn't approved yet/.test(r)).length, 2, `frame packets and the worker refused before approval: ${sbDenied.join(" | ")}`);
+const presentResult = results("mcp__explainer__present_storyboard")[0];
+assert.ok(presentResult && !presentResult.isError && presentResult.images === 1, `present_storyboard returned the photographed sheet: ${presentResult?.text.slice(0, 200)}`);
+const sbRun = seen.runs.storyboard!;
+assert.ok(sbRun.tools.includes("mcp__explainer__present_storyboard"), "the storyboard run can present");
+for (const t of ["mcp__explainer__deliver", "mcp__explainer__generate_images"]) assert.ok(!sbRun.tools.includes(t), `no ${t} before approval`);
+assert.match(sbRun.system, /## Mode: storyboard first — this run stops at the storyboard/);
+assert.match(sbRun.system, /## Teaching: clear, for a newcomer/);
+assert.match(sbRun.system, /## Pictures: planned now, generated after approval/);
+assert.match(sbRun.prompt, /Plan an explainer video from this brief and present its storyboard for review/);
+assert.match(fs.readFileSync(path.join(P, "BRIEF.md"), "utf8"), /storyboard: yes/);
+console.log(`  ✓ storyboard v1: ${job.storyboard?.frames} frames, sheet photographed, build steps refused (${((Date.now() - t0) / 1000).toFixed(0)} s)`);
+
+// ── run 2: a change to the storyboard ─────────────────────────────────────────
+const t1 = Date.now();
+const sb2Events: JobEvent[] = [];
+const sb2 = await runJob({ options: { brief: "", format: "portrait" }, reviseJobId: job.id, instructions: "Say 'good sourdough' in the hook.", emit: (e) => sb2Events.push(e) });
+assert.equal(sb2.status, "storyboard", `still waiting for approval${fail(sb2)}`);
+assert.equal(sb2.storyboard?.version, 2);
+assert.deepEqual(sb2.revisions.map((r) => r.kind), ["storyboard"]);
+assert.deepEqual(stepsOf(sb2Events), ["setup", "storyboard", "review"]);
+assert.match(fs.readFileSync(path.join(job.dir, "storyboard.md"), "utf8"), /storyboard v2[\s\S]*Why does good sourdough take \[X\] hours\?/);
+assert.match(seen.runs["storyboard-revision"]!.prompt, /reviewed storyboard v1 and asks for these changes[\s\S]*good sourdough[\s\S]*v2/);
+console.log(`  ✓ storyboard v2 after a change (${((Date.now() - t1) / 1000).toFixed(0)} s)`);
+
+// ── run 3: approved, with a last note → the video ─────────────────────────────
+const t2 = Date.now();
+const events: JobEvent[] = [];
+const built = await runJob({ options: { brief: "", format: "portrait" }, approveJobId: job.id, instructions: "Keep it calm.", emit: (e) => events.push(e) });
+const took = ((Date.now() - t2) / 1000).toFixed(0);
+assert.equal(built.status, "done", `job finished${fail(built)}`);
+assert.equal(built.phase, "video");
+assert.ok(built.storyboard?.approvedAt, "the approval is recorded");
+assert.equal(built.storyboard?.approvalNotes, "Keep it calm.");
+assert.equal(built.video, "video.mp4");
+assert.equal(built.width, 1080);
+assert.equal(built.height, 1350);
+assert.ok(built.durationSec && Math.abs(built.durationSec - 4) < 0.6, `about 4 s (${built.durationSec})`);
+assert.deepEqual(built.placeholders, ["[X] hours — frame 1"]);
+assert.equal(built.frames, 2);
+assert.equal(built.product, null);
+assert.equal(built.workflow, "faceless-explainer");
+assert.equal(built.hyperframes?.skills, pluginInfo().version);
+for (const f of ["video.mp4", "contact-sheet.jpg", "post.md", "brief.md", "job.json", "events.jsonl", "storyboard.md", "storyboard.jpg"]) assert.ok(fs.existsSync(path.join(job.dir, f)), f);
 assert.match(fs.readFileSync(path.join(job.dir, "post.md"), "utf8"), /## Placeholders to fill\n\n- \[X\] hours — frame 1/);
 assert.deepEqual(readJob(job.id)?.status, "done");
+const buildRun = seen.runs.build!;
+assert.match(buildRun.prompt, /Storyboard v2 of this explainer video was approved with last notes[\s\S]*<brief>[\s\S]*Keep it calm/);
+assert.notEqual(built.sessionId, job.sessionId, "the build runs in a fresh session (a resumed one keeps the storyboard's system prompt)");
+assert.match(buildRun.system, /## Mode: build the approved storyboard, rendering pre-approved/);
+for (const t of ["mcp__explainer__deliver", "mcp__explainer__generate_images"]) assert.ok(buildRun.tools.includes(t), `the build has ${t}`);
+assert.ok(!buildRun.tools.includes("mcp__explainer__present_storyboard"), "no presenting once approved");
 
 // the agent ended its turn while the workers ran; the run carried on to delivery (the prompt stays open, session.ts)
 assert.ok(seen.turnEndedMidJob, "the mock's main agent ended a turn mid-job");
@@ -64,9 +118,9 @@ assert.ok(events.filter((e) => e.type === "cost").length >= 2, "more than one tu
 const nudges = events.filter((e) => e.type === "status" && /asking it to carry on/.test((e as { message: string }).message)).length;
 console.log(`  · turn ended mid-job; continued by ${nudges ? `${nudges} nudge(s)` : "the workers' notices"}`);
 
-// every milestone, in order
-const steps = events.filter((e) => e.type === "step").map((e) => (e as { step: string }).step);
-assert.deepEqual(steps, ["setup", "brief", "design", "storyboard", "images", "audio", "frames", "assemble", "checks", "snapshot", "render", "deliver"]);
+// every milestone of the build, in order; the record keeps the storyboard's too
+assert.deepEqual(stepsOf(events), ["setup", "approved", "images", "audio", "frames", "assemble", "checks", "snapshot", "render", "deliver"]);
+assert.deepEqual(built.steps, ["setup", "brief", "design", "storyboard", "review", "approved", "images", "audio", "frames", "assemble", "checks", "snapshot", "render", "deliver"]);
 
 // the picture tool through the real SDK: a placeholder PNG, its preview in the result, the record, the post note
 const pics = results("mcp__explainer__generate_images")[0];
@@ -74,7 +128,7 @@ assert.ok(pics && !pics.isError, `generate_images: ${pics?.text.slice(0, 300)}`)
 assert.match(pics.text, /`assets\/images\/loaf\.png` · 1024×1024 · transparent cut-out · new · placeholder/);
 assert.ok(pics.images > 0, "the preview reached the model as an image");
 assert.ok(fs.existsSync(path.join(P, "assets", "images", "loaf.png")));
-assert.deepEqual(job.media?.map((m) => [m.type, m.file, m.provider]), [["image", "assets/images/loaf.png", "mock"]]);
+assert.deepEqual(built.media?.map((m) => [m.type, m.file, m.provider]), [["image", "assets/images/loaf.png", "mock"]]);
 assert.match(fs.readFileSync(path.join(job.dir, "post.md"), "utf8"), /## Generated media\n\n- 1 PLACEHOLDER picture/);
 
 // the model saw the HyperFrames plugin: every bundled skill offered, the router skill loads, no web tools
@@ -93,27 +147,25 @@ if (process.env.DEBUG_E2E) {
   console.log(`Skill result: ${skill?.text.slice(0, 400)}`);
 }
 assert.ok(skill && !skill.isError, `Skill hyperframes:hyperframes loaded: ${skill?.text.slice(0, 200)}`);
-for (const t of ["Bash", "Read", "Write", "Edit", "Skill", "Agent", "mcp__explainer__deliver", "mcp__explainer__generate_images"]) assert.ok(seen.mainToolNames.includes(t), `main agent has ${t}`);
-for (const t of ["WebFetch", "WebSearch", "AskUserQuestion", "mcp__explainer__generate_narration", "mcp__explainer__generate_music", "mcp__explainer__generate_sfx"]) assert.ok(!seen.mainToolNames.includes(t), `main agent lacks ${t}`);
-assert.match(seen.systemPrompt, /## Pictures: generated in the house style[\s\S]*placeholders \(IMAGE_MOCK=1/);
-assert.match(seen.systemPrompt, /Mode: autonomous, rendering pre-approved/);
-assert.match(seen.systemPrompt, /No product folder/);
+for (const t of ["Bash", "Read", "Write", "Edit", "Skill", "Agent"]) assert.ok(seen.mainToolNames.includes(t), `main agent has ${t}`);
+for (const t of ["WebFetch", "WebSearch", "AskUserQuestion", "mcp__explainer__generate_narration", "mcp__explainer__generate_music", "mcp__explainer__generate_sfx"]) assert.ok(!buildRun.tools.includes(t), `main agent lacks ${t}`);
+assert.match(buildRun.system, /## Pictures: generated in the house style[\s\S]*placeholders \(IMAGE_MOCK=1/);
+assert.match(buildRun.system, /No product folder/);
 
 // frame workers: two of them, file tools only, each wrote its frame
 assert.ok(seen.workerRequests >= 4, `two workers, two turns each (${seen.workerRequests})`);
 assert.ok(!seen.workerToolNames.includes("Bash") && seen.workerToolNames.includes("Write"), `worker tools: ${seen.workerToolNames.join(", ")}`);
+assert.match(seen.workerSystem, /confirmed sketch at `storyboard\.html#frame-NN`/);
 for (const f of ["01-hook", "02-answer"]) assert.ok(fs.existsSync(path.join(P, "compositions", "frames", `${f}.html`)), f);
-assert.ok(results("Agent").every((r) => !r.isError), "workers returned");
+assert.ok(results("Agent").filter((r) => !/isn't approved yet/.test(r.text)).every((r) => !r.isError), "workers returned");
 
 // the guard: network, preview and reads outside the job are refused with a reason; everything else ran
-const denied = events.filter((e) => e.type === "denied").map((e) => (e as { reason: string }).reason);
+const denied = deniedOf(events);
 assert.ok(denied.some((r) => /network/.test(r)), `curl refused: ${denied.join(" | ")}`);
 assert.ok(denied.some((r) => /headless/.test(r)), "preview refused");
 assert.ok(denied.some((r) => /outside/.test(r)), "/etc/hosts refused");
-// the mock reaches the project and the job by their real paths and as OUTPUT_DIR spells them (on macOS os.tmpdir() is
-// behind a symlink)
 assert.deepEqual(denied.filter((r) => !/network|headless|\/etc\/hosts/.test(r)), [], "nothing else refused");
-const bashErrors = results("Bash").filter((r) => r.isError && !/curl|preview|network|headless/.test(r.text));
+const bashErrors = results("Bash").filter((r) => r.isError && !/curl|preview|network|headless|isn't approved yet/.test(r.text));
 assert.deepEqual(bashErrors.map((r) => r.text.slice(0, 300)), [], "HyperFrames commands succeed");
 
 // npx and the plugin launcher run the installed CLI (an unpublished version would fail on npm)
@@ -122,26 +174,27 @@ assert.ok(fs.existsSync(path.join(P, ".hyperframes", "frame-packets", "_role.md"
 // GSAP localized before Chrome loaded the compositions; the agent looked at the contact sheet
 assert.ok(fs.existsSync(path.join(P, "vendor", "gsap", "gsap.min.js")));
 assert.ok(results("Read").some((r) => r.images > 0), "the contact sheet reached the model as an image");
-console.log(`  ✓ run: ${job.durationSec} s video, ${steps.length} steps, ${denied.length} refusals (${took} s)`);
+console.log(`  ✓ approved → built: ${built.durationSec} s video, ${stepsOf(events).length} steps, ${denied.length} refusals (${took} s)`);
 
-// ── a revision resumes the same session and project ────────────────────────
+// ── run 4: a revision of the video resumes the same session and project ─────
 const before = fs.statSync(path.join(job.dir, "video.mp4")).mtimeMs;
-const t1 = Date.now();
-const firstCost = job.costUsd ?? 0;
+const t3 = Date.now();
+const firstCost = built.costUsd ?? 0;
 const revEvents: JobEvent[] = [];
 const rev = await runJob({ options: { brief: "", format: "portrait" }, reviseJobId: job.id, instructions: "Make frame 2's line warmer.", emit: (e) => revEvents.push(e) });
-assert.equal(rev.status, "done", `revision finished${fail()}`);
-assert.equal(rev.revisions.length, 1);
+assert.equal(rev.status, "done", `revision finished${fail(rev)}`);
+assert.deepEqual(rev.revisions.map((r) => r.kind), ["storyboard", "video"]);
 assert.equal(rev.title, "Why sourdough takes time (v2)");
 assert.deepEqual(rev.placeholders, []);
 assert.ok(fs.statSync(path.join(job.dir, "video.mp4")).mtimeMs > before, "video re-rendered");
 assert.match(fs.readFileSync(path.join(P, "compositions", "frames", "02-answer.html"), "utf8"), /Slow yeast, better bread/);
 assert.equal(rev.options.quality, "draft", "the revision keeps the job's options");
-assert.deepEqual(revEvents.filter((e) => e.type === "step").map((e) => (e as { step: string }).step), ["setup", "frames", "checks", "render", "deliver"], "the revision shows its own progress");
-assert.equal(rev.steps?.length, 12, "the record keeps every milestone");
+assert.deepEqual(stepsOf(revEvents), ["setup", "frames", "checks", "render", "deliver"], "the revision shows its own progress");
+assert.equal(rev.steps?.length, 14, "the record keeps every milestone");
 assert.equal(rev.media?.length, 1, "the media record survives a revision");
 assert.ok((rev.costUsd ?? 0) > firstCost, `revision cost adds up (${firstCost} → ${rev.costUsd})`);
-console.log(`  ✓ revision (${((Date.now() - t1) / 1000).toFixed(0)} s)`);
+await assert.rejects(runJob({ options: { brief: "", format: "portrait" }, approveJobId: job.id }), /approved already/, "a delivered job can't be approved again");
+console.log(`  ✓ video revision (${((Date.now() - t3) / 1000).toFixed(0)} s)`);
 
 mock.close();
 if (process.env.KEEP_TEST_OUTPUT) console.log(`  kept ${process.env.OUTPUT_DIR}`);

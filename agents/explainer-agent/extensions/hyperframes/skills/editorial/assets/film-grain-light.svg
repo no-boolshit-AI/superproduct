@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="360" height="360" viewBox="0 0 360 360">
+  <!-- Film grain for dark grounds: fine light specks with alpha, tileable. Overlay with mix-blend-mode: screen. -->
+  <filter id="g" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB">
+    <feTurbulence type="fractalNoise" baseFrequency="1.05" numOctaves="2" seed="19" stitchTiles="stitch"/>
+    <feColorMatrix type="matrix" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 0.96  1.5 0 0 0 -0.7"/>
+  </filter>
+  <rect width="360" height="360" filter="url(#g)"/>
+</svg>

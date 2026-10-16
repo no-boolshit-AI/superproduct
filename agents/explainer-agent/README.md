@@ -1,9 +1,12 @@
 # Explainer Agent
 
-Brief in, explainer video out. A Claude Agent SDK agent that drives [HyperFrames](https://github.com/heygen-com/hyperframes) (HeyGen's open-source HTML → video framework) headless: Claude plans the story, designs every frame as an animated HTML composition, checks the result and renders an MP4, in the product folder's brand.
+Brief in, storyboard for review, explainer video out. A Claude Agent SDK agent that drives [HyperFrames](https://github.com/heygen-com/hyperframes) (HeyGen's open-source HTML → video framework) headless: Claude plans a lesson, shows you its storyboard, and once you approve it designs every frame as an animated HTML composition, checks the result and renders an MP4, in the product folder's brand.
 
-- **All HyperFrames skills bundled**: the whole HyperFrames Claude Code plugin (21 skills, `vendor/hyperframes`, pinned to the CLI version) is loaded into the agent, plus the agent's own **vox-collage** skill. It runs HyperFrames' own `faceless-explainer` workflow end to end, with one frame-worker subagent per frame.
-- **Styles**: `--style vox-collage` makes a Vox-style paper collage — torn strips and cut-outs slapped on in stop-motion, highlighter and marker annotations, tape, a rubber stamp, halftone drawings, grain.
+- **Clear for a newcomer**: every video is written like the clearest TED-Ed lessons — one question the viewer would ask, at most three main points, plain words with every term defined, an everyday analogy before the rule, one idea and one picture per frame, a recap before the call to action (the agent's `clear-explainer` skill).
+- **Storyboard first**: the first run stops at a storyboard — `storyboard.md` (the question, the main points, every frame's point, words and motion, the pictures to make, the open questions) and `storyboard.jpg` (a sketch sheet: each frame's key moment in the real fonts and colours). `--revise` changes it, `--approve` builds the video. Nothing is generated or rendered before approval. `--no-storyboard` builds in one go.
+- **All HyperFrames skills bundled**: the whole HyperFrames Claude Code plugin (21 skills, `vendor/hyperframes`, pinned to the CLI version) is loaded into the agent, plus the agent's own **clear-explainer**, **editorial** and **vox-collage** skills. It runs HyperFrames' own `faceless-explainer` workflow, with one frame-worker subagent per frame.
+- **Cinematic by default** — the **editorial** style: subjects printed as black-and-white halftone cut-outs on flat fields of the brand's colour, giant type behind the subject, line-art callouts (rings, orbits, connector lines with dots, "/ Name" tags, a spotlight that dims everything but the subject), a slow camera push with parallax between depth layers on every frame, living film grain and a lens vignette. Its look adapts to the brand: colour-field, paper-data, documentary or duotone.
+- **Other styles**: `--style vox-collage` makes a Vox-style paper collage — torn strips and cut-outs slapped on in stop-motion, the pictures printed as halftone cut-outs on torn colour fields, highlighter and marker annotations, tape, a rubber stamp, grain. `--style default` lets HyperFrames pick one of its own presets.
 - **4:5 portrait by default** (1080×1350, the LinkedIn/Instagram feed); `--format vertical | square | landscape` for 9:16, 1:1 and 16:9.
 - **Generated pictures in the house style**: with `OPENAI_API_KEY`, Claude has a tool that makes characters, props, illustrated interface elements and scenes with OpenAI `gpt-image-2.5-flare`, in the product's illustration style (a style description plus reference illustrations sent with every request), as transparent cut-outs ready to animate.
 - **Silent by default**: the on-screen text carries the story. `--voice` adds narration and word-timed captions; with `ELEVENLABS_API_KEY` Claude voices it with ElevenLabs (exact word timings), composes a music bed (`--music auto`) and designs sound effects for the video (`--sfx`). Without it, HyperFrames' own chain narrates (HeyGen → the free local Kokoro voice).
@@ -17,7 +20,8 @@ cd agents/explainer-agent
 npm install
 npm run setup            # checks Node 22+ and FFmpeg, downloads the Chrome HyperFrames renders with
 cp .env.example .env     # optional: OPENAI_API_KEY (pictures), ELEVENLABS_API_KEY (voice, music, effects), budget
-npm run video -- --file briefs/example-what-is-an-agent.md
+npm run video -- --file briefs/example-what-is-an-agent.md   # → a storyboard to review
+npm run video -- --approve <job-id>                          # → the video
 npm run web              # http://localhost:5050
 ```
 
@@ -29,13 +33,15 @@ Needs Node 22 or newer, FFmpeg (`brew install ffmpeg`) and Claude: your Claude C
 
 | File | What it is |
 |---|---|
-| `video.mp4` | The explainer (H.264) |
+| `storyboard.md` | The plan for review: the question, the answer, the main points, the look and why, every frame (its point, the words on screen, the narration, what you see, how it moves), the pictures to make, the placeholders, the agent's questions, and the commands to approve or change it |
+| `storyboard.jpg` | The sketch sheet, photographed: one static cell per frame at the video's aspect, in the real fonts and colours, grey placeholders for pictures not made yet (the page itself: `project/storyboard.html`) |
+| `video.mp4` | The explainer (H.264), after approval |
 | `contact-sheet.jpg` | One still per frame, for a quick look or a review |
 | `post.md` | Title, LinkedIn caption, alt text, every placeholder left on screen (e.g. `[X] hours — frame 2`), and what was generated with which model (for an AI-content label where a platform asks for one) |
-| `job.json` | The run record: options, product and brand used, HyperFrames versions, steps, cost, warnings, and `media`: every generated picture and sound with its model and prompt |
+| `job.json` | The run record: status (`storyboard` while it waits for approval, then `done`), options, product and brand used, HyperFrames versions, steps, the storyboard (version, approval and notes), cost, warnings, and `media`: every generated picture and sound with its model and prompt |
 | `events.jsonl` | Everything that happened, line by line |
 | `brief.md`, `product-context.md` | What Claude was given |
-| `project/` | The HyperFrames project: `BRIEF.md`, `STORYBOARD.md`, `frame.md`, `compositions/frames/*.html`, `renders/`; generated media in `assets/images/`, `assets/voice/`, `assets/sfx/`, `assets/music/`, the style references in `assets/style/` |
+| `project/` | The HyperFrames project: `BRIEF.md`, `STORYBOARD.md`, `storyboard.html`, `frame.md`, `compositions/frames/*.html`, `renders/`; the style's kit in `assets/editorial/` or `assets/collage/`; generated media in `assets/images/`, `assets/voice/`, `assets/sfx/`, `assets/music/`, the style references in `assets/style/` |
 
 The project is a normal HyperFrames project: open it in HyperFrames Studio (`npx hyperframes preview` in `project/`) to tweak a frame by hand, then `npm run render -- <job-id>`.
 
@@ -46,7 +52,10 @@ npm run video -- [brief text] [options]
 
   -f, --file <path>        Brief from a file (combined with inline text if both are given)
       --format <f>         portrait (default, 1080×1350) | vertical (1080×1920) | square | landscape (1920×1080)
-      --style <s>          default | vox-collage (paper collage, stop-motion, rendered at 24 fps)
+      --style <s>          editorial (default: cinematic cut-outs on brand colour) | vox-collage (paper collage,
+                           stop-motion, rendered at 24 fps) | default (a HyperFrames preset)
+      --look <l>           editorial: auto (default: from the brand) | colour-field | paper-data | documentary | duotone
+      --no-storyboard      Build in one go, without the storyboard review (STORYBOARD=off in .env: always)
   -l, --length <seconds>   Target length (default 45; explainers work best at 30–90)
       --voice              Narration + word-timed captions (ElevenLabs when its key is set)
       --voice-id <id>      Voice for --voice (ElevenLabs voice id, HeyGen voice id, or Kokoro e.g. am_michael)
@@ -63,29 +72,33 @@ npm run video -- [brief text] [options]
                            then the workspace's product/)
   -m, --model <id>         Claude model
       --budget <usd>       Stop when Claude spend reaches this (default $MAX_BUDGET_USD)
-      --revise <job-id>    Revise a job; the brief text is the change request
+      --approve <job-id>   Build the video from the job's storyboard; the brief text, if any, is a last note
+      --revise <job-id>    Change a job (its storyboard before approval, else its video); the text is the request
   -q, --quiet              Only milestones and the summary
 ```
 
 Examples:
 
 ```bash
-npm run video -- "Explain what RAG is to a finance team in 45 seconds" --audience "CFOs"
-npm run video -- --file ../../workspace/briefs/launch.md -i screenshots/app.png -i notes.pdf --format vertical --voice
+npm run video -- "Explain what RAG is to a finance team in 45 seconds" --audience "CFOs"     # → storyboard
+npm run video -- --revise 20261007-141500-what-is-rag "Use a library analogy in frame 2"          # → storyboard v2
+npm run video -- --approve 20261007-141500-what-is-rag "Keep it under 40 seconds"                 # → the video
+npm run video -- --file ../../workspace/briefs/launch.md --look documentary
+npm run video -- --file ../../workspace/briefs/launch.md -i screenshots/app.png -i notes.pdf --format vertical --voice --no-storyboard
 npm run video -- --file ../../workspace/briefs/launch.md --style vox-collage --length 30
 npm run video -- --file ../../workspace/briefs/launch.md --voice --music "dry upright piano, brushed snare, 90 bpm" --sfx
 npm run video -- --revise 20261007-141500-what-an-ai-agent-actually-is "Frame 3 is too fast; make the CTA bigger"
 npm run render -- 20261007-141500-what-an-ai-agent-actually-is --format mov   # ProRes 4444 for DaVinci Resolve
 ```
 
-A good brief says what the video should explain, to whom, the one message, and what the viewer should do afterwards. Facts come only from the brief, your files and the product folder: anything missing appears on screen as a visible placeholder and is listed in `post.md`.
+A good brief says what the video should explain, to whom, the question it answers, the one message, and what the viewer should do afterwards. Facts come only from the brief, your files and the product folder: anything missing appears on screen as a visible placeholder and is listed in `storyboard.md` and `post.md`.
 
 ## How it works
 
-1. **Before Claude starts** (no cost if something is missing): the product folder, Node, FFmpeg, Chrome, the bundled skills against the CLI version, and the voice provider when `--voice` is on are checked. Then `hyperframes init` creates `<job>/project` in the output folder, and the brief, your files and the brand are put where the workflow expects them.
-2. **Claude runs the HyperFrames workflow** (Agent SDK with the Claude Code preset, the HyperFrames plugin, the `faceless-explainer` workflow in autonomous mode):
-   `BRIEF.md` → `build-frame.mjs` (a HyperFrames frame preset remixed onto the brand) → `STORYBOARD.md` (+ `SCRIPT.md` with `--voice`) → pictures (`generate_images`) → audio (`generate_narration`, music, effects) → frame packets → **one frame-worker subagent per frame, in parallel** → `assemble-index` → transitions → `hyperframes lint`, `check` and `snapshot` → Claude looks at the contact sheet and fixes what's broken → `hyperframes render` → `deliver` (video, contact sheet, caption, alt text, placeholders).
-3. **The harness around it**: appends the Brand kit to `frame.md` after build-frame, serves GSAP from a local copy (renders work offline), maps `npx hyperframes@…` and the plugin launcher onto the installed CLI, keeps the session open while the frame workers run in the background (their completion notices start Claude's next turn; a turn that ends with nothing running and nothing delivered gets up to two nudges to carry on), records every step, and — if Claude stops early — renders and collects what exists.
+1. **Before Claude starts** (no cost if something is missing): the product folder, Node, FFmpeg, Chrome, the bundled skills against the CLI version, and the voice provider when `--voice` is on are checked. Then `hyperframes init` creates `<job>/project` in the output folder, and the brief, your files, the brand and the style's kit are put where the workflow expects them.
+2. **The storyboard** (the first run; Agent SDK with the Claude Code preset, the HyperFrames plugin, the `faceless-explainer` workflow with `storyboard: yes`): `BRIEF.md` → `build-frame.mjs` (the style's preset remixed onto the brand) → `STORYBOARD.md` written with `clear-explainer` (+ `SCRIPT.md` with `--voice`), the Video direction and each frame's blueprint and pictures → the sketch sheet `storyboard.html` → `present_storyboard`, which photographs the sheet with HyperFrames' Chrome, writes `storyboard.md` and shows the photo to Claude to check. The run ends with status `storyboard`. Until approval the harness refuses the build: no pictures, sound, frame packets, frame workers, assembly or renders. `--revise` resumes the same session for a new version.
+3. **The video** (`--approve`, or the first run with `--no-storyboard`): a fresh session (a resumed one would keep the storyboard's instructions) starts from the approved files and the brief → pictures (`generate_images`) → audio (`generate_narration`, music, effects) → the time-coded shot sequences on the approved layouts → frame packets → **one frame-worker subagent per frame, in parallel**, each keeping its confirmed sketch → `assemble-index` → transitions → `hyperframes lint`, `check` and `snapshot` → Claude looks at the contact sheet and fixes what's broken → `hyperframes render` → `deliver` (video, contact sheet, caption, alt text, placeholders).
+4. **The harness around it**: appends the Brand kit to `frame.md` after build-frame, serves GSAP from a local copy (renders work offline), maps `npx hyperframes@…` and the plugin launcher onto the installed CLI, keeps the session open while the frame workers run in the background (their completion notices start Claude's next turn; a turn that ends with nothing running and nothing delivered or presented gets up to two nudges to carry on), records every step, and — if Claude stops early — collects the storyboard from `STORYBOARD.md`, or renders and collects the video that exists.
 
 ## The HyperFrames skills
 
@@ -93,6 +106,7 @@ A good brief says what the video should explain, to whom, the one message, and w
 
 - workflows: `faceless-explainer` (the default here), `general-video`, `motion-graphics`, `product-launch-video`, `music-to-video`, `pr-to-video`, `slideshow`, `embedded-captions`, `talking-head-recut`, `remotion-to-hyperframes`
 - domain skills: `hyperframes` (the router), `hyperframes-core`, `hyperframes-animation`, `hyperframes-keyframes`, `hyperframes-creative` (frame presets, typography, design), `hyperframes-cli`, `hyperframes-audio`, `hyperframes-registry` (~400 blocks and components), `hyperframes-studio`, `media-use` (TTS, music, SFX, captions), `figma`
+- explainer-agent's own (`extensions/hyperframes`): `clear-explainer` (the teaching method and the storyboard sheet), `editorial` (the default style), `vox-collage`
 
 ```bash
 npm run skills:check              # list them (◆ = explainer-agent's own) and check them against the CLI
@@ -104,21 +118,45 @@ The helper scripts inside the skills (`animation-map`, `contrast-report`) run on
 
 ## Styles
 
+The style comes from `--style`, else `product.json → agents.explainer.style`, else `DEFAULT_STYLE` (editorial).
+
+**editorial** (the default) — the cinematic magazine explainer, after the clearest Vox, Economist and TED-Ed pieces. Every frame is one clear picture of one idea: the subject (a generated picture or a supplied photo) **printed in black and white** — halftone dots, a white cut-out rim, a soft shadow, by HyperFrames' own media treatments — on a **flat field of the brand's colour** (full ground, arch, circle, organic silhouette, a text-filled silhouette of the key words), with **giant type behind it**; thin **line-art** guides the eye after the content is read: rings and orbits with markers, connector lines with dots and "/ Name" tags, a **spotlight** that dims everything but the subject, one highlighted word; **the camera always moves** — a slow push with three depth layers drifting apart, reframes and zoom-throughs where the story moves — under living film grain and a lens vignette. Numbers count up with their comparison; charts are quiet and sourced.
+
+The look follows the brand (frame.md's Brand kit and the product's art direction) unless `--look` or `agents.explainer.look` pins it:
+
+| look | for |
+|---|---|
+| `colour-field` | a bold accent that reads as a big field: B&W cut-outs on the brand colour |
+| `paper-data` | calm brands whose accent is for small touches: paper, a drafting grid, colour as type, bars and one band |
+| `documentary` | dark ground, B&W photos, spotlight, connectors, name tags |
+| `duotone` | everything in one brand hue: the brand dot screen on its light tint |
+
+What it adds to the bundled skills (`extensions/hyperframes/`):
+
+| | |
+|---|---|
+| `hyperframes:editorial` | the style's method: the looks, what to choose at each workflow step, the blueprint menu, the picture treatments, pitfalls; `references/storyboard-guide.md` |
+| `editorial/assets/` → `project/assets/editorial/` | the kit: `editorial.js` (seek-safe helpers: push with parallax, camera, rise, pop, grow/wipe, draw, highlight, spotlight focus, connect, count-up, live grain; SVG shapes, text fills, line-art generators) and the grain, vignette, grid and halftone textures |
+| `hyperframes-animation/rules/editorial-*.md` | 6 rules (the kit, camera, cut-outs, callouts, graphics, transitions), inlined into the frame workers' packets |
+| `hyperframes-animation/blueprints/editorial-*.md` | 11 shot blueprints: subject on a field, type behind, spotlight & link, crowd, metaphor scene, orbit, hub, compare, chart, recap, closing card |
+| `hyperframes-creative/frame-presets/editorial/` | the frame preset (the colour field maps to the brand accent exactly) and its documentary caption skin |
+
 `--style default` lets the workflow pick one of HyperFrames' frame presets for the topic. `--style vox-collage` fixes the look:
 
-**vox-collage** — an explainer made of paper, in the manner of Vox's collage videos. Every frame is a paper board seen from above: torn headline strips, tags, tickets, clippings and ink-and-halftone "FIG." drawings are slapped on by hand, moving **on twos** (12 poses a second, rendered at 24 fps) and "boiling" while held, under a slow, smooth camera push; then a hand annotates them: one highlighter swipe on the verdict word, marker loops, arrows, strike-throughs and ticks, tape, a rubber stamp. Paper colours, ink and one accent (the brand accent as a highlighter fill).
+**vox-collage** — an explainer made of paper, in the manner of Vox's collage videos. Every frame is a paper board seen from above: torn headline strips, tags, tickets, clippings, the generated pictures printed as B&W halftone cut-outs on torn sheets of the brand colour, giant type behind them and ink-and-halftone "FIG." drawings are slapped on by hand, moving **on twos** (12 poses a second, rendered at 24 fps) and "boiling" while held, under a slow, smooth camera push across three depth layers; then a hand annotates them: one highlighter swipe on the verdict word, marker loops, arrows, strike-throughs and ticks, tape, a rubber stamp. Paper colours, ink and one accent (the brand accent as a highlighter fill and the torn colour fields).
 
 What it adds to the bundled skills (`extensions/hyperframes/`, laid over `vendor/hyperframes/` by `npm run setup`, `npm run skills:update` and every job):
 
 | | |
 |---|---|
 | `hyperframes:vox-collage` | the style's method: what to choose at each workflow step, the look and motion rules, pitfalls |
-| `vox-collage/assets/` → `project/assets/collage/` | the collage kit: `collage.js` (seek-safe helpers: slap, slide, lift, ransom, tape, stamp, highlight, marker draw, boil, drift, camera, tear-away; torn paper as SVG) and the paper, grain, grid, halftone and stamp textures |
-| `hyperframes-animation/rules/collage-*.md` | 7 motion rules (the kit, cut-out slap, paper tear, stop-motion boil, camera, marker and stationery, halftone figures), inlined into the frame workers' packets |
-| `hyperframes-animation/blueprints/collage-*.md` | 6 shot blueprints: poster build, figure plate, clipping + highlight, board pan, checklist, stamp title card |
+| `vox-collage/assets/` → `project/assets/collage/` | the collage kit: `collage.js` (seek-safe helpers: slap, slide, lift, ransom, tape, stamp, highlight, marker draw, boil, drift, camera, tear-away, count-up on twos; torn paper as SVG) and the paper, grain, grid, halftone and stamp textures |
+| `hyperframes-animation/rules/collage-*.md` | 7 motion rules (the kit, cut-out slap, paper tear, stop-motion boil, camera, marker and stationery, halftone figures and printed pictures), inlined into the frame workers' packets |
+| `hyperframes-animation/blueprints/collage-*.md` | 7 shot blueprints: poster build, portrait on a torn colour field, figure plate, clipping + highlight, board pan, checklist (the recap), stamp title card |
+| `hyperframes:clear-explainer` | (every style) the teaching method — one question, ≤ 3 main points, plain words, concrete before abstract, a recap — and the storyboard sheet |
 | `hyperframes-creative/frame-presets/vox-collage/` | the frame preset (remixed onto the brand by build-frame) and its paper-strip caption skin |
 
-A product can make it its default: `"style": "vox-collage"` in `product.json → agents.explainer`.
+A product sets its default with `"style"` (and for editorial `"look"`) in `product.json → agents.explainer`.
 
 ## Brand
 
@@ -138,7 +176,8 @@ Optional settings in `product.json`:
     "colors": { "accent": "{color.brand}" },
     "fonts": { "display": "sans", "accent": "serif" },
     "preset": "cobalt-grid",
-    "style": "default",
+    "style": "editorial",
+    "look": "paper-data",
     "voice": "am_michael",
     "cta": "primary",
     "notes": "The accent is a highlighter: never a full background.",
@@ -161,7 +200,7 @@ With `OPENAI_API_KEY` in `.env`, Claude gets `generate_images`: pictures for the
 - **Kinds**: `cutout` (one subject on a transparent ground: a character, a prop, anything that moves), `ui` (an interface element — a window, card, button, dial, inbox, chat bubble — drawn in the house style, transparent, with blank areas where HTML text goes), `illustration` (a small complete picture on paper white) and `scene` (a full-bleed background at the video's canvas). Sizes: `square`, `portrait`, `landscape`, `wide`, `tall`, `frame` or any `WIDTHxHEIGHT` in multiples of 16.
 - **Consistency**: a picture can name earlier ones in `refs` (the same character in every frame).
 - **No text in pictures**: words, numbers, labels and logos are set in HTML; the prompt rules out real people, brands and logos.
-- Claude plans the pictures in the storyboard, generates them before the frame workers start (up to 8 per call, in parallel), sees a preview of each, and regenerates what's off. Workers place the PNGs and animate them like any layer; in `vox-collage` they become cut-out clippings on the paper board.
+- Claude plans the pictures in the storyboard (they appear on the sheet as labelled placeholders and in `storyboard.md` → Pictures to make), generates them after approval, before the frame workers start (up to 8 per call, in parallel), sees a preview of each, and regenerates what's off. Workers place the PNGs and animate them like any layer; in `editorial` and `vox-collage` they are printed at render time (B&W halftone, a brand dot screen, two-ink or print colour, by HyperFrames' media treatments) as cut-outs on colour fields and clippings.
 - `MAX_IMAGES` (24) caps new pictures per run; an identical request reuses the earlier file for free (also across revisions). `OPENAI_IMAGE_QUALITY`: `high` by default (`low` … `max`). `IMAGE_MOCK=1` makes placeholders instead (layout runs, tests), and `post.md` flags them. `--no-images` turns the tool off for one run.
 
 For example, a product whose hero is a 1950s commercial illustration (ink and gouache with print texture, muted blues and browns) sets that style in `product.json → agents.explainer.images` with the hero image as its reference, and every picture follows it.
@@ -180,18 +219,19 @@ Without ElevenLabs, `--voice` uses HyperFrames' chain: **HeyGen** (`HEYGEN_API_K
 
 ## Revisions and re-renders
 
-- `--revise <job-id> "what to change"` (or **Request changes** in the web UI) resumes the same Claude session on the same project: only the frames that change are rebuilt, then it renders and delivers again.
+- While the storyboard waits for approval, `--revise <job-id> "what to change"` (or **Revise storyboard** in the web UI) resumes the storyboard session: only the frames named change, and a new version is presented. `--approve <job-id> ["last note"]` (or **Approve & build the video**) builds it.
+- After delivery, `--revise <job-id> "what to change"` (or **Request changes** in the web UI) resumes the build session on the same project: only the frames that change are rebuilt, then it renders and delivers again.
 - `npm run render -- <job-id> [--format mp4|mov|webm] [--quality draft|standard|high]` renders again without Claude. `mov` is ProRes 4444 with alpha, ready for DaVinci Resolve.
 
 ## Safety
 
-Claude works only inside the job's project folder. Its shell runs HyperFrames commands, the bundled skill scripts, FFmpeg and basic file tools; network tools, other interpreters and scripts, nested shells, `.env` files and anything outside the job are refused with a reason. The guard compares paths with symlinks resolved, as Claude Code reports them, so an `OUTPUT_DIR` behind a symlink works and a link out of the project doesn't. `hyperframes preview`, `publish`, `auth login`, `skills` and cloud rendering are off; nothing is uploaded or published. Frame workers can only read and write files. Spend stops at `--budget` / `MAX_BUDGET_USD`.
+Claude works only inside the job's project folder. Before the storyboard is approved, the build steps (frame packets, frame workers, audio, assembly, transitions, captions, snapshots, renders) are refused and the media tools don't exist yet, so nothing is paid for outside Claude before you approve. Its shell runs HyperFrames commands, the bundled skill scripts, FFmpeg and basic file tools; network tools, other interpreters and scripts, nested shells, `.env` files and anything outside the job are refused with a reason. The guard compares paths with symlinks resolved, as Claude Code reports them, so an `OUTPUT_DIR` behind a symlink works and a link out of the project doesn't. `hyperframes preview`, `publish`, `auth login`, `skills` and cloud rendering are off; nothing is uploaded or published. Frame workers can only read and write files. Spend stops at `--budget` / `MAX_BUDGET_USD`.
 
 The picture and sound tools run inside the agent's own process: the OpenAI and ElevenLabs keys never reach Claude or its shell, the tools write only into the project's `assets/` folders, and a tool exists in a run only when its key is set and the job asked for that kind of media.
 
 ## Cost and time
 
-Expect 10–30 minutes for a 45-second explainer (more with narration). Claude usage grows with the number of frames (the main agent plus one worker per frame) and depends on the model; `--budget` / `MAX_BUDGET_USD` stops a run at the cap, and `FRAME_WORKER_MODEL` can put the workers on a cheaper model. The render itself is local and free; `--quality draft` renders fastest.
+Expect 3–8 minutes for the storyboard and 10–30 more for a 45-second explainer after approval (more with narration). Claude usage grows with the number of frames (the main agent plus one worker per frame) and depends on the model; `--budget` / `MAX_BUDGET_USD` stops a run at the cap, and `FRAME_WORKER_MODEL` can put the workers on a cheaper model. The render itself is local and free; `--quality draft` renders fastest.
 
 Pictures and sound are billed by OpenAI and ElevenLabs on their own accounts, outside `--budget`: a typical 60-second video uses 4–10 pictures (capped by `MAX_IMAGES`), one narration line per frame, a music bed and a handful of effects. `job.json → media` and the CLI's summary say what was made.
 
@@ -203,13 +243,15 @@ npm test
 
 Zero cost: a mock Claude API plays the agent, everything else is real.
 
-- `units`, `guard`, `product`: prompts, milestones, the shell and file policy (also on a job folder behind a symlink), the brand kit (on `lib/fixtures/acme`)
-- `session`: the prompt stream that stays open while background workers run, closes on delivery or a run limit, and nudges a stalled agent
+- `units`, `guard`, `product`: prompts (each phase, the teaching section, the styles and looks), milestones, the shell and file policy (also on a job folder behind a symlink), the pre-approval refusals, the brand kit (on `lib/fixtures/acme`)
+- `session`: the prompt stream that stays open while background workers run, closes on delivery (or the presented storyboard) or a run limit, and nudges a stalled agent
+- `storyboard`: `present_storyboard` (the only tool before approval): its refusals, the review document, the sheet photographed with HyperFrames' Chrome and shown to the agent, the safety net from `STORYBOARD.md`
 - `media`: the picture and sound tools against a mock of OpenAI's image API and ElevenLabs: the edit endpoint with the style and consistency references, sizes, transparency, the cache and the per-run limit, placeholders, narration with word timings, effects and music, and the workflow's own audio passes (`sync-durations`, `fetch-sfx`) keeping them
 - `pipeline`: the real HyperFrames workflow scripts, lint, check, snapshot and a render in the acme brand, without Claude
 - `collage`: the skill extensions (idempotent overlay), the collage kit, `--style vox-collage` setup, the vox-collage preset remix, frame packets with the collage rules, a collage frame through lint, check, snapshot and a 24 fps render
-- `e2e`: the real Agent SDK and Claude Code with the bundled plugin, the picture tool (placeholders), both frame workers in the background with the main turn ending while they run, refusals, a render, delivery and a revision
-- `web`: the UI server: guards, a job from the UI, video byte ranges, a revision
+- `editorial`: the editorial kit, `--style editorial` setup, the preset remix (the field becomes the brand accent), packets with the editorial rules, two frames on the kit through lint, check, snapshot and a render, with pixel checks that the halftone reaches the second frame, the spotlight dims and the vignette darkens the corners
+- `e2e`: the real Agent SDK and Claude Code with the bundled plugin across a whole job: the storyboard (build steps refused, the sheet photographed), a storyboard change, the approval in a fresh session, the picture tool (placeholders), both frame workers in the background with the main turn ending while they run, refusals, a render, delivery and a video revision
+- `web`: the UI server: guards, a job from the UI to its storyboard, the approval, video byte ranges, a revision
 
 The render tests need `npm run setup` first (they skip with a warning when Chrome is missing).
 
@@ -222,4 +264,7 @@ The render tests need `npm run setup` first (they skip with a warning when Chrom
 - **"ElevenLabs 402/403"**: the plan doesn't include that feature, or its credits are used up.
 - **"HyperFrames skills are X but the CLI is Y"**: `npm run skills:update -- Y`, or `npm install` after a `package.json` change.
 - **A frame looks wrong**: `--revise <job-id> "frame 3: …"`; the frame ids are in `post.md` and the contact sheet.
+- **"has no storyboard waiting for approval"**: the job was built already (use `--revise`) or made with `--no-storyboard`.
+- **No `storyboard.jpg`**: HyperFrames' Chrome isn't there (`npm run setup`); `storyboard.md` still has everything and `project/storyboard.html` opens in a browser.
+- **A picture stays in colour in the editorial or collage style**: its `<img>` must be its own clip (`class="clip"` with `data-start`, `data-duration`, `data-track-index`) and nothing above it hidden with `visibility` at load — the kits' rules say so; ask for it with `--revise`.
 - **The brand font doesn't show**: the product folder must ship the font files (`brand.fonts[].files` in `product.json`).

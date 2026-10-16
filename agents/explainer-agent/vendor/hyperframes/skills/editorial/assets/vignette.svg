@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="1000" viewBox="0 0 1000 1000" preserveAspectRatio="none">
+  <!-- Lens vignette: clear centre, darkened edges. Stretch it over the frame (background-size 100% 100%) and overlay
+       with mix-blend-mode: multiply. An image, not a CSS radial-gradient (HyperFrames counts those as heavy overlays). -->
+  <defs>
+    <radialGradient id="v" cx="50%" cy="46%" r="72%">
+      <stop offset="0.52" stop-color="#000" stop-opacity="0"/>
+      <stop offset="0.82" stop-color="#000" stop-opacity="0.28"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0.62"/>
+    </radialGradient>
+  </defs>
+  <rect width="1000" height="1000" fill="url(#v)"/>
+</svg>

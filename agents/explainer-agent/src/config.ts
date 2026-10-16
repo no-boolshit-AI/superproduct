@@ -40,10 +40,11 @@ export type Workflow = (typeof WORKFLOWS)[number];
 export const isWorkflow = (s: unknown): s is Workflow => typeof s === "string" && (WORKFLOWS as readonly string[]).includes(s);
 
 /**
- * Visual styles on top of a workflow. "default" lets the workflow pick a frame preset; the others fix the look:
- * the preset, the skill that carries the method, the kit staged into the project and the render frame rate.
+ * Visual styles on top of a workflow. "editorial" (the default) and "vox-collage" fix the look: the preset, the skill
+ * that carries the method, the kit staged into the project and the render frame rate. "default" lets the workflow
+ * pick one of HyperFrames' own frame presets.
  */
-export const STYLES = ["default", "vox-collage"] as const;
+export const STYLES = ["editorial", "vox-collage", "default"] as const;
 export type Style = (typeof STYLES)[number];
 export const isStyle = (s: unknown): s is Style => typeof s === "string" && (STYLES as readonly string[]).includes(s);
 export interface StyleSpec {
@@ -59,11 +60,34 @@ export interface StyleSpec {
   fps?: number;
 }
 export const STYLE_SPECS: Record<Style, StyleSpec> = {
-  default: { id: "default", label: "Default · the workflow picks a preset" },
+  editorial: { id: "editorial", label: "Editorial · cinematic cut-outs on brand colour, camera moves", preset: "editorial", skill: "editorial", kit: ["assets", "assets/editorial"] },
   "vox-collage": { id: "vox-collage", label: "Vox collage · paper cut-outs, stop-motion, marker", preset: "vox-collage", skill: "vox-collage", kit: ["assets", "assets/collage"], fps: 24 },
+  default: { id: "default", label: "HyperFrames preset · the workflow picks one" },
 };
 export const styleSpec = (s: unknown): StyleSpec => STYLE_SPECS[isStyle(s) ? s : "default"];
-export const DEFAULT_STYLE: Style = isStyle(process.env.DEFAULT_STYLE) ? process.env.DEFAULT_STYLE : "default";
+export const DEFAULT_STYLE: Style = isStyle(process.env.DEFAULT_STYLE) ? process.env.DEFAULT_STYLE : "editorial";
+
+/**
+ * The editorial style's looks. "auto": the agent picks one from the brand and the topic and says why in the
+ * storyboard; the others fix it (--look, product.json → agents.explainer.look).
+ */
+export const LOOKS = ["auto", "colour-field", "paper-data", "documentary", "duotone"] as const;
+export type Look = (typeof LOOKS)[number];
+/** A look name, accepting the American spelling ("color-field"); undefined when it isn't one. */
+export const lookOf = (s: unknown): Look | undefined => {
+  const v = typeof s === "string" ? s.trim().toLowerCase().replace(/^color-/, "colour-") : "";
+  return (LOOKS as readonly string[]).includes(v) ? (v as Look) : undefined;
+};
+export const LOOK_LABELS: Record<Look, string> = {
+  auto: "Auto · picked from the brand and the topic",
+  "colour-field": "Colour field · B&W cut-outs on bold brand colour",
+  "paper-data": "Paper & data · light paper, grid, colour as accents",
+  documentary: "Documentary · dark ground, spotlight, connectors",
+  duotone: "Duotone · everything in one brand hue",
+};
+
+/** Review a storyboard before building (the default); STORYBOARD=off in .env builds in one go, like --no-storyboard. */
+export const DEFAULT_STORYBOARD = !/^(off|no|false|0)$/i.test(process.env.STORYBOARD?.trim() ?? "");
 
 /** Render quality → `hyperframes render --quality` value. */
 export const QUALITIES = { draft: "draft", standard: "looks", high: "delivery" } as const;
@@ -135,10 +159,12 @@ export const REQUIRED_SKILLS = [
   "motion-graphics",
   "product-launch-video",
   // explainer-agent's own additions (extensions/hyperframes), laid over the plugin by applyExtensions()
+  "clear-explainer",
+  "editorial",
   "vox-collage",
 ];
 /** Required skills that come from extensions/hyperframes rather than the HyperFrames release. */
-export const EXTENSION_SKILLS = ["vox-collage"];
+export const EXTENSION_SKILLS = ["clear-explainer", "editorial", "vox-collage"];
 
 /** Problems with the bundled skills: missing plugin, missing skills, or a plugin/CLI version mismatch. */
 export function skillProblems(info = pluginInfo(), cli = cliVersion()): string[] {

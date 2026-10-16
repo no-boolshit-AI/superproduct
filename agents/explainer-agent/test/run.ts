@@ -1,7 +1,7 @@
 /** Runs each test file in its own process (they set OUTPUT_DIR / API mocks at import time). */
 import { spawnSync } from "node:child_process";
 
-const files = ["test/units.test.ts", "test/session.test.ts", "test/guard.test.ts", "test/product.test.ts", "test/pipeline.test.ts", "test/collage.test.ts", "test/media.test.ts", "test/e2e.test.ts", "test/web.test.ts"];
+const files = ["test/units.test.ts", "test/session.test.ts", "test/guard.test.ts", "test/product.test.ts", "test/storyboard.test.ts", "test/pipeline.test.ts", "test/collage.test.ts", "test/editorial.test.ts", "test/media.test.ts", "test/e2e.test.ts", "test/web.test.ts"];
 let failed = 0;
 for (const f of files) {
   console.log(`\n▶ ${f}`);

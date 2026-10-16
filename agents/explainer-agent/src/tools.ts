@@ -1,7 +1,9 @@
 /**
  * The agent's own tools; everything else is the HyperFrames CLI and skills.
- *  - deliver: copies the render and its contact sheet into the job folder, writes post.md (caption, alt text,
- *    placeholders, generated media) and ends the job;
+ *  - present_storyboard (storyboard phase): photographs the sketch sheet (storyboard.html), writes storyboard.md (the
+ *    review document) into the job folder and ends the phase: nothing is built before the person approves;
+ *  - deliver (video phase): copies the render and its contact sheet into the job folder, writes post.md (caption, alt
+ *    text, placeholders, generated media) and ends the job;
  *  - generate_images (OPENAI_API_KEY or IMAGE_MOCK=1): pictures in the product's illustration style for the motion
  *    layers — cut-outs, illustrated interface elements, illustrations, scenes — into assets/images/;
  *  - generate_narration, find_voices (--voice), generate_sfx (--sfx), generate_music (--music auto|<mood>), with
@@ -16,6 +18,7 @@ import { VERSION } from "./config.js";
 import type { Emit } from "./events.js";
 import { contactSheetFromVideo, probeVideo, type VideoInfo } from "./hyperframes.js";
 import { isInside } from "./guard.js";
+import { renderSheet, type SheetShot } from "./sheet.js";
 import { madeThisRun, type MediaStore } from "./media/common.js";
 import { IMAGE_KINDS, generateImages, type ImageResult, type ImageSettings, type ImageStyle } from "./media/images.js";
 import type { SoundSettings } from "./media/elevenlabs.js";
@@ -41,6 +44,20 @@ export interface MediaContext {
   sound?: { settings: SoundSettings; voiceId: string; language?: string; narration: boolean; sfx: boolean; music: boolean };
 }
 
+/** A storyboard handed to the person for review. */
+export interface StoryboardPresented {
+  version: number;
+  /** files written into the job folder */
+  review: string;
+  sheet?: string;
+  /** project-relative sketch sheet */
+  html?: string;
+  frames: number;
+  seconds: number;
+  cells?: number;
+  warnings: string[];
+}
+
 export interface ToolContext {
   jobDir: string;
   projectDir: string;
@@ -50,10 +67,18 @@ export interface ToolContext {
   cta?: { label: string; url: string };
   emit: Emit;
   media?: MediaContext;
+  /** what this run makes: the storyboard for review (ends at present_storyboard) or the video (ends at deliver) */
+  phase?: "storyboard" | "video";
+  /** the version this run's storyboard gets (1 for the first, +1 per revision) */
+  storyboardVersion?: number;
+  /** e.g. "4:5 portrait · about 45 s · silent", for the review document */
+  formatLine?: string;
+  storyboard?: StoryboardPresented;
   delivered?: Delivery;
 }
 
 export const TOOL = {
+  present: "mcp__explainer__present_storyboard",
   deliver: "mcp__explainer__deliver",
   images: "mcp__explainer__generate_images",
   narration: "mcp__explainer__generate_narration",
@@ -135,6 +160,152 @@ export function collectDelivery(ctx: ToolContext, d: { videoAbs: string; sheetAb
   return delivery;
 }
 
+export interface StoryboardFrameInput {
+  id: string;
+  name: string;
+  seconds: number;
+  point: string;
+  on_screen: string[];
+  narration?: string;
+  visual: string;
+  motion: string;
+}
+
+export interface StoryboardInput {
+  title: string;
+  question: string;
+  message: string;
+  audience?: string;
+  main_points: string[];
+  look: string;
+  frames: StoryboardFrameInput[];
+  pictures?: { name: string; kind?: string; shows: string; treatment?: string }[];
+  placeholders?: string[];
+  questions?: string[];
+}
+
+const quote = (t: string) => `"${t.replace(/^["“]|["”]$/g, "")}"`;
+
+/** storyboard.md: what the person reads to approve or change the plan. */
+export function storyboardReview(ctx: ToolContext, sb: StoryboardInput, shot: SheetShot | null, version: number): string {
+  const id = path.basename(ctx.jobDir);
+  const seconds = sb.frames.reduce((a, f) => a + (Number(f.seconds) || 0), 0);
+  const ph = (sb.placeholders ?? []).map((p) => p.trim()).filter(Boolean);
+  const head = [
+    `# ${sb.title.trim()} — storyboard v${version}`,
+    "",
+    `**The question:** ${sb.question.trim()}  `,
+    `**The answer:** ${sb.message.trim()}  `,
+    sb.audience?.trim() ? `**For:** ${sb.audience.trim()}  ` : "",
+    `**Format:** ${[ctx.formatLine, `${sb.frames.length} frames`, `${seconds.toFixed(0)} s planned`].filter(Boolean).join(" · ")}  `,
+    `**Look:** ${sb.look.trim()}`,
+    "",
+    "**Main points**",
+    "",
+    ...sb.main_points.map((p, i) => `${i + 1}. ${p.trim()}`),
+    "",
+    shot?.ok ? `![The storyboard sheet](${path.basename(shot.file!)})` : `_The sheet couldn't be photographed${shot?.error ? ` (${shot.error})` : ""}: open \`project/storyboard.html\` in a browser._`,
+    "",
+    "The sketch sheet itself: `project/storyboard.html` (open it in a browser). Pictures, narration and motion are made after approval; grey shapes on the sheet stand for pictures not made yet.",
+  ].filter((l, i, a) => l !== "" || a[i - 1] !== "");
+  const frames = sb.frames.map((f) =>
+    `### ${f.id} · ${f.name.trim()} — ${Number(f.seconds).toFixed(1)} s\n\n` +
+    [
+      `- **Point:** ${f.point.trim()}`,
+      `- **On screen:** ${f.on_screen.length ? f.on_screen.map(quote).join(" · ") : "(no words)"}`,
+      f.narration?.trim() ? `- **Narration:** ${quote(f.narration.trim())}` : "",
+      `- **You see:** ${f.visual.trim()}`,
+      `- **Motion:** ${f.motion.trim()}`,
+    ]
+      .filter(Boolean)
+      .join("\n"),
+  );
+  const pictures = (sb.pictures ?? []).map((p) => `- \`${p.name}\`${[p.kind, p.treatment].filter(Boolean).length ? ` (${[p.kind, p.treatment].filter(Boolean).join(", ")})` : ""} — ${p.shows.trim()}`);
+  return [
+    head.join("\n"),
+    `## Frames\n\n${frames.join("\n\n")}`,
+    pictures.length && `## Pictures to make (after approval)\n\n${pictures.join("\n")}`,
+    `## Placeholders to fill\n\n${ph.length ? ph.map((p) => `- ${p}`).join("\n") : "None."}`,
+    sb.questions?.length && `## Questions for you\n\n${sb.questions.map((q) => `- ${q.trim()}`).join("\n")}`,
+    `## Next\n\n- Approve and build the video: \`npm run video -- --approve ${id}\` (add a short note in quotes for last small changes)\n- Change the storyboard: \`npm run video -- --revise ${id} "frame 03: …"\``,
+  ]
+    .filter(Boolean)
+    .join("\n\n") + "\n";
+}
+
+/**
+ * Hand a storyboard to the person: photograph storyboard.html into the job folder (storyboard.jpg), write
+ * storyboard.md and record it on the context. Shared by the tool and the safety net.
+ */
+export async function presentStoryboard(ctx: ToolContext, sb: StoryboardInput, opts: { htmlRel?: string } = {}): Promise<{ presented: StoryboardPresented; shot: SheetShot | null }> {
+  const version = ctx.storyboardVersion ?? 1;
+  const htmlRel = opts.htmlRel ?? "storyboard.html";
+  const htmlAbs = path.resolve(ctx.projectDir, htmlRel);
+  const warnings: string[] = [];
+  let shot: SheetShot | null = null;
+  if (fs.existsSync(htmlAbs)) {
+    shot = await renderSheet(htmlAbs, path.join(ctx.jobDir, "storyboard.jpg"));
+    if (!shot.ok) warnings.push(`The sheet couldn't be photographed: ${shot.error}`);
+    else if (!shot.cells) warnings.push(`No cells with id="frame-NN" on the sheet`);
+    else if (shot.cells < sb.frames.length) warnings.push(`The sheet has ${shot.cells} cells for ${sb.frames.length} frames`);
+    if (shot.cut) warnings.push("The sheet is taller than 14000 px; the image is cut");
+  } else warnings.push(`${htmlRel} doesn't exist`);
+  if (!shot?.ok) fs.rmSync(path.join(ctx.jobDir, "storyboard.jpg"), { force: true });
+  fs.writeFileSync(path.join(ctx.jobDir, "storyboard.md"), storyboardReview(ctx, sb, shot, version));
+  const presented: StoryboardPresented = {
+    version,
+    review: "storyboard.md",
+    sheet: shot?.ok ? "storyboard.jpg" : undefined,
+    html: fs.existsSync(htmlAbs) ? path.relative(ctx.jobDir, htmlAbs).split(path.sep).join("/") : undefined,
+    frames: sb.frames.length,
+    seconds: sb.frames.reduce((a, f) => a + (Number(f.seconds) || 0), 0),
+    cells: shot?.cells,
+    warnings,
+  };
+  ctx.storyboard = presented;
+  ctx.emit({ type: "storyboard", version, review: presented.review, sheet: presented.sheet });
+  return { presented, shot };
+}
+
+/** STORYBOARD.md → a minimal storyboard, for the safety net when the agent stopped before presenting. */
+export function storyboardFromProject(projectDir: string, title: string): StoryboardInput | null {
+  const file = path.join(projectDir, "STORYBOARD.md");
+  if (!fs.existsSync(file)) return null;
+  const md = fs.readFileSync(file, "utf8");
+  const front = md.match(/^---\n([\s\S]*?)\n---/)?.[1] ?? "";
+  const fm = (k: string) => front.match(new RegExp(`^${k}:\\s*(.+)$`, "m"))?.[1]?.trim().replace(/^["']|["']$/g, "");
+  const field = (block: string, k: string) => block.match(new RegExp(`^-\\s+${k}:\\s*(.+)$`, "m"))?.[1]?.trim();
+  const prose = (block: string, k: string) => block.match(new RegExp(`^${k}:\\s*(.+)$`, "m"))?.[1]?.trim();
+  const frames = md
+    .split(/^#{2,3} (?:Frame|Beat|Scene)\s+/m)
+    .slice(1)
+    .map((block, i) => {
+      const head = block.split("\n")[0].trim();
+      const src = field(block, "src");
+      const vo = field(block, "voiceover")?.replace(/^["“]|["”]$/g, "");
+      return {
+        id: src ? path.basename(src).replace(/\.html?$/i, "") : String(i + 1).padStart(2, "0"),
+        name: head.replace(/^\d+\s*[—–:.-]?\s*/, "") || `Frame ${i + 1}`,
+        seconds: parseFloat(field(block, "duration") ?? "0") || 0,
+        point: prose(block, "keyMessage") ?? prose(block, "narrativeRole") ?? field(block, "scene") ?? "",
+        on_screen: [],
+        narration: vo || undefined,
+        visual: field(block, "scene") ?? "",
+        motion: field(block, "transition_in") ? `seam in: ${field(block, "transition_in")}` : "",
+      };
+    });
+  if (!frames.length) return null;
+  return {
+    title,
+    question: "(not written: the agent stopped before presenting)",
+    message: fm("message") ?? "(see STORYBOARD.md)",
+    audience: fm("audience"),
+    main_points: [],
+    look: "(see project/frame.md and STORYBOARD.md → Video direction)",
+    frames,
+  };
+}
+
 /** The image tool's reply: one line per picture, then a preview of each new or reused one. */
 function imagesReply(results: (ImageResult | Error)[], names: string[], remaining: number) {
   const lines = results.map((r, i) =>
@@ -157,8 +328,66 @@ function imagesReply(results: (ImageResult | Error)[], names: string[], remainin
   return { content, isError: ok.length === 0 };
 }
 
-/** The tools this job offers: deliver, plus the media tools its keys and options allow. */
+/** The present_storyboard tool (the storyboard phase's only tool of ours). */
+function presentTool(ctx: ToolContext) {
+  return tool(
+    "present_storyboard",
+    `Hand the storyboard to the person for review — call it once STORYBOARD.md (and SCRIPT.md with narration) and the sketch sheet storyboard.html are written. It photographs the sheet into the job folder, writes storyboard.md (the review document) from what you pass, shows you the photographed sheet, and ends this phase: nothing is built before the person approves. Calling it again in this run replaces this version (fix the sheet, then present again).`,
+    {
+      title: z.string().min(2).describe("The video's working title"),
+      question: z.string().min(4).describe("The one question the video answers, as the viewer would ask it"),
+      message: z.string().min(4).describe("The answer in one sentence a newcomer understands (BRIEF.md's message)"),
+      audience: z.string().optional(),
+      main_points: z.array(z.string().min(2)).min(1).max(5).describe("The main points (≤ 3 for most videos), one plain sentence each, in order"),
+      look: z.string().min(4).describe("The style and look and why they fit the brand, one or two sentences (e.g. 'Editorial · paper-data: the brand keeps orange for small accents…')"),
+      frames: z
+        .array(
+          z.object({
+            id: z.string().describe("The frame id = its composition file name, e.g. 01-hook"),
+            name: z.string(),
+            seconds: z.number().min(0.5).max(60),
+            point: z.string().describe("What the viewer understands after this frame, one plain sentence"),
+            on_screen: z.array(z.string()).describe("Every word on screen, verbatim, one entry per line or label"),
+            narration: z.string().optional().describe("The narration line (with --voice), verbatim"),
+            visual: z.string().describe("What you see: the picture, the field, the type, the callout"),
+            motion: z.string().describe("How it moves, one sentence: entrances, camera, the effect that guides the eye, the seam"),
+          }),
+        )
+        .min(1)
+        .max(40),
+      pictures: z.array(z.object({ name: z.string(), kind: z.string().optional(), shows: z.string(), treatment: z.string().optional() })).optional().describe("Pictures to generate after approval"),
+      placeholders: z.array(z.string()).optional().describe("Facts the brief didn't give, shown as [X] on screen, e.g. '[X] hours — frame 02'"),
+      questions: z.array(z.string()).optional().describe("Choices the person may want to change: the analogy, the look, the length, a fact to confirm"),
+      sheet: z.string().optional().describe("The sketch sheet, project-relative (default storyboard.html)"),
+    },
+    async (a) => {
+      if (ctx.phase !== "storyboard") return text("This run builds the video; the storyboard was already approved.", true);
+      if (!fs.existsSync(path.join(ctx.projectDir, "STORYBOARD.md"))) return text("Write STORYBOARD.md first (the workflow's Step 3), then the sketch sheet, then present.", true);
+      const htmlRel = a.sheet ?? "storyboard.html";
+      if (!isInside(path.resolve(ctx.projectDir, htmlRel), ctx.projectDir)) return text(`${htmlRel} is outside the project.`, true);
+      if (!fs.existsSync(path.resolve(ctx.projectDir, htmlRel)))
+        return text(`${htmlRel} doesn't exist yet. Draw the sketch sheet first (hyperframes:clear-explainer → references/storyboard-sheet.md), then present.`, true);
+      try {
+        const { presented, shot } = await presentStoryboard(ctx, a, { htmlRel });
+        ctx.emit({ type: "status", message: `Storyboard v${presented.version}: ${presented.frames} frames, ${presented.seconds.toFixed(0)} s${presented.sheet ? ", sheet photographed" : ""}` });
+        const lines = [
+          `Presented storyboard v${presented.version}: storyboard.md${presented.sheet ? " and storyboard.jpg (the sheet, shown below)" : ""} are in the job folder for the person.`,
+          ...presented.warnings.map((w) => `WARNING: ${w}`),
+          "Look at the sheet: if a cell is broken (text overflowing, a missing font, an empty or missing cell, a frame in the wrong order), fix storyboard.html and call present_storyboard again. Otherwise end your turn now with one short line — the person reviews it and answers in a later message (changes, or approval to build).",
+        ];
+        const content: ({ type: "text"; text: string } | { type: "image"; data: string; mimeType: string })[] = [{ type: "text", text: lines.join("\n") }];
+        if (shot?.ok && shot.file) content.push({ type: "image", data: fs.readFileSync(shot.file).toString("base64"), mimeType: "image/jpeg" });
+        return { content, isError: false };
+      } catch (e) {
+        return text(`Presenting failed: ${(e as Error).message}`, true);
+      }
+    },
+  );
+}
+
+/** The tools this job offers: present_storyboard while the storyboard is made; deliver plus the media tools its keys and options allow while the video is built. */
 export function explainerTools(ctx: ToolContext) {
+  if (ctx.phase === "storyboard") return [presentTool(ctx)];
   const inProject = (p: string) => path.resolve(ctx.projectDir, p);
   const media = ctx.media;
   const status = (message: string) => ctx.emit({ type: "status", message });
@@ -354,5 +583,5 @@ export function createExplainerServer(ctx: ToolContext) {
   return createSdkMcpServer({ name: "explainer", version: VERSION, tools: explainerTools(ctx) });
 }
 
-/** Every tool this server can offer (deliver first); a job registers the ones its keys and options allow. */
-export const TOOL_NAMES: string[] = [TOOL.deliver, TOOL.images, TOOL.narration, TOOL.voices, TOOL.sfx, TOOL.music];
+/** Every tool this server can offer; a run registers the ones its phase, keys and options allow. */
+export const TOOL_NAMES: string[] = [TOOL.present, TOOL.deliver, TOOL.images, TOOL.narration, TOOL.voices, TOOL.sfx, TOOL.music];

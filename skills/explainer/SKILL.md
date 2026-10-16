@@ -1,15 +1,23 @@
 ---
 name: explainer
-description: Make an explainer or short motion-graphics video (MP4) with agents/explainer-agent, which runs HyperFrames' explainer workflow with every HyperFrames skill bundled. Use for "make a video / animation / explainer / reel / motion graphic about X", LinkedIn or Instagram feed videos, concept explainers, how-tos, product teasers and launch announcements from a brief, including Vox-style paper-collage videos (--style vox-collage). Default 4:5 portrait, silent with on-screen text; generated pictures in the product's illustration style (OpenAI) when OPENAI_API_KEY is set; narration, composed music and sound effects with ElevenLabs on request.
+description: Make an explainer or short motion-graphics video (MP4) with agents/explainer-agent, which runs HyperFrames' explainer workflow with every HyperFrames skill bundled and teaches like a TED-Ed lesson (one question, at most three main points, plain words, a recap). Storyboard first — the first run stops at a storyboard you show the user; --revise changes it, --approve builds the video. Use for "make a video / animation / explainer / reel / motion graphic about X", LinkedIn or Instagram feed videos, concept explainers, how-tos, product teasers and launch announcements from a brief. Default style editorial (cinematic: B&W halftone cut-outs on brand-colour fields, type behind the subject, spotlight and connector callouts, camera push with parallax, film grain; look picked from the brand or --look); Vox-style paper collage with --style vox-collage. Default 4:5 portrait, silent with on-screen text; generated pictures (OpenAI) when OPENAI_API_KEY is set; narration, composed music and sound effects with ElevenLabs on request.
 ---
 
 # explainer-agent
 
-Brief in, MP4 out. Claude runs HyperFrames (HTML compositions animated with GSAP, rendered to video by headless
-Chrome) headless: story → design system from a HyperFrames frame preset remixed onto the product's brand → storyboard
-→ one frame-worker subagent per frame → assembly, transitions → lint, check, contact sheet → render → caption and
-alt text. All 21 HyperFrames skills (`hyperframes:*`) are bundled in `vendor/hyperframes`, pinned to the CLI, plus
-the agent's own `hyperframes:vox-collage` (kept in `extensions/hyperframes`, laid over the bundle by `npm run setup`).
+Brief in, storyboard for review, then MP4. Claude runs HyperFrames (HTML compositions animated with GSAP, rendered to
+video by headless Chrome) headless, in two steps:
+
+1. **Storyboard** (the first run): story written to teach a newcomer → design system from a frame preset remixed
+   onto the product's brand → `STORYBOARD.md` → a sketch sheet (one static cell per frame, real words, real fonts and
+   colours, grey placeholders for pictures) → `storyboard.md` + `storyboard.jpg` in the job folder. Nothing is
+   generated or built yet; the run ends with status `storyboard`.
+2. **Video** (after `--approve`): pictures and sound → one frame-worker subagent per frame, each keeping its approved
+   sketch → assembly, transitions → lint, check, contact sheet → render → caption and alt text.
+
+All 21 HyperFrames skills (`hyperframes:*`) are bundled in `vendor/hyperframes`, pinned to the CLI, plus the agent's
+own `hyperframes:clear-explainer` (the teaching method + the storyboard sheet), `hyperframes:editorial` (the default
+style) and `hyperframes:vox-collage` (kept in `extensions/hyperframes`, laid over the bundle by `npm run setup`).
 
 Claude also has the agent's own media tools (the keys stay in the agent's process):
 - `generate_images` (`OPENAI_API_KEY`): characters, props, illustrated interface elements and scenes with OpenAI
@@ -39,8 +47,9 @@ the free local voice (`npm run setup:voice`). `npm run setup` reports which are 
 ```markdown
 # <Title: what the video explains>
 
-Audience: <who watches, what they know already>
-The one message: <the single thing they must remember>
+Audience: <who watches, what they know already — "new to the subject" unless they're experts>
+The question: <the one question the viewer would ask, which the video answers>
+The one message: <the answer, in one sentence a newcomer understands>
 What they should do afterwards: <only if different from the product's CTA>
 
 Beats (optional; the agent designs the story if you leave them out):
@@ -54,24 +63,50 @@ Length: <30–90> seconds. Narration: <none | yes, voice: …>
 ```
 
 Facts: only what the brief, the attached files and `workspace/product/knowledge/facts.md` say. Missing facts become visible
-placeholders (`[X]`) listed in `post.md`.
+placeholders (`[X]`) listed in `storyboard.md` and `post.md`. The agent keeps the explanation simple on its own (≤ 3
+main points, every term defined, an everyday analogy, a recap frame); give it the facts and the audience, not a script,
+unless the user has one.
 
 ## Running it
 
 ```bash
 cd agents/explainer-agent
 npm run video -- --file ../../workspace/briefs/<brief>.md [--format portrait|vertical|square|landscape] [--length 45] \
-  [--style default|vox-collage] [--no-images] \
+  [--style editorial|vox-collage|default] [--look auto|colour-field|paper-data|documentary|duotone] [--no-images] \
   [--voice [--voice-id <id>]] [--music bed.mp3|auto|"<mood>"] [--sfx] [-i image.png -i notes.pdf …] \
   [--audience "…"] [--lang ro] [--quality draft|standard|high] [--budget 15]
+# → status "storyboard": show it to the user, then one of
+npm run video -- --revise <job-id> "frame 02: use a kitchen analogy; drop frame 05"   # a new storyboard version
+npm run video -- --approve <job-id> ["a last small note"]                           # build the video
 ```
+
+## The storyboard checkpoint (your job as the orchestrator)
+
+1. The first run takes ~3–8 minutes and stops with status `storyboard`. Read `workspace/out/explainer/<job>/storyboard.md`
+   and look at `storyboard.jpg` (stage it in Cowork).
+2. Show the user the sheet image path and a short summary: the question and answer, the main points, the frames
+   (one line each: what it teaches and what's on screen), the look and why, the agent's questions, the placeholders.
+   Ask: approve, or what to change? (with AskUserQuestion where you have it; offer the agent's questions as options).
+3. Changes → `--revise <job-id> "<their words>"` (a new version, same flow; changes cost little). Approval →
+   `--approve <job-id>` with any last small notes in quotes. Approve on your own only when the user said so up front
+   ("just make it", "no need to show me") — or run with `--no-storyboard` in that case.
+4. The approved run builds the video (10–30 min more); check and report it as below. A delivered video is changed with
+   `--revise` again (now it changes the video).
 
 - `--format`: portrait 1080×1350 (default; LinkedIn/Instagram feed), vertical 1080×1920 (Reels/Shorts/TikTok),
   square 1080×1080, landscape 1920×1080 (YouTube, website).
+- `--style editorial` (the default): cinematic editorial — subjects printed as black-and-white halftone cut-outs on
+  flat fields of the brand's colour, giant type behind the subject, line-art callouts (rings, orbits, connector lines
+  with dots, "/ Name" tags, a spotlight that dims all but the subject), a slow camera push with parallax on every
+  frame, film grain and a vignette. Its **look** comes from the brand unless `--look` (or `product.json →
+  agents.explainer.look`) pins it: `colour-field` (bold accent as big fields), `paper-data` (calm brands: paper,
+  grid, colour as accents), `documentary` (dark ground, spotlight, connectors), `duotone` (all in one brand hue).
 - `--style vox-collage`: a Vox-style paper collage — torn strips and cut-outs slapped on in stop-motion (on twos,
-  rendered at 24 fps), one highlighter swipe and marker annotations per frame, tape, a rubber stamp, ink-and-halftone
-  drawings instead of photos, film grain. Good for launches and explainers with an argument. A product can make it
-  its default with `product.json → agents.explainer.style`.
+  rendered at 24 fps), the generated pictures printed as B&W halftone cut-outs on torn colour fields, one highlighter
+  swipe and marker annotations per frame, tape, a rubber stamp, film grain. Good for launches and explainers with an
+  argument. `--style default` lets HyperFrames pick one of its own presets. A product sets its default with
+  `product.json → agents.explainer.style`.
+- `--no-storyboard` (or `STORYBOARD=off` in the agent's `.env`): one run straight to the video, no review.
 - Silent by default: on-screen text carries the story. `--voice` adds narration and word-timed captions (ElevenLabs
   when its key is set). `--music auto` composes a bed from the story's mood, `--music "dry upright piano, 90 bpm"`
   one to a brief, `--music bed.mp3` lays your file; `--sfx` adds effects made for the video.
@@ -83,14 +118,19 @@ npm run video -- --file ../../workspace/briefs/<brief>.md [--format portrait|ver
 - `--workflow general-video | motion-graphics` for non-explainer pieces (a title sting, a stat count-up, a logo
   sting); `--workflow product-launch-video --url <site>` captures a website.
 - Web UI: `npm run web` → http://localhost:5050 (for the user).
-- Time: expect 10–30 minutes for a 45-second video (more with narration). Cost grows with the number of frames and
-  depends on the model; the cap is `--budget` / `MAX_BUDGET_USD` (15). A 13-frame, 100-second vox-collage video ran past
-  the $15 cap and needed a `--revise` to finish: for long videos, raise `--budget` (ask first) or cut beats. Run it in the background
-  and follow `workspace/out/explainer/<job>/events.jsonl`. OpenAI and ElevenLabs bill separately, outside `--budget`.
+- Time: the storyboard takes ~3–8 minutes; the build 10–30 more for a 45-second video (more with narration). Cost
+  grows with the number of frames and depends on the model; `--budget` / `MAX_BUDGET_USD` (15) caps each run (the
+  storyboard is a small part; the build starts a fresh session from the approved files). A 13-frame, 100-second
+  vox-collage video ran past the $15 cap and needed a `--revise` to finish: for long videos, raise `--budget` (ask
+  first) or cut beats. Run it in the background and follow `workspace/out/explainer/<job>/events.jsonl`. OpenAI and
+  ElevenLabs bill separately, outside `--budget`, and only after approval.
 
 ## Outputs (`workspace/out/explainer/<job-id>/`)
 
-- `video.mp4`, `contact-sheet.jpg` (one still per frame), `post.md` (title, caption, alt text, frames, placeholders)
+- before approval: `storyboard.md` (the question, the answer, the main points, every frame — point, words on screen,
+  what you see, how it moves —, pictures to make, placeholders, the agent's questions) and `storyboard.jpg` (the sketch
+  sheet; the HTML is `project/storyboard.html`); `job.json → status: "storyboard"`, `storyboard.version`
+- after approval: `video.mp4`, `contact-sheet.jpg` (one still per frame), `post.md` (title, caption, alt text, frames, placeholders)
 - `job.json` (status, product used, HyperFrames versions, steps, cost, warnings, `media`: every generated picture and
   sound with model and prompt), `events.jsonl`; `post.md → Generated media` says what was made with which model
 - `project/`: the HyperFrames project (`STORYBOARD.md`, `frame.md`, `compositions/frames/*.html`; generated media in
@@ -101,8 +141,9 @@ warnings in `job.json`.
 
 ## Revisions and other formats
 
-- `npm run video -- --revise <job-id> "frame 03-…: slower; bigger CTA; darker ground"`: same session and project,
-  only the changed frames are rebuilt. Frame ids are in `post.md` → Frames.
+- Before approval, `--revise <job-id> "…"` changes the storyboard (a new version); `--approve <job-id>` builds it.
+- After delivery, `npm run video -- --revise <job-id> "frame 03-…: slower; bigger CTA; darker ground"`: same session
+  and project, only the changed frames are rebuilt. Frame ids are in `post.md` → Frames.
 - `npm run render -- <job-id> --format mov`: ProRes 4444 with alpha for DaVinci Resolve / Premiere (no Claude).
   `--format webm`, `--quality draft|standard|high` also work.
 - A different aspect ratio is a new run with `--format`, not a revision.
@@ -116,6 +157,11 @@ warnings in `job.json`.
 - Skills/CLI version mismatch → `npm run skills:update -- <version>` then `npm install`.
 - The brand comes from the product folder, `workspace/product/` (colours by role, the product's font files, logo, CTA, the illustration style for
   pictures); `--product none` uses a HyperFrames preset palette and a neutral illustration style. Per-product
-  settings: `product.json → agents.explainer` (ground, colors, fonts, preset, style, voice, cta, notes, images
-  {style, references}, profiles).
-- Never publish the video yourself; hand over the files.
+  settings: `product.json → agents.explainer` (ground, colors, fonts, preset, style, look, voice, cta, notes, images
+  {style, references}, profiles). The art-direction `notes` steer the editorial look (e.g. "orange only as small
+  accents" → paper-data, not colour-field).
+- "has no storyboard waiting for approval" → the job was built already (use `--revise`) or made with `--no-storyboard`.
+- No `storyboard.jpg` → HyperFrames' Chrome is missing (`npm run setup`); `storyboard.md` still lists everything and
+  `project/storyboard.html` opens in a browser.
+- Never publish the video yourself; hand over the files. Never approve a storyboard the user hasn't seen unless they
+  told you to skip the review.

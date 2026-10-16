@@ -5,7 +5,7 @@ import path from "node:path";
 import { parseArgs } from "node:util";
 import type { SDKMessage } from "@anthropic-ai/claude-agent-sdk";
 import { describeAuth, readJob, runJob } from "./agent.js";
-import { DEFAULT_FORMAT, DEFAULT_LENGTH_SEC, FORMAT_IDS, OUTPUT_DIR, STYLES, WORKFLOWS, isFormat, isQuality, isStyle, isWorkflow, pluginInfo } from "./config.js";
+import { DEFAULT_FORMAT, DEFAULT_LENGTH_SEC, DEFAULT_STORYBOARD, FORMAT_IDS, LOOKS, OUTPUT_DIR, STYLES, WORKFLOWS, isFormat, isQuality, isStyle, isWorkflow, lookOf, pluginInfo } from "./config.js";
 import type { JobOptions } from "./events.js";
 import { soundSettings } from "./media/elevenlabs.js";
 import { imageSettings } from "./media/images.js";
@@ -13,10 +13,21 @@ import { brandKit, resolveProduct } from "./product.js";
 
 const HELP = `Usage: npm run video -- [brief text] [options]
 
+A new video starts with a storyboard for review (storyboard.md + storyboard.jpg in the job folder); nothing is built
+until you approve it with --approve <job-id>. --no-storyboard builds in one go.
+
   -f, --file <path>        Brief from a file (markdown/txt); combined with inline text if both are given
       --format <f>         ${FORMAT_IDS.join(" | ")} (default ${DEFAULT_FORMAT}: 1080×1350 for the LinkedIn/Instagram feed)
-      --style <s>          ${STYLES.join(" | ")} (default: the product's agents.explainer.style, else default).
-                           vox-collage: Vox-style paper collage — torn cut-outs on twos, marker, stamps, 24 fps
+      --style <s>          ${STYLES.join(" | ")} (default: the product's agents.explainer.style, else editorial).
+                           editorial: cinematic — B&W halftone cut-outs on brand-colour fields, type behind the
+                           subject, spotlight and connector callouts, camera push with parallax, film grain.
+                           vox-collage: Vox-style paper collage — torn cut-outs on twos, marker, stamps, 24 fps.
+                           default: one of HyperFrames' own frame presets
+      --look <l>           editorial only: ${LOOKS.join(" | ")}
+                           (default: the product's agents.explainer.look, else auto — picked from the brand and
+                           the topic, stated in the storyboard)
+      --no-storyboard      Build the video in one go, without the storyboard review (STORYBOARD=off in .env does
+                           the same for every run)
   -l, --length <seconds>   Target length (default ${DEFAULT_LENGTH_SEC}; explainers work best at 30–90)
       --voice              Add narration and word-timed captions (ElevenLabs when ELEVENLABS_API_KEY is set, else
                            HyperFrames TTS: HeyGen → local Kokoro)
@@ -38,11 +49,15 @@ const HELP = `Usage: npm run video -- [brief text] [options]
                            (default: $PRODUCT_DIR, then workspace/product)
   -m, --model <id>         Claude model (default $CLAUDE_MODEL / SDK default)
       --budget <usd>       Stop when Claude spend reaches this (default $MAX_BUDGET_USD)
-      --revise <job-id>    Revise an existing job; the brief text becomes the change request
+      --approve <job-id>   Build the video from the job's storyboard; the brief text, if any, is a last note
+      --revise <job-id>    Change a job: its storyboard while it waits for approval, else its video; the brief text
+                           becomes the change request
   -q, --quiet              Only print progress milestones and the summary
 
 Examples:
-  npm run video -- --file briefs/example-what-is-an-agent.md
+  npm run video -- --file briefs/example-what-is-an-agent.md            (→ a storyboard to review)
+  npm run video -- --revise 20261007-141500-what-an-ai-agent-actually-is "Use a kitchen analogy in frame 2"
+  npm run video -- --approve 20261007-141500-what-an-ai-agent-actually-is   (→ the video)
   npm run video -- "Explain RAG to a finance team in 45 seconds" --format vertical --voice
   npm run video -- --file ../../workspace/briefs/launch.md --style vox-collage --length 30
   npm run video -- --revise 20261007-141500-what-an-ai-agent-actually-is "Slow down frame 3 and make the CTA bigger"
@@ -71,16 +86,21 @@ const { values, positionals } = parseArgs({
     model: { type: "string", short: "m" },
     budget: { type: "string" },
     revise: { type: "string" },
+    approve: { type: "string" },
+    "no-storyboard": { type: "boolean" },
+    look: { type: "string" },
     quiet: { type: "boolean", short: "q" },
     help: { type: "boolean", short: "h" },
   },
 });
 
 const brief = [values.file ? fs.readFileSync(values.file, "utf8") : "", positionals.join(" ")].filter(Boolean).join("\n\n").trim();
-if (values.help || !brief) {
+if (values.help || (!brief && !values.approve)) {
   console.log(HELP);
   process.exit(values.help ? 0 : 1);
 }
+if (values.approve && values.revise) throw new Error("--approve and --revise are separate steps: change the storyboard first, then approve it");
+if (values.look && !lookOf(values.look)) throw new Error(`--look must be one of ${LOOKS.join(", ")}`);
 const format = values.format ?? DEFAULT_FORMAT;
 if (!isFormat(format)) throw new Error(`--format must be one of ${FORMAT_IDS.join(", ")}`);
 if (values.workflow && !isWorkflow(values.workflow)) throw new Error(`--workflow must be one of ${WORKFLOWS.join(", ")}`);
@@ -131,6 +151,8 @@ const options: JobOptions = {
   audience: values.audience,
   workflow: values.workflow as JobOptions["workflow"],
   style: values.style as JobOptions["style"],
+  look: lookOf(values.look),
+  storyboard: values["no-storyboard"] ? false : DEFAULT_STORYBOARD,
   url: values.url,
   quality: values.quality as JobOptions["quality"],
   // absolute paths, so a revision started from another folder (or the web UI) finds the same files
@@ -139,12 +161,13 @@ const options: JobOptions = {
   maxBudgetUsd: values.budget ? Number(values.budget) : undefined,
   inputs: (values.input ?? []).map((f) => path.resolve(f)),
 };
-if (values.revise && !readJob(values.revise)) throw new Error(`No job ${values.revise} in ${OUTPUT_DIR}`);
+for (const id of [values.revise, values.approve]) if (id && !readJob(id)) throw new Error(`No job ${id} in ${OUTPUT_DIR}`);
 
 const job = await runJob({
   options,
   reviseJobId: values.revise,
-  instructions: values.revise ? brief : undefined,
+  approveJobId: values.approve,
+  instructions: values.revise || values.approve ? brief : undefined,
   onMessage,
   emit: (e) => {
     if (e.type === "tool" && !values.quiet && !e.worker) console.log(dim(`→ ${e.summary}`));
@@ -158,6 +181,16 @@ const job = await runJob({
 console.log(`\n${"─".repeat(64)}\n${job.summary ?? job.error ?? ""}\n`);
 console.log(`Job:    ${job.id}`);
 console.log(`Folder: ${path.relative(process.cwd(), job.dir) || job.dir}`);
+if (job.status === "storyboard" && job.storyboard) {
+  const sb = job.storyboard;
+  const rel = (f: string) => path.relative(process.cwd(), path.join(job.dir, f));
+  console.log(`\nStoryboard v${sb.version} ready for review (${sb.frames} frames, about ${Math.round(sb.seconds ?? 0)} s):`);
+  console.log(`  ${rel(sb.review)}   the plan, frame by frame`);
+  if (sb.sheet) console.log(`  ${rel(sb.sheet)}   the sketch sheet`);
+  if (sb.html) console.log(`  ${rel(sb.html)}   the sheet in a browser`);
+  console.log(`\nApprove and build:  npm run video -- --approve ${job.id} ["a last note"]`);
+  console.log(`Change it:          npm run video -- --revise ${job.id} "what to change"`);
+}
 if (job.video) console.log(`Video:  ${path.relative(process.cwd(), path.join(job.dir, job.video))}  (${job.width}×${job.height}, ${job.durationSec?.toFixed(1)} s)`);
 if (job.post) console.log(`Post:   ${path.relative(process.cwd(), path.join(job.dir, job.post))}`);
 if (job.placeholders?.length) console.log(`Placeholders: ${job.placeholders.join(" · ")}`);
@@ -171,4 +204,5 @@ const mediaBits = [
 ].filter(Boolean);
 if (mediaBits.length) console.log(dim(`Generated: ${mediaBits.join(" · ")} (listed in job.json → media)`));
 console.log(dim(`Cost: $${(job.costUsd ?? 0).toFixed(2)} Claude${mediaBits.length ? " (OpenAI/ElevenLabs bill separately)" : ""}`));
-process.exitCode = job.status === "done" ? 0 : 1;
+// a storyboard waiting for review is a finished run too
+process.exitCode = job.status === "done" || job.status === "storyboard" ? 0 : 1;

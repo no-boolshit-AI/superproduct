@@ -12,7 +12,9 @@
  *   - sizes are authored numbers (data-cg-size, function arguments): no layout measurement;
  *   - every move is a tween on the frame's ONE paused timeline; nothing autoplays.
  *   - no CSS clip-path and no CSS blur filter on pieces (HyperFrames' heavy-overlay hazard): torn paper is an
- *     inline SVG shape drawn behind the content.
+ *     inline SVG shape drawn behind the content;
+ *   - pieces wait for their entrance with opacity, not visibility (HyperFrames' media treatments skip a picture
+ *     that is visibility-hidden when the page loads).
  *
  * The transform stack of a collage piece; each level is moved by ONE helper only, so tweens never fight:
  *   .cg-camera (Collage.camera) > .cg-board (Collage.drift push) > .cg-layer (Collage.drift parallax)
@@ -40,10 +42,11 @@
     ".cg-camera{transform-origin:50% 50%}",
     ".cg-board{transform-origin:50% 45%}",
     ".cg-boil{position:absolute}",
-    /* a piece: hidden until it lands; the shadow grows with --lift while it is in the air */
-    ".cg-cut{visibility:hidden;opacity:0;--lift:0;filter:drop-shadow(0 calc(4px + var(--lift) * 18px) calc(3px + var(--lift) * 20px) rgba(var(--cg-shadow,27,27,24),.3))}",
+    /* a piece: transparent until it lands (opacity, not visibility: a treated picture inside must be visible to the
+       runtime at load); the shadow grows with --lift while it is in the air */
+    ".cg-cut{opacity:0;--lift:0;filter:drop-shadow(0 calc(4px + var(--lift) * 18px) calc(3px + var(--lift) * 20px) rgba(var(--cg-shadow,27,27,24),.3))}",
     ".cg-cut.cg-flat{filter:none}",
-    ".cg-cut.cg-shown{visibility:inherit;opacity:1}",
+    ".cg-cut.cg-shown{opacity:1}",
     /* paper: the torn sheet is an SVG drawn behind the content (Collage.build) */
     /* the sheet sits at z-index -1 inside the paper's own stacking context: behind any content, text nodes included */
     ".cg-paper{position:relative;isolation:isolate;background:var(--cg-paper,#FFFFFF);color:var(--cg-ink,#1B1B18)}",
@@ -66,6 +69,8 @@
     ".cg-chip.cg-on-ink{background:var(--cg-ink,#1B1B18);color:var(--cg-paper,#FFFFFF)}",
     ".cg-chip.cg-on-accent{background:var(--cg-accent,#FFE52E);color:var(--cg-ink,#1B1B18)}",
     ".cg-serif{font-family:var(--cg-serif,serif)}",
+    /* giant type behind the subject (a year, a number, one word), in the back layer */
+    ".cg-giant{position:absolute;font-weight:800;line-height:.8;letter-spacing:-.05em;white-space:nowrap;color:var(--cg-accent,#FFE52E)}",
     ".cg-mono{font-family:var(--cg-mono,monospace)}",
     ".cg-fig{font-size:22px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--cg-muted,#6F6C66)}",
     ".cg-greek{background:repeating-linear-gradient(to bottom,rgba(var(--cg-shadow,27,27,24),.2) 0 7px,transparent 7px 17px)}",
@@ -558,6 +563,27 @@
     return at + d + 0.06;
   }
 
+  /**
+   * Count: a number rolls to its value ON TWOS (the digits change 12 times a second, like a hand-flipped counter).
+   * The text is a pure function of the tween's progress (seek-safe). opts: from (0), to, duration (1), decimals (0),
+   * prefix, suffix, separator (","). Returns the end time.
+   */
+  function count(tl, el, at, opts) {
+    var o = opts || {};
+    var d = o.duration || 1;
+    var from = o.from || 0;
+    var sep = o.separator == null ? "," : o.separator;
+    var write = function (v) {
+      var s = Math.abs(v).toFixed(o.decimals || 0).split(".");
+      s[0] = s[0].replace(/\B(?=(\d{3})+(?!\d))/g, sep);
+      el.textContent = (o.prefix || "") + (v < 0 ? "\u2212" : "") + s.join(".") + (o.suffix || "");
+    };
+    var proxy = { v: from };
+    write(from);
+    tl.fromTo(proxy, { v: from }, { v: o.to, duration: d, ease: twos(o.ease || "power2.out", d), immediateRender: false, onUpdate: function () { write(proxy.v); } }, at);
+    return at + d;
+  }
+
   /** Reveal a piece instantly (a hard cut-in on the beat, no move): visible from `at`. */
   function show(tl, el, at) {
     tl.set(el, { autoAlpha: 1 }, at);
@@ -597,5 +623,6 @@
     ransom: ransom,
     tearAway: tearAway,
     show: show,
+    count: count,
   };
 })(window);

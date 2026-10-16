@@ -1,7 +1,7 @@
 /** The prompt stream (session.ts): open while background workers run, closed on delivery or a run limit, nudged when the agent stops early. */
 import assert from "node:assert/strict";
 import type { SDKMessage } from "@anthropic-ai/claude-agent-sdk";
-import { NUDGE, TurnKeeper } from "../src/session.js";
+import { NUDGE, STORYBOARD_NUDGE, TurnKeeper } from "../src/session.js";
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 const m = (x: Record<string, unknown>) => x as unknown as SDKMessage;
@@ -85,6 +85,22 @@ async function drain(k: TurnKeeper, max = 10) {
   await sleep(40);
   assert.equal(nudged, 1, "settled by the timer");
   k.close();
+}
+
+// the storyboard phase nudges toward present_storyboard, and closes once it was presented
+{
+  let presented = false;
+  const k = new TurnKeeper("Plan it", { delivered: () => presented, nudge: STORYBOARD_NUDGE, settleMs: 10 });
+  const got = drain(k, 3);
+  k.observe(assistant());
+  k.observe(result());
+  k.observe(idle);
+  presented = true;
+  k.observe(assistant());
+  k.observe(result());
+  assert.equal(k.isClosed, true);
+  assert.deepEqual(await got, ["Plan it", STORYBOARD_NUDGE]);
+  assert.match(STORYBOARD_NUDGE, /present_storyboard/);
 }
 
 // a hung session: the stall watchdog closes it

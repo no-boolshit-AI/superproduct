@@ -192,3 +192,161 @@ export function collageFrame(look: FixtureLook): string {
 </template>
 `;
 }
+
+/** A two-frame storyboard in the editorial style: both frames cite editorial blueprints and the editorial rules. */
+export const EDITORIAL_STORYBOARD = `---
+format: 1080x1350
+duration: 6s
+message: "Sourdough takes a day because wild yeast is slow"
+arc: Hook → Evidence
+audience: home bakers
+mode: autonomous
+music: none
+---
+
+## Video direction
+
+- **Look**: editorial · colour-field — B&W halftone subject on the brand colour, a paper frame for the number.
+- **Camera**: every frame pushes with three depth layers.
+
+## Frame 1 — The question
+
+- scene: the subject printed in halftone on the brand colour; "Wild yeast is slow." lands; the spotlight closes
+- duration: 3s
+- transition_in: cut
+- status: animated
+- src: compositions/frames/01-field.html
+- blueprint: editorial-subject-field (Adapt)
+- focal: the subject cut-out
+- pictures: subject.png (cutout, B&W halftone, 600×600)
+- rules: editorial-kit, editorial-cutout, editorial-callouts, editorial-camera
+
+Scene 1 (0.0–0.8s): the page of words wipes in; "24h" rises behind; the subject rises.
+Scene 2 (0.8–2.0s): a ring draws; the connector routes to "Starter"; the line lands; "slow" highlighted.
+Scene 3 (2.0–3.0s): the spotlight closes on the subject; held read.
+
+## Frame 2 — The number
+
+- scene: paper and grid; the subject again; the number counts to 829%; two bars grow
+- duration: 3s
+- transition_in: cut
+- status: animated
+- src: compositions/frames/02-paper.html
+- blueprint: editorial-compare (Adapt)
+- focal: the number
+- pictures: subject.png (cutout, B&W halftone, 600×600)
+- rules: editorial-kit, editorial-graphics, editorial-cutout
+
+Scene 1 (0.0–1.2s): the subject rises; the bars grow from the baseline.
+Scene 2 (1.2–3.0s): the number counts up to 829%; held read.
+`;
+
+const HALFTONE = `{"adjust":{"saturation":-1,"contrast":0.3},"effects":{"halftone":0.94,"halftoneSize":0.3}}`;
+
+/** The two editorial frames as frame workers write them on the kit (assets/editorial/editorial.js). */
+export function editorialFrames(look: FixtureLook): Record<string, string> {
+  const head = (id: string, vars: string) => `<template>
+  <style>
+    ${look.fontFaceCss}
+    #root { position: relative; width: 1080px; height: 1350px; overflow: hidden; font-family: ${look.family}; color: ${look.ink};
+      --ed-paper: ${look.canvas}; --ed-ink: ${look.ink}; --ed-field: ${look.accent}; --ed-line: ${look.ink}; --ed-mark: ${look.canvas};
+      --ed-display: ${look.family}; --ed-serif: Georgia, serif; ${vars} }
+  </style>
+  <div id="root" data-composition-id="${id}" data-width="1080" data-height="1350" data-duration="3">`;
+  const tail = (id: string, motion: string) => `  </div>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+  <script src="assets/editorial/editorial.js"></script>
+  <script>
+    window.__timelines = window.__timelines || {};
+    const E = window.Editorial;
+    const R = document.querySelector('[data-composition-id="${id}"]');
+    const $ = (id) => R.querySelector("#" + id);
+    E.build(R);
+    const tl = gsap.timeline({ paused: true });
+    ${motion}
+    E.push(tl, R, { duration: 3 });
+    E.grain(tl, R, 3);
+    window.__timelines["${id}"] = tl;
+  </script>
+</template>
+`;
+  const subject = (p: string) => `<div class="ed-cutout ed-edge ed-in" id="${p}-subject" style="left:240px; top:300px; width:600px; height:600px">
+          <img class="clip" id="${p}-subject-img" data-start="0" data-duration="3" data-track-index="3" src="assets/images/subject.png" width="600" height="600" data-color-grading='${HALFTONE}'>
+        </div>`;
+  return {
+    "01-field": `${head("01-field", "--ed-ground: " + look.accent + ";")}
+    <div class="clip ed-ground" id="f-ground" data-start="0" data-duration="3" data-track-index="0"></div>
+    <div class="ed-camera" id="f-cam">
+      <div class="ed-layer" id="f-back" data-ed-depth="0.25">
+        <div class="ed-field ed-in" id="f-page" data-ed-shape="blob 4" data-ed-size="520x760" data-ed-textfill="wild yeast is slow" style="left:540px; top:40px"></div>
+        <div class="ed-pos ed-giant ed-in" id="f-year" style="left:40px; top:80px; font-size:280px; color:${look.onAccent}">24h</div>
+      </div>
+      <div class="ed-layer" id="f-mid" data-ed-depth="0.6">
+        ${subject("f")}
+      </div>
+      <div class="ed-layer" id="f-front" data-ed-depth="1">
+        <svg class="ed-lines" width="1080" height="1350"><path id="f-link" data-ed-path="route 30 300 760 300 940 900 940"/><path id="f-ring" class="ed-paper" data-ed-path="ring 540 600 300"/></svg>
+        <div class="ed-dot ed-in" id="f-d1" style="left:300px; top:760px"></div>
+        <div class="ed-dot ed-in" id="f-d2" style="left:900px; top:940px"></div>
+        <div class="ed-tag ed-in" id="f-tag" style="left:760px; top:860px; font-size:44px; color:${look.ink}"><span class="ed-slash"></span>Starter</div>
+        <div class="ed-pos ed-display ed-in" id="f-line" style="left:64px; top:990px; width:950px; font-size:84px">Wild yeast is <span class="ed-hl-word"><span class="ed-hl" id="f-hl"></span><span class="ed-hl-text">slow</span></span>.</div>
+      </div>
+    </div>
+    <div class="ed-spot" id="f-spot" data-ed-spot="540 600 300"></div>
+    <div class="clip ed-finish" id="f-finish" data-start="0" data-duration="3" data-track-index="9"></div>
+${tail(
+  "01-field",
+  `E.grow(tl, $("f-page"), 0, { from: "top", duration: 0.6 });
+    E.rise(tl, $("f-year"), 0.1, { distance: 60 });
+    E.rise(tl, $("f-subject"), 0.25, { distance: 100, duration: 0.7 });
+    E.draw(tl, $("f-ring"), 0.8, 0.5);
+    E.connect(tl, { from: $("f-d1"), path: $("f-link"), to: $("f-d2"), label: $("f-tag") }, 1.0, { duration: 0.5 });
+    E.rise(tl, $("f-line"), 1.4, { distance: 30, duration: 0.5 });
+    E.highlight(tl, $("f-hl"), 1.7, 0.3);
+    E.focus(tl, $("f-spot"), 2.0, { dim: 0.7, duration: 0.5 });`,
+)}`,
+    "02-paper": `${head("02-paper", "--ed-ground: " + look.canvas + ";")}
+    <div class="clip ed-ground" id="p-ground" data-start="0" data-duration="3" data-track-index="0"></div>
+    <div class="ed-camera" id="p-cam">
+      <div class="ed-layer" id="p-back" data-ed-depth="0.2">
+        <div class="ed-grid"></div>
+        <div class="ed-pos ed-giant ed-in" id="p-num" style="left:60px; top:930px; font-size:180px; color:${look.ink}">0%</div>
+      </div>
+      <div class="ed-layer" id="p-mid" data-ed-depth="0.6">
+        ${subject("p")}
+      </div>
+      <div class="ed-layer" id="p-front" data-ed-depth="1">
+        <div class="ed-bar ed-in" id="p-b1" style="left:780px; top:960px; width:80px; height:120px; background:${look.ink}"></div>
+        <div class="ed-bar ed-in" id="p-b2" style="left:900px; top:840px; width:80px; height:240px"></div>
+      </div>
+    </div>
+    <div class="clip ed-finish" id="p-finish" data-start="0" data-duration="3" data-track-index="9"></div>
+${tail(
+  "02-paper",
+  `E.rise(tl, $("p-subject"), 0.1, { distance: 80, duration: 0.6 });
+    E.grow(tl, [$("p-b1"), $("p-b2")], 0.5, { from: "bottom", duration: 0.6, stagger: 0.2 });
+    E.rise(tl, $("p-num"), 1.2, { distance: 30, duration: 0.4 });
+    E.count(tl, $("p-num"), 1.2, { to: 829, suffix: "%", duration: 1.0 });`,
+)}`,
+  };
+}
+
+/** The sketch sheet the agent draws for review (storyboard.html): one cell per frame at the video's aspect. */
+export function storyboardSheet(version = 1, hook = "Why does sourdough take [X] hours?"): string {
+  return `<!doctype html><html><head><meta charset="utf-8"><title>Storyboard v${version}</title><style>
+body{width:1600px;margin:0;padding:40px;box-sizing:border-box;background:#ECEAE6;font-family:sans-serif;color:#1d1d1b}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:28px}
+.cell{aspect-ratio:4/5;container-type:inline-size;background:#f6f4ef;position:relative;overflow:hidden}
+.cell h2{position:absolute;left:8cqw;right:8cqw;top:28cqw;font-size:9cqw;line-height:1.05;margin:0}
+.bar{position:absolute;left:8cqw;top:20cqw;width:34cqw;height:2.6cqw;background:#3a5bd9}
+.cta{position:absolute;left:8cqw;top:66cqw;padding:2cqw 4cqw;background:#3a5bd9;color:#fff;font-size:4.4cqw;border-radius:1.4cqw}
+.note{font-size:15px;margin:8px 0 0}
+</style></head><body>
+<h1>Why sourdough takes time · v${version}</h1>
+<p><b>The question:</b> Why does sourdough take a whole day? · <b>The answer:</b> Wild yeast is slow, so good bread needs time.</p>
+<div class="grid">
+  <div><div class="cell" id="frame-01"><div class="bar"></div><h2>${hook}</h2></div><p class="note"><b>01 · Hook · 2 s</b><br>Point: sourdough takes longer than other bread.</p></div>
+  <div><div class="cell" id="frame-02"><h2>Wild yeast is slow. We wait, so you don't.</h2><div class="cta">Start a subscription</div></div><p class="note"><b>02 · Answer · 2 s</b><br>Point: slow yeast is the reason.</p></div>
+</div></body></html>
+`;
+}

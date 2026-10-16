@@ -81,7 +81,21 @@ The transform stack — each level is moved by ONE helper only, so tweens never 
 | `.cg-cut` | `C.slap / slide / lift / show / ransom`, `--lift` shadow | CSS transform |
 | `.cg-paper` | static: CSS `rotate:` property for the resting tilt, `data-cg-sheet` shape | GSAP |
 
-`.cg-cut` is hidden until its entrance (`visibility:hidden; opacity:0`); a piece that must be there from t=0 gets `class="cg-cut cg-shown"`.
+`.cg-cut` is transparent until its entrance (`opacity:0` — opacity, not visibility, so a treated picture inside is treated); a piece that must be there from t=0 gets `class="cg-cut cg-shown"`.
+
+## A picture as a printed cut-out
+
+Generated pictures (`assets/images/…`) and cleared photos (`public/…`) are printed in black and white by HyperFrames' media treatments — a `data-color-grading` attribute on the `<img>`, which must be **its own clip** (otherwise only the first frame of the video is treated):
+
+```html
+<div class="cg-boil" style="left:230px; top:300px"><div class="cg-cut" id="c-clerk">
+  <img class="clip" id="c-clerk-img" data-start="0" data-duration="6" data-track-index="3"
+       src="assets/images/clerk.png" width="600" height="600"
+       data-color-grading='{"adjust":{"saturation":-1,"contrast":0.3},"effects":{"halftone":0.94,"halftoneSize":0.3}}'>
+</div></div>
+```
+
+The cut-out's alpha keeps its shape; the kit's cut-paper shadow follows it; slap and boil it like any piece. Other recipes (a brand dot screen, two-ink, B&W photo, print colour): see `collage-halftone-figure`.
 
 ## Paper
 
@@ -108,6 +122,7 @@ The transform stack — each level is moved by ONE helper only, so tweens never 
 | `C.drift(tl, {duration, board, push=0.04, pan=[0,-18], layers:[[el, depth]]})` | smooth slow push-in + parallax (single-station frames) |
 | `C.camera(tl, camEl, [{x,y,scale}, {at, duration=0.9, x, y, scale, ease="power2.inOut"}, …])` | smooth moves between stations on a board bigger than the frame; x = -1080 shows the next station to the right |
 | `C.tearAway(tl, left, right, at, {duration=0.5, distance=760})` + `C.seam(w, h, x)` + `C.sheet(el, w, h, {d, fill})` | a covering sheet rips in two and both halves fly off, revealing the board |
+| `C.count(tl, el, at, {from=0, to, duration=1, decimals=0, prefix, suffix, separator=","})` | a number rolls to its value on twos (a hand-flipped counter); seek-safe |
 | `C.twos(ease, duration)` | any ease sampled on the stop-motion grid, for your own piece tweens |
 
 ## Stationery
@@ -139,6 +154,8 @@ The transform stack — each level is moved by ONE helper only, so tweens never 
 <span class="cg-cut cg-chip cg-on-accent" id="c-r3">changed.</span>
 ```
 
+Giant type behind the subject: `<div class="cg-giant" id="c-year" style="left:40px; top:120px; font-size:300px">1961</div>` in the BACK layer (accent by default; `color: var(--cg-ink)` on light paper), revealed with `C.show` or a slap, the subject slapped on top of it.
+
 `data-cg-path` generators: `circle cx cy rx ry [seed]` (an overshooting pen loop), `arrow x1 y1 x2 y2 [bend] [seed]`, `underline x y w [seed]`, `strike x y w [seed]`, `scribble x y w h [seed]`, `check x y size [seed]` (a tick), `cross x y size [seed]`. Coordinates are px in the svg. Other classes: `cg-fig` (FIG. caption: small caps-tracked muted label), `cg-greek` (grey bars standing in for body text on a clipping — never invent readable copy), `cg-serif`, `cg-mono`, `cg-flat` (a cut with no shadow).
 
 ## CSS variables
@@ -147,7 +164,8 @@ The transform stack — each level is moved by ONE helper only, so tweens never 
 
 ## Critical constraints
 
-- **Never `visibility: visible`** on a piece (in CSS or a tween): it overrides the runtime hiding the whole scene, and the piece shows up in other frames. The kit reveals with `autoAlpha` / `visibility: inherit`.
+- **Never `visibility: visible`** on a piece (in CSS or a tween): it overrides the runtime hiding the whole scene, and the piece shows up in other frames. The kit reveals with `autoAlpha` / `visibility: inherit`, and hides pieces before their entrance with opacity only.
+- **A treated `<img>` is a clip** (`class="clip"` + `data-start`, `data-duration`, `data-track-index`) inside its `.cg-cut`; never hide its ancestors with `visibility` at load.
 - **No CSS `clip-path` and no CSS `filter: blur()` on pieces.** ~25–40 such elements across a montage make the capture go black (`composition_heavy_overlay_count_high`). Torn paper is the kit's SVG sheet; shadows are the kit's `drop-shadow`.
 - **Sizes are authored, never measured**: `data-cg-sheet` and `data-cg-size` restate the CSS size; marker coordinates are px you choose. Fonts may not be loaded when the script runs.
 - **Marker svgs are unscaled** (`width`/`height` attributes, no `viewBox` stretch, no `vector-effect`): Chrome dashes non-scaling strokes in screen space and the draw comes out partial.

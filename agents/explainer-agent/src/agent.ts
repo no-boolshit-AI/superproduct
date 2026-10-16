@@ -1,7 +1,7 @@
 import { query, type HookCallback, type HookJSONOutput, type Options, type SDKMessage } from "@anthropic-ai/claude-agent-sdk";
 import fs from "node:fs";
 import path from "node:path";
-import { DEFAULT_STYLE, FORMATS, NODE_BIN, OUTPUT_DIR, PLUGIN_DIR, QUALITIES, ROOT, VERSION, cliVersion, pluginInfo, skillProblems, slugify, styleSpec, type Workflow } from "./config.js";
+import { DEFAULT_STORYBOARD, DEFAULT_STYLE, FORMATS, NODE_BIN, OUTPUT_DIR, PLUGIN_DIR, QUALITIES, ROOT, VERSION, cliVersion, pluginInfo, skillProblems, slugify, styleSpec, type Workflow } from "./config.js";
 import type { Emit, JobEvent, JobOptions, JobRecord, StepId } from "./events.js";
 import { STEPS } from "./events.js";
 import { applyExtensions } from "./extensions.js";
@@ -12,9 +12,9 @@ import { soundSettings } from "./media/elevenlabs.js";
 import { DEFAULT_IMAGE_STYLE, imageSettings, type ImageStyle } from "./media/images.js";
 import { BRAND_MARKER, brandKit, brandSection, productContext, resolveProduct, type BrandKit } from "./product.js";
 import { lockedBriefFields, setupProject, writeBrandCapture, type ProjectSetup } from "./project.js";
-import { FRAME_WORKER_PROMPT, initialPrompt, revisionPrompt, systemAppend } from "./prompt.js";
-import { TurnKeeper } from "./session.js";
-import { collectDelivery, createExplainerServer, TOOL, TOOL_NAMES, type MediaContext, type ToolContext } from "./tools.js";
+import { FRAME_WORKER_PROMPT, approvalPrompt, initialPrompt, revisionPrompt, storyboardRevisionPrompt, systemAppend, type Phase } from "./prompt.js";
+import { NUDGE, STORYBOARD_NUDGE, TurnKeeper } from "./session.js";
+import { collectDelivery, createExplainerServer, presentStoryboard, storyboardFromProject, TOOL, TOOL_NAMES, type MediaContext, type ToolContext } from "./tools.js";
 
 export function newJobId(brief: string): string {
   const d = new Date();
@@ -77,12 +77,13 @@ const STEP_LABEL = Object.fromEntries(STEPS.map((s) => [s.id, s.label])) as Reco
 /** The workflow milestones a tool call marks (in workflow order), from the files and commands HyperFrames' explainer workflow uses. */
 export function stepsFor(name: string, input: Record<string, unknown>): StepId[] {
   if (name === TOOL.deliver) return ["deliver"];
+  if (name === TOOL.present) return ["review"];
   if (name === TOOL.images) return ["images"];
   if (name === TOOL.narration || name === TOOL.sfx || name === TOOL.music) return ["audio"];
   if (["Write", "Edit"].includes(name)) {
     const f = String(input.file_path ?? "").replace(/\\/g, "/");
     if (/(^|\/)BRIEF\.md$/.test(f)) return ["brief"];
-    if (/(^|\/)STORYBOARD\.md$/.test(f) || /(^|\/)SCRIPT\.md$/.test(f)) return ["storyboard"];
+    if (/(^|\/)STORYBOARD\.md$/.test(f) || /(^|\/)SCRIPT\.md$/.test(f) || /(^|\/)storyboard\.html$/.test(f)) return ["storyboard"];
     if (/compositions\/(frames\/)?[^/]+\.html$/.test(f)) return ["frames"];
     return [];
   }
@@ -96,6 +97,8 @@ export function stepsFor(name: string, input: Record<string, unknown>): StepId[]
     brief: false,
     design: runs("build-frame"),
     storyboard: false,
+    review: false,
+    approved: false,
     images: false,
     audio: runs("audio"),
     frames: runs("frame-packets"),
@@ -132,6 +135,8 @@ function summarizeTool(name: string, input: Record<string, unknown>): string | n
       return `Worker: ${short(input.description ?? input.subagent_type, 80)}`;
     case TOOL.deliver:
       return "Delivering the video";
+    case TOOL.present:
+      return `Presenting the storyboard (${Array.isArray(input.frames) ? input.frames.length : "?"} frames)`;
     case TOOL.images: {
       const list = Array.isArray(input.images) ? (input.images as { name?: string }[]) : [];
       return `Generating ${list.length} picture${list.length === 1 ? "" : "s"}: ${short(list.map((i) => i.name).join(", "), 90)}`;
@@ -153,7 +158,10 @@ function summarizeTool(name: string, input: Record<string, unknown>): string | n
 
 export interface RunArgs {
   options: JobOptions;
+  /** change an existing job: its storyboard (while it waits for approval) or its video */
   reviseJobId?: string;
+  /** build the storyboard a job presented; `instructions` are the person's last notes, if any */
+  approveJobId?: string;
   instructions?: string;
   jobId?: string;
   emit?: Emit;
@@ -171,17 +179,25 @@ export function ensureBrandSection(projectDir: string, kit: BrandKit, logos: Pro
   return true;
 }
 
+/** The third family each style preset names for its serif voice, which build-frame's remix leaves alone. */
+const STYLE_SERIF: [RegExp, string][] = [
+  [/^name: Vox Collage/m, "Playfair Display"],
+  [/^name: Editorial/m, "EB Garamond"],
+];
+
 /**
- * The vox-collage preset names a third family for its serif voice (Playfair Display), which build-frame's remix leaves
- * alone. With a product, point it at a face the project actually ships: the brand's accent face, else its display face.
+ * The vox-collage and editorial presets name a third family for their serif voice (Playfair Display, EB Garamond),
+ * which build-frame's remix leaves alone. With a product, point it at a face the project actually ships: the brand's
+ * accent face, else its display face.
  */
 export function alignStyleFonts(projectDir: string, kit: BrandKit): boolean {
   const frame = path.join(projectDir, "frame.md");
   if (kit.name === "none" || !fs.existsSync(frame)) return false;
   const md = fs.readFileSync(frame, "utf8");
   const face = kit.fonts.accent ?? kit.fonts.display;
-  if (!face || !/^name: Vox Collage/m.test(md) || !md.includes("Playfair Display")) return false;
-  fs.writeFileSync(frame, md.replaceAll("Playfair Display", face));
+  const serif = STYLE_SERIF.find(([name, family]) => name.test(md) && md.includes(family))?.[1];
+  if (!face || !serif) return false;
+  fs.writeFileSync(frame, md.replaceAll(serif, face));
   return true;
 }
 
@@ -190,6 +206,8 @@ interface HookActions {
   onFrameMd: () => void;
   /** a job-specific refusal for a shell command (beyond the guard), or null */
   refuse?: (command: string) => string | null;
+  /** a job-specific refusal for any other tool (frame workers before approval), or null */
+  refuseTool?: (name: string) => string | null;
   /** build-frame.mjs is about to run: make sure capture/ carries the brand tokens and fonts */
   beforeBuildFrame: () => void;
 }
@@ -225,6 +243,11 @@ function buildHooks(roots: Roots, emit: Emit, act: HookActions): Options["hooks"
         return { hookSpecificOutput: { hookEventName: "PreToolUse", permissionDecision: "allow", updatedInput: { ...ti, command: local } } };
       return {};
     }
+    const no = act.refuseTool?.(input.tool_name);
+    if (no) {
+      emit({ type: "denied", tool: input.tool_name, reason: no });
+      return deny(no);
+    }
     const why = checkFileTool(input.tool_name, ti, roots, cwd);
     if (why) {
       emit({ type: "denied", tool: input.tool_name, reason: why });
@@ -249,6 +272,20 @@ export function refuseWorkflowTts(command: string): string | null {
     : null;
 }
 
+const BEFORE_APPROVAL = "The storyboard isn't approved yet: this run ends at mcp__explainer__present_storyboard, and pictures, sound, frames, assembly and renders come after the person approves. Finish STORYBOARD.md and storyboard.html and present them.";
+
+/** While the storyboard waits for approval: the build steps the workflow would take next. */
+export function refuseBeforeApproval(command: string): string | null {
+  const runs = (script: string) => new RegExp(`\\bnode\\b[^;&|\\n]*[\\s"'\\/\\\\](${script})\\.mjs`).test(command);
+  const hf = (sub: string) => new RegExp(`\\bhyperframes(@[\\w.-]+)?\\s+(${sub})\\b|plugin-cli\\.mjs["']?\\s+(${sub})\\b`).test(command);
+  return runs("frame-packets|assemble-index|transitions|captions|audio") || hf("render|snapshot|add") ? BEFORE_APPROVAL : null;
+}
+
+/** Frame workers and the dispatch tools wait for approval too. */
+export function refuseToolBeforeApproval(name: string): string | null {
+  return name === "Agent" || name === "Task" ? BEFORE_APPROVAL : null;
+}
+
 function frameCount(projectDir: string): number {
   const dir = path.join(projectDir, "compositions", "frames");
   return fs.existsSync(dir) ? fs.readdirSync(dir).filter((f) => f.endsWith(".html")).length : 0;
@@ -256,17 +293,29 @@ function frameCount(projectDir: string): number {
 
 export async function runJob(args: RunArgs): Promise<JobRecord> {
   const o = args.options;
+  const startedAt = Date.now();
   let job: JobRecord;
-  if (args.reviseJobId) {
-    const existing = readJob(args.reviseJobId);
-    if (!existing) throw new Error(`Job not found: ${args.reviseJobId}`);
-    if (!existing.sessionId) throw new Error("This job has no saved agent session, so it can't be revised.");
+  /** what this run makes */
+  let phase: Phase;
+  /** this run continues a job: its storyboard changes, the approval, or a video revision */
+  let mode: "new" | "storyboard-revision" | "approval" | "video-revision" = "new";
+  const existingId = args.approveJobId ?? args.reviseJobId;
+  if (existingId) {
+    const existing = readJob(existingId);
+    if (!existing) throw new Error(`Job not found: ${existingId}`);
+    if (!existing.sessionId) throw new Error(`This job has no saved agent session, so it can't be ${args.approveJobId ? "approved" : "revised"}.`);
+    const waiting = existing.status === "storyboard" || (existing.phase === "storyboard" && !!existing.storyboard && !existing.video);
+    if (args.approveJobId && !waiting)
+      throw new Error(existing.storyboard?.approvedAt ? `Job ${existingId}'s storyboard was approved already; use --revise to change the video.` : `Job ${existingId} has no storyboard waiting for approval.`);
+    mode = args.approveJobId ? "approval" : waiting ? "storyboard-revision" : "video-revision";
+    phase = mode === "storyboard-revision" ? "storyboard" : "video";
     job = existing;
     job.dir = jobDirFor(job.id); // where the job folder is now, if it moved since it was created
     job.status = "running";
     job.error = undefined;
     job.warnings = [];
-    job.revisions = [...(job.revisions ?? []), { at: new Date().toISOString(), instructions: args.instructions ?? "" }];
+    if (mode === "approval") job.storyboard = { ...job.storyboard!, approvedAt: new Date().toISOString(), approvalNotes: args.instructions?.trim() || undefined };
+    else job.revisions = [...(job.revisions ?? []), { at: new Date().toISOString(), instructions: args.instructions ?? "", kind: phase }];
     Object.assign(o, {
       ...job.options,
       model: o.model ?? job.options.model,
@@ -281,9 +330,12 @@ export async function runJob(args: RunArgs): Promise<JobRecord> {
     const dir = jobDirFor(id);
     fs.mkdirSync(dir, { recursive: true });
     fs.writeFileSync(path.join(dir, "brief.md"), o.brief);
+    o.storyboard ??= DEFAULT_STORYBOARD;
     const { brief: _b, inputs: _i, ...rest } = o;
     job = { id, dir, brief: o.brief, options: rest, status: "running", createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), revisions: [] };
+    phase = o.storyboard === false ? "video" : "storyboard";
   }
+  job.phase = phase;
   const dir = job.dir;
   const baseCost = job.costUsd ?? 0; // a revision adds to what the job already cost
   const workflow: Workflow = o.workflow ?? job.workflow ?? "faceless-explainer";
@@ -301,8 +353,10 @@ export async function runJob(args: RunArgs): Promise<JobRecord> {
     fs.appendFile(eventsFile, JSON.stringify({ t: Date.now(), ...e }) + "\n", () => {});
     args.emit?.(e);
   };
+  // the storyboard phase can only reach the storyboard's milestones (a refused build step still shows up as a call)
+  const reachable = (s: StepId) => phase !== "storyboard" || ["setup", "brief", "design", "storyboard", "review"].includes(s);
   const mark = (s: StepId) => {
-    if (steps.has(s)) return;
+    if (steps.has(s) || !reachable(s)) return;
     steps.add(s);
     emit({ type: "step", step: s, label: STEP_LABEL[s] });
   };
@@ -314,7 +368,15 @@ export async function runJob(args: RunArgs): Promise<JobRecord> {
     emit({ type: "done", job });
     return job;
   };
-  emit({ type: "status", message: args.reviseJobId ? `Revising ${job.id}` : `Started ${job.id}` });
+  emit({
+    type: "status",
+    message:
+      mode === "approval" ? `Building ${job.id} from storyboard v${job.storyboard?.version ?? 1}`
+      : mode === "storyboard-revision" ? `Revising storyboard v${job.storyboard?.version ?? 1} of ${job.id}`
+      : mode === "video-revision" ? `Revising ${job.id}`
+      : phase === "storyboard" ? `Started ${job.id} (storyboard first)`
+      : `Started ${job.id}`,
+  });
   if (ext.copied.length || ext.appended.length) emit({ type: "status", message: `Skill extensions applied (${ext.copied.length + ext.appended.length} files)` });
   for (const t of ext.missingTargets) emit({ type: "status", message: `Skill extension skipped: ${t} isn't in this HyperFrames release` });
 
@@ -326,16 +388,17 @@ export async function runJob(args: RunArgs): Promise<JobRecord> {
     return fail((e as Error).message);
   }
   const kit = brandKit(product);
-  // the look: --style, else the product's default, else DEFAULT_STYLE
+  // the look: --style, else the product's default, else DEFAULT_STYLE; the editorial look: --look, else the product's
   o.style ??= kit.style ?? DEFAULT_STYLE;
   job.options.style = o.style;
+  const look = o.style === "editorial" ? (o.look ?? kit.look ?? "auto") : undefined;
   const context = product ? productContext(product) : undefined;
   if (context) fs.writeFileSync(path.join(dir, "product-context.md"), context);
   job.product = product ? { dir: product.dir, name: product.name } : null;
   job.brand = kit.source;
   for (const w of kit.warnings) emit({ type: "status", message: `Brand: ${w}` });
   emit({ type: "status", message: `Brand: ${kit.source} · HyperFrames ${job.hyperframes.cli ?? "?"} · skills ${plugin.version ?? "missing"} (${plugin.skills.length})` });
-  if (o.style !== "default") emit({ type: "status", message: `Style: ${styleSpec(o.style).label}` });
+  if (o.style !== "default") emit({ type: "status", message: `Style: ${styleSpec(o.style).label}${look ? ` · look: ${look}` : ""}` });
   const skills = skillProblems(plugin, job.hyperframes.cli);
   if (skills.length) return fail(skills.join("; "));
   const pf: Preflight = await preflight({ voice: o.voice });
@@ -359,6 +422,7 @@ export async function runJob(args: RunArgs): Promise<JobRecord> {
   const projectDir = setup.projectDir;
   job.title ??= setup.title;
   mark("setup");
+  if (mode === "approval") mark("approved");
   saveJob(job);
 
   const f = FORMATS[o.format];
@@ -379,7 +443,18 @@ export async function runJob(args: RunArgs): Promise<JobRecord> {
     const what = [nativeVoice && "narration", o.sfx && "sound effects", media.sound.music && "music"].filter(Boolean);
     if (what.length) emit({ type: "status", message: `Sound: ElevenLabs (${what.join(", ")})` });
   }
-  const ctx: ToolContext = { jobDir: dir, projectDir, width: f.width, height: f.height, cta: kit.cta, emit, media };
+  const ctx: ToolContext = {
+    jobDir: dir,
+    projectDir,
+    width: f.width,
+    height: f.height,
+    cta: kit.cta,
+    emit,
+    media,
+    phase,
+    storyboardVersion: mode === "storyboard-revision" ? (job.storyboard?.version ?? 0) + 1 : (job.storyboard?.version ?? 1),
+    formatLine: `${f.ratio} ${f.id} ${f.width}×${f.height} · about ${o.lengthSec ?? 45} s · ${o.voice ? "narrated, with captions" : "silent, on-screen text"}`,
+  };
   const roots = rootsFor(dir, projectDir, PLUGIN_DIR, ROOT);
   const onFrameMd = () => {
     if (alignStyleFonts(projectDir, kit)) emit({ type: "status", message: "frame.md: the serif voice set to the brand's face" });
@@ -389,6 +464,9 @@ export async function runJob(args: RunArgs): Promise<JobRecord> {
     if (kit.name !== "none") writeBrandCapture(projectDir, kit, { title: setup.title, description: setup.title });
   };
   const promptCtx = {
+    phase,
+    look,
+    reviewed: phase === "video" && !!job.storyboard?.approvedAt,
     projectDir,
     jobDir: dir,
     pluginDir: PLUGIN_DIR,
@@ -407,13 +485,21 @@ export async function runJob(args: RunArgs): Promise<JobRecord> {
       sound: media.sound && { narration: media.sound.narration, sfx: media.sound.sfx, music: media.sound.music, voiceId: media.sound.voiceId, ttsModel: media.sound.settings.ttsModel },
     },
   };
-  const prompt = args.reviseJobId ? revisionPrompt(args.instructions ?? "", setup.staged) : initialPrompt(o, lockedBriefFields(o, workflow, voiceId), setup.staged);
+  const prompt =
+    mode === "approval" ? approvalPrompt({ brief: job.brief, notes: args.instructions ?? "", staged: setup.staged, version: job.storyboard?.version ?? 1, workflow, voice: !!o.voice })
+    : mode === "storyboard-revision" ? storyboardRevisionPrompt(args.instructions ?? "", setup.staged, ctx.storyboardVersion ?? 2)
+    : mode === "video-revision" ? revisionPrompt(args.instructions ?? "", setup.staged)
+    : initialPrompt(o, lockedBriefFields(o, workflow, voiceId), setup.staged, phase);
 
+  const freshSession = mode === "new" || mode === "approval";
+  let sessionSaved = false;
   const abort = new AbortController();
-  // the prompt stays open until the video is delivered, so background frame workers can finish (see session.ts)
+  // the prompt stays open until the video (or the storyboard) is handed over, so background frame workers can finish
+  // (see session.ts)
   const keeper = new TurnKeeper(prompt, {
-    delivered: () => !!ctx.delivered,
-    onNudge: (n) => emit({ type: "status", message: `The agent ended its turn before delivering; asking it to carry on (${n}/2)` }),
+    delivered: () => (phase === "storyboard" ? !!ctx.storyboard : !!ctx.delivered),
+    nudge: phase === "storyboard" ? STORYBOARD_NUDGE : NUDGE,
+    onNudge: (n) => emit({ type: "status", message: `The agent ended its turn before ${phase === "storyboard" ? "presenting the storyboard" : "delivering"}; asking it to carry on (${n}/2)` }),
     onStall: () => emit({ type: "status", message: "Nothing happened for 45 minutes; ending the run" }),
   });
   args.signal?.addEventListener("abort", () => {
@@ -449,19 +535,27 @@ export async function runJob(args: RunArgs): Promise<JobRecord> {
           },
         },
         mcpServers: { explainer: createExplainerServer(ctx) },
-        hooks: buildHooks(roots, emit, { onFrameMd, beforeBuildFrame, refuse: (command) => (nativeVoice ? refuseWorkflowTts(command) : null) }),
+        hooks: buildHooks(roots, emit, {
+          onFrameMd,
+          beforeBuildFrame,
+          refuse: (command) => (phase === "storyboard" ? refuseBeforeApproval(command) : nativeVoice ? refuseWorkflowTts(command) : null),
+          refuseTool: (name) => (phase === "storyboard" ? refuseToolBeforeApproval(name) : null),
+        }),
         maxTurns: o.maxTurns ?? Number(process.env.MAX_TURNS || 400),
         maxBudgetUsd: o.maxBudgetUsd ?? (process.env.MAX_BUDGET_USD ? Number(process.env.MAX_BUDGET_USD) : undefined),
         abortController: abort,
-        ...(args.reviseJobId && job.sessionId ? { resume: job.sessionId } : {}),
+        // a resumed session keeps the system prompt it started with, so the build after approval (whose prompt differs
+        // from the storyboard's) starts a fresh session from the approved files; changes resume their run's session
+        ...(!freshSession && job.sessionId ? { resume: job.sessionId } : {}),
         env: agentEnv(dir),
       },
     });
     for await (const msg of q) {
       keeper.observe(msg);
       args.onMessage?.(msg);
-      if (!job.sessionId && "session_id" in msg && msg.session_id) {
+      if (freshSession && !sessionSaved && "session_id" in msg && msg.session_id) {
         job.sessionId = msg.session_id;
+        sessionSaved = true;
         saveJob(job);
       }
       if (msg.type === "assistant") {
@@ -503,8 +597,34 @@ export async function runJob(args: RunArgs): Promise<JobRecord> {
 
   // ── safety net: whatever happened, hand over what exists ────────────────────
   const warnings: string[] = job.warnings ?? [];
+  if (phase === "storyboard") {
+    if (!ctx.storyboard && job.status !== "cancelled") {
+      const fallback = storyboardFromProject(projectDir, job.title ?? "Explainer");
+      if (fallback && fs.statSync(path.join(projectDir, "STORYBOARD.md")).mtimeMs >= startedAt - 1000) {
+        emit({ type: "status", message: "The agent stopped before presenting; collecting the storyboard that exists" });
+        await presentStoryboard(ctx, fallback);
+        warnings.push("The agent didn't call present_storyboard; storyboard.md was collected from STORYBOARD.md by the safety net (no main points or on-screen words).");
+      }
+    }
+    if (ctx.storyboard) {
+      const sb = ctx.storyboard;
+      job.storyboard = { version: sb.version, review: sb.review, sheet: sb.sheet, html: sb.html, frames: sb.frames, seconds: sb.seconds, presentedAt: new Date().toISOString() };
+      warnings.push(...sb.warnings);
+      mark("review");
+      if (job.status === "running") job.status = "storyboard";
+    } else if (job.status === "running") {
+      job.status = "error";
+      job.error ??= "The agent stopped before presenting a storyboard.";
+    }
+    job.frames = frameCount(projectDir);
+    job.steps = STEPS.map((x) => x.id).filter((id) => steps.has(id) || earlierSteps.includes(id));
+    job.warnings = warnings;
+    saveJob(job);
+    emit({ type: "done", job });
+    return job;
+  }
   if (!ctx.delivered && job.status !== "cancelled") {
-    const since = Date.parse(job.revisions.at(-1)?.at ?? job.createdAt) - 1000;
+    const since = startedAt - 1000;
     const fresh = (v: string | null): v is string => !!v && fs.statSync(v).mtimeMs >= since;
     let video = findVideo(projectDir);
     if (!fresh(video) && fs.existsSync(path.join(projectDir, "index.html")) && frameCount(projectDir) > 0) {

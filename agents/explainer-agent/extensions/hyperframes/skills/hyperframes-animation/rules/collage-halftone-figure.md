@@ -34,6 +34,30 @@ When there is no photography (faceless explainers, rights not cleared), the coll
 - The caption (`cg-fig`) is `FIG. NN — <a line from the brief>`; never a made-up source or citation.
 - Animate the plate as one piece (slap), then individual parts on twos: a gear turning in 15° steps (`C.twos("none")` on rotation), slips of paper sliding out, an arrow drawing on.
 
+## A generated picture as a printed cut-out
+
+The run's generated pictures (house illustration style, transparent cut-outs) become **printed matter**: HyperFrames' media treatment prints them in black-and-white halftone (or a brand dot screen) at render time. The `<img>` is its own clip inside the `.cg-cut`:
+
+```html
+<div class="cg-boil" style="left:200px; top:280px"><div class="cg-cut" id="x-baker">
+  <img class="clip" id="x-baker-img" data-start="0" data-duration="6" data-track-index="3"
+       src="assets/images/baker.png" width="640" height="640"
+       data-color-grading='{"adjust":{"saturation":-1,"contrast":0.3},"effects":{"halftone":0.94,"halftoneSize":0.3}}'>
+</div></div>
+```
+
+| treatment | `data-color-grading` |
+|---|---|
+| B&W halftone (the signature) | `{"adjust":{"saturation":-1,"contrast":0.3},"effects":{"halftone":0.94,"halftoneSize":0.3}}` |
+| dot screen in two paper/ink colours | `{"effects":{"monoScreen":1,"monoScreenSize":0.35,"monoScreenAngle":0.25,"monoScreenSpread":0.3},"palette":["<ink>","<paper>"]}` |
+| two-ink (ink + accent) | the dot screen with `"palette":["<ink>","<accent>"]` |
+| B&W photo | `{"preset":"mono-fade","intensity":1}` |
+| print colour (keep the house colours) | `{"preset":"editorial-halftone","intensity":1}` |
+
+- The cut-out on a **torn colour field** is the strongest collage image: a big torn sheet in the accent (`data-cg-fill="var(--cg-accent)"`, white `data-cg-rim`) behind, the B&W subject slapped on top (blueprint `collage-portrait-field`).
+- Halftone needs size: ≥ 500 px on screen for a person, or the dots read as grey.
+- The treated `<img>` must be a clip, and nothing above it hidden with `visibility` at load (the kit uses opacity) — otherwise it stays in colour.
+
 ## A real photo (only when supplied and cleared)
 
 ```html

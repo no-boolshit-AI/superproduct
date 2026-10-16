@@ -50,3 +50,55 @@ A paper board seen from above. Torn magazine strips, tags, tickets and clippings
 | If the content feels... | Use... |
 | --- | --- |
 | Explanatory, editorial, investigative, "let me show you" | Paper Collage |
+
+## 10. Editorial — the cinematic magazine explainer
+
+**Mood:** Clear, cinematic, journalistic | **Best for:** explainers for newcomers, concept lessons, history and people, evidence and numbers, "how it really works" stories. Ships as the `editorial` frame preset + the `editorial` skill (kit, rules `editorial-*`, blueprints `editorial-*`); explainer-agent's default style.
+
+```yaml
+name: Editorial
+colors:
+  paper: "#F2EFE8"
+  ink: "#1B1B18"
+  field: "#E1381C"
+  field-deep: "#8F2414"
+  field-tint: "#F6D9D1"
+  stone: "#8E8A84"
+typography:
+  display:
+    fontFamily: Archivo Black
+    fontSize: 104px
+    fontWeight: 400
+  serif:
+    fontFamily: EB Garamond
+    fontSize: 64px
+    fontWeight: 400
+  body:
+    fontFamily: Inter
+    fontSize: 36px
+    fontWeight: 500
+  label:
+    fontFamily: IBM Plex Mono
+    fontSize: 24px
+    fontWeight: 500
+motion:
+  energy: moderate
+  easing:
+    entry: "expo.out (rise), expo.inOut (field wipes)"
+    camera: "sine.inOut push with parallax; power3.inOut reframes"
+  duration:
+    entrance: 0.9
+    hold: 1.5
+    transition: 0
+  atmosphere:
+    - film-grain
+    - vignette
+    - parallax-layers
+  transition: cut
+```
+
+One clear picture per idea: a subject printed in black and white (halftone, dot screen, B&W photo — HyperFrames media treatments) laid on a flat field of the brand's colour, giant type behind it, thin line-art that guides the eye (rings, orbits, connector lines with dots, "/ Name" tags, a spotlight that dims all but the subject), a highlighter on the one word. The camera pushes slowly on every frame and three depth layers drift apart; grain and a vignette over everything. Looks per brand: colour-field, paper-data, documentary, duotone. Avoid: coloured subjects, stock people, blur, glows, bouncing, a second hue.
+
+| If the content feels... | Use... |
+| --- | --- |
+| A lesson for newcomers, cinematic, journalistic, "here's how it really works" | Editorial |

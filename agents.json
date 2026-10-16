@@ -74,9 +74,9 @@
       "id": "explainer",
       "dir": "agents/explainer-agent",
       "title": "Explainer video (MP4), HyperFrames motion graphics",
-      "summary": "Brief (+ images, clips, notes) → 30–90 s explainer video in the product's brand: HyperFrames' explainer workflow with every HyperFrames skill bundled (story, a frame preset remixed onto the brand, one frame-worker per frame, lint/check, contact sheet, local render). 4:5 portrait by default (9:16, 1:1, 16:9 on request); silent with on-screen text; pictures generated in the product's illustration style (OpenAI gpt-image-2.5, as cut-outs for the motion layers) when OPENAI_API_KEY is set; narration with word-timed captions (--voice), a composed music bed (--music auto|<mood>) and sound effects (--sfx) with ElevenLabs; --style vox-collage for a Vox-style paper collage (cut-outs in stop-motion, marker, stamps). MP4, contact sheet, caption, alt text.",
+      "summary": "Brief (+ images, clips, notes) → 30–90 s explainer video in the product's brand that teaches a newcomer (TED-Ed-style: one question, at most three main points, plain words, a recap). Storyboard first: a run stops at a storyboard for review (storyboard.md + the sketch sheet storyboard.jpg); --revise changes it, --approve builds the video (--no-storyboard: one go). HyperFrames' explainer workflow with every HyperFrames skill bundled (story, a frame preset remixed onto the brand, one frame-worker per frame, lint/check, contact sheet, local render). Default style editorial: cinematic B&W halftone cut-outs on brand-colour fields, type behind the subject, spotlight and connector callouts, camera push with parallax, film grain; its look (colour-field, paper-data, documentary, duotone) picked from the brand or set with --look. --style vox-collage for a Vox-style paper collage. 4:5 portrait by default (9:16, 1:1, 16:9 on request); silent with on-screen text; pictures generated in the product's illustration style (OpenAI) when OPENAI_API_KEY is set; narration with word-timed captions (--voice), a composed music bed (--music auto|<mood>) and sound effects (--sfx) with ElevenLabs. MP4, contact sheet, caption, alt text.",
       "command": "npm run video --",
-      "example": "npm run video -- --file ../../workspace/briefs/2026-10-07-what-is-an-agent.md --length 45",
+      "example": "npm run video -- --file ../../workspace/briefs/2026-10-07-what-is-an-agent.md --length 45   (then --approve <job-id>)",
       "productFlag": "--product <dir|none>",
       "web": { "command": "npm run web", "url": "http://localhost:5050" },
       "install": ["npm install", "npm run setup"],
@@ -84,7 +84,7 @@
       "claudeAuth": "login-or-key",
       "env": { "required": [], "optional": ["OPENAI_API_KEY", "ELEVENLABS_API_KEY", "HEYGEN_API_KEY"] },
       "needs": ["node22", "ffmpeg", "hyperframes-chrome"],
-      "outputs": { "dir": "out/explainer", "env": "OUTPUT_DIR", "depth": 1, "record": "job.json", "files": ["video.mp4", "contact-sheet.jpg", "post.md"] },
+      "outputs": { "dir": "out/explainer", "env": "OUTPUT_DIR", "depth": 1, "record": "job.json", "files": ["storyboard.md", "storyboard.jpg", "video.mp4", "contact-sheet.jpg", "post.md"] },
       "skill": "skills/explainer/SKILL.md"
     },
     {

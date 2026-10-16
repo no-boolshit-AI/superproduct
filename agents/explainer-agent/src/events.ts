@@ -1,4 +1,4 @@
-import type { FormatId, Quality, Style, Workflow } from "./config.js";
+import type { FormatId, Look, Quality, Style, Workflow } from "./config.js";
 import type { MediaEntry } from "./media/common.js";
 
 export type JobEvent =
@@ -9,19 +9,23 @@ export type JobEvent =
   | { type: "step"; step: StepId; label: string }
   | { type: "denied"; tool: string; reason: string }
   | { type: "video"; path: string; durationSec?: number }
+  /** A storyboard was presented for review (files relative to the job folder). */
+  | { type: "storyboard"; version: number; review: string; sheet?: string }
   | { type: "cost"; usd: number; turns: number }
   | { type: "done"; job: JobRecord }
   | { type: "error"; message: string };
 
 export type Emit = (e: JobEvent) => void;
 
-export type StepId = "setup" | "brief" | "design" | "storyboard" | "images" | "audio" | "frames" | "assemble" | "checks" | "snapshot" | "render" | "deliver";
+export type StepId = "setup" | "brief" | "design" | "storyboard" | "review" | "approved" | "images" | "audio" | "frames" | "assemble" | "checks" | "snapshot" | "render" | "deliver";
 
 export const STEPS: { id: StepId; label: string }[] = [
   { id: "setup", label: "Project set up" },
   { id: "brief", label: "Brief locked" },
   { id: "design", label: "Design system" },
   { id: "storyboard", label: "Storyboard" },
+  { id: "review", label: "Storyboard ready" },
+  { id: "approved", label: "Approved" },
   { id: "images", label: "Images" },
   { id: "audio", label: "Audio" },
   { id: "frames", label: "Frames" },
@@ -51,8 +55,12 @@ export interface JobOptions {
   language?: string;
   audience?: string;
   workflow?: Workflow;
-  /** Visual style: "default" (the workflow picks a preset) or "vox-collage" (paper cut-outs on twos). */
+  /** Visual style: "editorial" (cinematic cut-outs on brand colour), "vox-collage" (paper cut-outs on twos) or "default" (the workflow picks a HyperFrames preset). */
   style?: Style;
+  /** The editorial style's look; "auto" (or absent): the agent picks it from the brand. */
+  look?: Look;
+  /** Review a storyboard before anything is built (default true): the run stops at the storyboard; --approve builds it. */
+  storyboard?: boolean;
   /** Website for product-launch-video. */
   url?: string;
   quality?: Quality;
@@ -65,12 +73,33 @@ export interface JobOptions {
   inputs?: string[];
 }
 
+/** The storyboard presented for review (files relative to the job folder). */
+export interface StoryboardRecord {
+  version: number;
+  /** storyboard.md: the review document */
+  review: string;
+  /** storyboard.jpg: the sketch sheet as an image (absent when it couldn't be photographed) */
+  sheet?: string;
+  /** project/storyboard.html: the sketch sheet itself */
+  html?: string;
+  frames: number;
+  seconds?: number;
+  presentedAt: string;
+  approvedAt?: string;
+  /** what the person added when approving */
+  approvalNotes?: string;
+}
+
 export interface JobRecord {
   id: string;
   dir: string;
   brief: string;
   options: Omit<JobOptions, "brief" | "inputs">;
-  status: "running" | "done" | "error" | "cancelled";
+  /** "storyboard": the storyboard waits for the person's approval (or changes) */
+  status: "running" | "storyboard" | "done" | "error" | "cancelled";
+  /** what the last run worked on: the storyboard, or the video */
+  phase?: "storyboard" | "video";
+  storyboard?: StoryboardRecord;
   createdAt: string;
   updatedAt: string;
   sessionId?: string;
@@ -90,7 +119,7 @@ export interface JobRecord {
   summary?: string;
   error?: string;
   warnings?: string[];
-  revisions: { at: string; instructions: string }[];
+  revisions: { at: string; instructions: string; kind?: "storyboard" | "video" }[];
   /** The product folder the job used (brand, voice, facts), if any. */
   product?: { dir: string; name: string } | null;
   /** Where the brand came from: "product folder: <name>" or "none (HyperFrames preset palette)". */

@@ -1,4 +1,4 @@
-/** Web UI server: meta, request guards, a job from the UI with an uploaded note, live events, video byte ranges, revision. */
+/** Web UI server: meta, request guards, a job from the UI with an uploaded note, its storyboard, the approval, live events, video byte ranges, revision. */
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import type { AddressInfo } from "node:net";
@@ -30,10 +30,12 @@ try {
   assert.equal(meta.formats.length, 4);
   assert.equal(meta.defaults.format, "portrait");
   assert.equal(meta.brand, "none (HyperFrames preset palette)");
-  assert.equal(meta.hyperframes.skillCount, 22);
-  assert.deepEqual(meta.styles.map((s: { id: string }) => s.id), ["default", "vox-collage"]);
-  assert.equal(meta.defaults.style, "default");
-  assert.equal(meta.steps.length, 12);
+  assert.equal(meta.hyperframes.skillCount, 24);
+  assert.deepEqual(meta.styles.map((s: { id: string }) => s.id), ["editorial", "vox-collage", "default"]);
+  assert.equal(meta.defaults.style, "editorial");
+  assert.equal(meta.defaults.storyboard, true, "the storyboard is reviewed first by default");
+  assert.deepEqual(meta.looks.map((l: { id: string }) => l.id), ["auto", "colour-field", "paper-data", "documentary", "duotone"]);
+  assert.equal(meta.steps.length, 14);
   assert.ok("images" in meta && "sound" in meta, "the UI is told which media services are set up");
 
   assert.equal((await post("/api/jobs", {}, { Origin: "https://evil.example" })).status, 403, "cross-origin POST blocked");
@@ -53,15 +55,31 @@ try {
     const r = await post("/api/jobs", { brief: "# Why sourdough takes time\n\nFour seconds for home bakers.", format: "portrait", length: 4, quality: "draft", style: "vox-collage", files: [{ name: "notes.md", data: note }] });
     assert.equal(r.status, 202);
     const { id } = await r.json();
+    // the storyboard first
+    const sbEvents = await sseUntilDone(id);
+    const sbDone = sbEvents.at(-1);
+    assert.equal(sbDone.type, "done");
+    assert.equal(sbDone.job.status, "storyboard", sbDone.job.error);
+    assert.ok(sbEvents.some((e) => e.type === "storyboard" && e.version === 1));
+    assert.ok(!sbEvents.some((e) => e.type === "step" && e.step === "render"), "nothing rendered before approval");
+    assert.ok(fs.existsSync(path.join(process.env.OUTPUT_DIR!, id, "project", "capture", "inputs", "notes.md")), "the uploaded note is in the project");
+    assert.equal(sbDone.job.options.style, "vox-collage", "the style from the form reaches the job");
+    assert.ok(fs.existsSync(path.join(process.env.OUTPUT_DIR!, id, "project", "assets", "collage", "collage.js")), "the collage kit is staged");
+    const waiting = await (await fetch(`${base}/api/jobs/${id}`)).json();
+    assert.match(waiting.storyboardReview, /# Why sourdough takes time — storyboard v1/);
+    assert.equal((await fetch(`${base}/out/${id}/storyboard.jpg`)).headers.get("content-type"), "image/jpeg");
+    assert.ok((await fetch(`${base}/out/${id}/project/storyboard.html`)).ok, "the sheet opens in the browser");
+    assert.equal((await (await fetch(`${base}/api/jobs`)).json())[0].thumb, "storyboard.jpg", "the list shows the sheet until there's a video");
+    // approved → the video
+    assert.equal((await post(`/api/jobs/${id}/approve`, { notes: "Keep it calm." })).status, 202);
     const events = await sseUntilDone(id);
     const done = events.at(-1);
     assert.equal(done.type, "done");
     assert.equal(done.job.status, "done", done.job.error);
+    assert.equal(done.job.storyboard.approvalNotes, "Keep it calm.");
     assert.ok(events.some((e) => e.type === "step" && e.step === "render"));
     assert.ok(events.some((e) => e.type === "video"));
-    assert.ok(fs.existsSync(path.join(process.env.OUTPUT_DIR!, id, "project", "capture", "inputs", "notes.md")), "the uploaded note is in the project");
-    assert.equal(done.job.options.style, "vox-collage", "the style from the form reaches the job");
-    assert.ok(fs.existsSync(path.join(process.env.OUTPUT_DIR!, id, "project", "assets", "collage", "collage.js")), "the collage kit is staged");
+    assert.equal((await post(`/api/jobs/${id}/approve`, {})).status, 409, "nothing left to approve");
 
     const job = await (await fetch(`${base}/api/jobs/${id}`)).json();
     assert.match(job.post, /## Caption/);
@@ -86,7 +104,7 @@ try {
     const revDone = (await sseUntilDone(id)).at(-1);
     assert.equal(revDone.job.status, "done", revDone.job.error);
     assert.equal(revDone.job.revisions.length, 1);
-    console.log(`  ✓ job ${id} and a revision through the UI`);
+    console.log(`  ✓ job ${id}: storyboard, approval and a revision through the UI`);
   }
   console.log("✓ web OK");
 } finally {

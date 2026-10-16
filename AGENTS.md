@@ -53,7 +53,7 @@ Output paths in the last column are inside `workspace/`.
 | **carousel** · `agents/carousel-agent` | LinkedIn document carousels in the consulting look: hero numbers, frosted-glass cover, in the product's brand. Case studies, launches, data stories. 4 to 6 slides, square or portrait. | `npm run generate -- --file <brief> [--slides 5] [--format square\|portrait] [--asset img] [--budget 3]` | `out/carousel/<run>/carousel.pdf`, `png/`, `post.md` (caption, alt text) |
 | **collage-post** · `agents/collage-post-agent` | Editorial collage posts (Instagram/LinkedIn, 1080×1350): cutouts, duotones, torn paper, loud type, in the product's `brand` palette. Culture, history, people, opinion pieces. Single post or carousel. | `npm run post -- --file <brief> [--slides 5] [--palette brand\|auto\|cobalt\|…]` · revise: `--revise <job-id> "change"` | `out/collage-post/<job>/png/`, `caption.md`, `index.html`, `<job>.zip` |
 | **deck** · `agents/deck-agent` | Business presentations (16:9) and A4 reports from a brief and data files, in the product's colours, fonts and logo. Board decks, strategy, market studies, QBRs; McKinsey-style method with `--theme strategy`. | `npm run deck -- --file <brief> [--format auto\|deck\|report] [--theme strategy\|corporate\|executive\|swiss\|editorial] [--pages 12] [-i data.csv]…` · revise: `--revise <job-id> "change"` | `out/deck/<job>/presentation.pdf` or `report.pdf`, `png/`, `storyline.md` |
-| **explainer** · `agents/explainer-agent` | Explainer and short motion-graphics videos (MP4) from a brief, in the product's brand: HyperFrames with all its skills bundled; story, animated frames, contact sheet, caption. Concepts, how-tos, launch teasers. 4:5 portrait by default (9:16, 1:1, 16:9); silent with on-screen text; generated pictures in the product's illustration style (OpenAI, when its key is set); narration (`--voice`), composed music (`--music auto\|"<mood>"`) and sound effects (`--sfx`) with ElevenLabs; `--style vox-collage` for a Vox-style paper collage (cut-outs in stop-motion, marker, stamps). | `npm run video -- --file <brief> [--format portrait\|vertical\|square\|landscape] [--length 45] [--style vox-collage] [--voice] [--music auto] [--sfx] [--no-images] [-i image.png]…` · revise: `--revise <job-id> "change"` | `out/explainer/<job>/video.mp4`, `contact-sheet.jpg`, `post.md` (caption, alt text, placeholders) |
+| **explainer** · `agents/explainer-agent` | Explainer and short motion-graphics videos (MP4) from a brief, in the product's brand, that teach a newcomer (TED-Ed-style: one question, ≤ 3 main points, plain words, a recap). **Storyboard first**: a run stops at a storyboard for the user to approve; `--approve` builds the video. HyperFrames with all its skills bundled. Default style **editorial** (cinematic: B&W halftone cut-outs on brand-colour fields, type behind the subject, spotlight and connector callouts, camera push with parallax, film grain; the look — colour-field, paper-data, documentary, duotone — picked from the brand or `--look`); `--style vox-collage` for a Vox-style paper collage. 4:5 portrait by default (9:16, 1:1, 16:9); silent with on-screen text; generated pictures (OpenAI); narration (`--voice`), music (`--music auto\|"<mood>"`) and effects (`--sfx`) with ElevenLabs. | `npm run video -- --file <brief> [--format portrait\|vertical\|square\|landscape] [--length 45] [--style editorial\|vox-collage] [--look …] [--voice] [--music auto] [--sfx] [--no-images] [-i image.png]…` → storyboard · change it: `--revise <job-id> "change"` · build: `--approve <job-id> ["note"]` · `--no-storyboard`: one go | `out/explainer/<job>/storyboard.md` + `storyboard.jpg` (for review), then `video.mp4`, `contact-sheet.jpg`, `post.md` (caption, alt text, placeholders) |
 | **landing-page** · `agents/landing-page-agent` | Marketing landing pages in the product's brand: Next.js + Tailwind, static export, tested and screenshotted. | `npm run page -- -f <brief> -s <slug> [-a assets/] [--replace] [--budget 8]` · re-check: `npm run check -- <slug>` | `sites/<slug>/out/` (static site), `sites/<slug>/.lpa/screens/` |
 | **dev** · `agents/dev-agent` | Features on an existing GitHub repo: PRD, milestone plan, tested commits in Docker, review, pushed branch and draft PR. First use per repo is a setup interview. | `npm run agent -- "<feature>" --project <slug> --relay` · setup: `npm run agent -- setup <owner/repo> --relay` | `dev/runs/<project>/<run>/` (PRD.md, PLAN.md, run.json) and the branch/PR on GitHub |
 
@@ -74,7 +74,8 @@ covers the product folder and `campaign` covers multi-agent work.
 - "LinkedIn post": carousel, unless the user wants the collage look or a single image post (then collage-post).
 - "Presentation"/"deck"/"report": deck. "Website"/"page": landing-page.
 - "Video", "explainer", "animation", "reel", "motion graphic": explainer (`--format vertical` for Reels/Shorts/TikTok).
-  "Vox-style", "collage", "cut-paper", "editorial" video: explainer `--style vox-collage`.
+  Cinematic, editorial, documentary, magazine look: the default editorial style (`--look` to pin colour-field,
+  paper-data, documentary or duotone). "Vox-style", "collage", "cut-paper" video: explainer `--style vox-collage`.
 - "Implement / fix / add to our app": dev.
 - "Here's our new product / brand / client", "update our prices", "we changed the logo": the product folder (skill
   `product`), not an agent.
@@ -165,6 +166,10 @@ You run the agents directly, natively.
    - Ask before anything likely to exceed about $15, and before a campaign of more than three runs.
 5. **Watch it.**
    - For dev-agent, relay questions and approvals (below).
+   - For explainer, the first run stops at a storyboard: show it to the user (the sheet `storyboard.jpg` and a short
+     summary of `storyboard.md`: the question, the main points, the frames, the look, its questions and placeholders),
+     then run `--revise <job-id> "…"` with their changes or `--approve <job-id> ["last note"]` to build the video.
+     Never approve on the user's behalf unless they said so (e.g. "just make it").
    - If a run fails, read the error and the agent's log before retrying. Don't retry blindly; fix the brief or the
      setup.
 6. **Check the result yourself before reporting:**
@@ -178,7 +183,7 @@ You run the agents directly, natively.
    - placeholders the user must fill;
    - the obvious next step (revise, other formats, publish).
 8. **Revise** with the agent's own mechanism, not by editing outputs by hand:
-   - collage-post, deck and explainer: `--revise <job-id>`;
+   - collage-post, deck and explainer: `--revise <job-id>` (explainer: before approval this changes the storyboard);
    - explainer, another format without Claude: `npm run render -- <job-id> --format mov` (ProRes for Resolve);
    - landing-page: re-run with the same `-s <slug> --replace`, or edit `workspace/sites/<slug>` and run
      `npm run check -- <slug>`;

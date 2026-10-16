@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 12 12">
+  <!-- One halftone cell for shading a flat shape (rotate the element 45° for a print screen). Pictures get the real
+       halftone from HyperFrames' media treatments (data-color-grading), not from this. -->
+  <circle cx="6" cy="6" r="2.4" fill="#1B1B18"/>
+</svg>

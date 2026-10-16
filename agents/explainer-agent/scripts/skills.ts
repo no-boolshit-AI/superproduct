@@ -1,6 +1,6 @@
 /**
  * The bundled HyperFrames plugin (vendor/hyperframes: every published HyperFrames skill, pinned to the CLI version,
- * plus explainer-agent's own extensions from extensions/hyperframes, e.g. vox-collage).
+ * plus explainer-agent's own extensions from extensions/hyperframes: clear-explainer, editorial, vox-collage).
  *   npm run skills:check              list the skills and check them against the installed CLI
  *   npm run skills:update [-- 0.9.1]  replace them with a release (default: the latest) and pin the CLI to match;
  *                                     then run npm install

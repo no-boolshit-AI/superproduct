@@ -26,30 +26,34 @@ const lap = (what: string) => console.log(`  ✓ ${what} (${((Date.now() - t0) /
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "explainer-collage-"));
 
 // ── the extensions over the plugin ───────────────────────────────────────────
-assert.deepEqual(STYLES, ["default", "vox-collage"]);
+assert.deepEqual(STYLES, ["editorial", "vox-collage", "default"]);
 assert.equal(styleSpec("vox-collage").fps, 24);
 assert.equal(styleSpec("nope").id, "default");
-assert.deepEqual(EXTENSION_SKILLS, ["vox-collage"]);
+assert.deepEqual(EXTENSION_SKILLS, ["clear-explainer", "editorial", "vox-collage"]);
 {
   const status = extensionStatus();
   assert.deepEqual([status.copied, status.appended, status.missingTargets], [[], [], []], "the shipped plugin already carries the extensions");
   // a fresh copy of the upstream index files, as a skills update leaves them
   const plugin = path.join(tmp, "plugin");
-  for (const rel of ["skills/hyperframes-animation/rules-index.md", "skills/hyperframes-animation/blueprints-index.md", "skills/hyperframes-creative/references/visual-styles.md"]) {
+  for (const rel of ["skills/hyperframes-animation/rules-index.md", "skills/hyperframes-animation/blueprints-index.md", "skills/hyperframes-creative/references/visual-styles.md", "skills/faceless-explainer/references/story-design.md"]) {
     const dest = path.join(plugin, rel);
     fs.mkdirSync(path.dirname(dest), { recursive: true });
     const upstream = fs.readFileSync(path.join(PLUGIN_DIR, rel), "utf8").replace(/\n*<!-- explainer-agent extension: [\s\S]*?<!-- \/explainer-agent extension -->\n?/g, "\n");
     fs.writeFileSync(dest, upstream);
   }
   const first = applyExtensions(plugin);
-  assert.equal(first.appended.length, 3);
+  assert.equal(first.appended.length, 4);
   assert.ok(first.copied.includes("skills/vox-collage/SKILL.md") && first.copied.includes("skills/vox-collage/assets/collage.js"));
+  assert.ok(first.copied.includes("skills/editorial/assets/editorial.js") && first.copied.includes("skills/clear-explainer/SKILL.md"));
+  assert.ok(first.copied.includes("skills/hyperframes-animation/rules/editorial-kit.md") && first.copied.includes("skills/hyperframes-creative/frame-presets/editorial/FRAME.md"));
   assert.ok(first.copied.includes("skills/hyperframes-animation/rules/collage-kit.md") && first.copied.includes("skills/hyperframes-creative/frame-presets/vox-collage/FRAME.md"));
   const again = applyExtensions(plugin);
   assert.deepEqual([again.copied.length, again.appended.length], [0, 0], "applying twice changes nothing");
   const index = fs.readFileSync(path.join(plugin, "skills/hyperframes-animation/rules-index.md"), "utf8");
   assert.equal(index.match(/<!-- explainer-agent extension: /g)?.length, 1, "one block per appended file");
   assert.match(index, /<collage-kit path="rules\/collage-kit\.md">/);
+  assert.match(index, /<editorial-kit path="rules\/editorial-kit\.md">/, "one block carries both styles' rules");
+  assert.match(fs.readFileSync(path.join(plugin, "skills/faceless-explainer/references/story-design.md"), "utf8"), /explainer-agent: teach a newcomer[\s\S]*hyperframes:clear-explainer/);
   // an edited extension replaces its block instead of adding a second one
   const ext = path.join(tmp, "ext");
   fs.cpSync(EXTENSIONS_DIR, ext, { recursive: true });
@@ -86,6 +90,9 @@ lap("skill extensions: applied once, idempotent, edits replace their block");
   assert.equal(twos(0.49), 5 / 12, "the ease only changes 12 times a second");
   assert.equal(twos(0.5), 6 / 12);
   assert.equal(twos(1), 1);
+  const num = { textContent: "" };
+  (C.count as (...a: unknown[]) => unknown)({ fromTo: (o: { v: number }, _a: unknown, b: { v: number; onUpdate: () => void }) => ((o.v = b.v), b.onUpdate()) }, num, 0, { to: 1961 });
+  assert.equal(num.textContent, "1,961", "the count-up on twos writes its value");
   for (const kind of ["circlePath", "arrowPath", "underlinePath", "scribblePath", "checkPath", "crossPath"]) {
     const d = String((C[kind] as (...a: number[]) => string)(100, 100, 60, 40));
     assert.match(d, /^M[\d.-]+ [\d.-]+C/, kind);
