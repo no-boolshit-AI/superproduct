@@ -1,6 +1,6 @@
 # Collage post agent
 
-A Claude Agent SDK agent that turns a brief into collage-style social posts (single posts or carousels). Seven editorial layouts (cover portrait, diagonal question, statement, layered collage, filmstrip, lineage box, mosaic) and nine palettes re-skin type, shapes and photos; with a product folder, a tenth palette, the fonts and the masthead come from the product's brand.
+A Claude Agent SDK agent that turns a brief into collage-style social posts (single posts or carousels). Eight editorial layouts (breakout cover, paper-strip question, taped note, giant figure, split, quote, stacked sheets, echo) and nine palettes re-skin type, shapes and photos; with a product folder, a tenth palette, the fonts and the masthead come from the product's brand.
 
 ![Every layout in every palette, rendered with the bundled sample images](docs/palettes-x-layouts.jpg)
 
@@ -44,7 +44,7 @@ Type a brief, pick slide count and palette (or Auto), and watch the agent work: 
 ```bash
 npm run post -- "Why we still need explorers. Angle: curiosity is a habit that feeds quietly wear down. Mention Ada Lovelace and Marie Curie; end with today's explorers."
 npm run post -- --file brief.md --slides 5 --palette saffron --brand "Your Brand"
-npm run post -- --revise 20261006-101500-why-we-still "Replace the mosaic portraits with hands at work"
+npm run post -- --revise 20261006-101500-why-we-still "Echo slide: four different people instead of one"
 npm run post -- --file brief.md --product ~/clients/acme/product    # another product's palette, fonts, masthead, voice
 npm run post -- --file brief.md --product none                      # no product folder: the nine palettes, $BRAND_NAME
 npm run post -- --help
@@ -67,7 +67,7 @@ brief ─► Claude (Agent SDK, custom system prompt)
 host ─► final PNG export at the chosen scale, CREDITS.md, index.html, zip
 ```
 
-- **Design system**: `design/collage.css` (tokens, effects, the 7 layouts), `design/collage.js` (builds duotone/tritone and outline SVG filters from the palette, shrinks headlines to fit, checks for overflow, overlap and broken images), `design/palettes.css` (generated from `src/palettes.ts`).
+- **Design system**: `design/collage.css` (tokens, effects, paper pieces, the 8 layouts), `design/collage.js` (builds duotone/tritone and outline SVG filters from the palette, shrinks headlines to fit, checks for overflow, overlap and broken images), `design/palettes.css` (generated from `src/palettes.ts`).
 - **Image rules**: no text or logos in generated images; generated people are anonymous archetypes; named real people come only from Wikimedia (public domain/CC0 by default, CC BY/BY-SA with `--cc-by`, credits recorded automatically).
 - **Guardrails**: the agent can only write inside its job folder (not `_design/`), can only read the job folder, `design/`, your reference posts (optional, see below) and the style guide, has no shell or web access, ignores MCP servers configured on your machine, and stops at `MAX_BUDGET_USD`. Image generation stops at `MAX_IMAGES` per post.
 
@@ -92,7 +92,7 @@ npm run preview -- brand    # the product folder's palette, fonts and masthead
 | `newsprint` | light paper, journalistic |
 | `graphite` | monochrome, serious |
 
-Layouts: 01 cover portrait · 02 diagonal question · 03 statement + ghost · 04 layered collage · 05 filmstrip · 06 lineage box (the loud slide) · 07 mosaic grid.
+Layouts: 01 breakout (the cover) · 02 strips (a question) · 03 note (the core claim) · 04 figure (a number or date) · 05 split (then / now) · 06 quote · 07 sheets (3–4 steps; the loud slide) · 08 echo (community, the closing call to action).
 
 ## The product folder
 

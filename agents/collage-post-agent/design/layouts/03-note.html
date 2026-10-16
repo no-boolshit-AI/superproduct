@@ -1,0 +1,31 @@
+<!doctype html>
+<!--
+LAYOUT 03 · NOTE — use for: the core claim / a hard-hitting statement / a single post.
+COPY   .paper .hl  serif statement on the torn sheet, 10–20 words, max 5 lines.
+       .dek        1 short paragraph, 14–26 words, bottom-right.
+IMAGES 1–2 photos or textures (NOT transparent) as dark fragments peeking out from behind the sheet
+       (top-right and bottom-left). The same image may be used for both.
+       generate_image kind=texture|scene aspect=landscape — or a public-domain photo/artwork.
+       Classes: .img .duo-shade (dark) or .duo-ghost (faint) inside .frag (optional .scissor-1/2/3 on the .frag).
+       Remove .frag-b if you only want one fragment.
+-->
+<html lang="en" data-palette="orchid">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Note</title>
+<link rel="stylesheet" href="_design/collage.css">
+<script src="_design/collage.js" defer></script>
+</head>
+<body>
+<main class="canvas L-note grain">
+  <div class="frag frag-a scissor-2"><img class="img duo-ghost" src="assets/sample-texture.jpg" alt=""></div>
+  <div class="frag frag-b scissor-3"><img class="img duo-shade" src="assets/sample-portrait.jpg" alt=""></div>
+  <div class="paper"><h1 class="txt hl" data-fit data-min="56">Darkness is not empty. It is a habitat, a clock and a view we all used to share.</h1></div>
+  <div class="tape tape-a"></div>
+  <div class="tape tape-b"></div>
+  <p class="mast">Your Brand</p>
+  <p class="txt body dek">Moths, migrating birds and sea turtles depend on it. So did every sailor who ever steered by the stars.</p>
+</main>
+</body>
+</html>

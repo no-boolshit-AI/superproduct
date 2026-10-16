@@ -1,0 +1,31 @@
+<!doctype html>
+<!--
+LAYOUT 06 · QUOTE — use for: a person's voice, a human/identity point, testimony. Also a single post.
+COPY   .hl    the quote, 10–24 words, no quotation marks (the big mark is decoration).
+              Only real, sourced quotes (attribute them), or the brand's own words.
+       .cite  <b>Name</b> + role / work / year, 4–12 words.
+IMAGES 1 frontal head-and-shoulders portrait (NOT transparent), used twice:
+       a) .eyes  a strip cut across the eyes: tune style="--y:17%" on the <img> until the eyes sit in the strip.
+       b) .card  the same portrait on a small tilted square (multiplied onto it).
+       generate_image kind=portrait aspect=portrait — or a public-domain photo of the named person.
+       Classes: .img .duo-loud in .eyes; .img in .card.
+-->
+<html lang="en" data-palette="orchid">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Quote</title>
+<link rel="stylesheet" href="_design/collage.css">
+<script src="_design/collage.js" defer></script>
+</head>
+<body>
+<main class="canvas L-quote grain">
+  <div class="eyes"><img class="img duo-loud punch" src="assets/sample-portrait.jpg" style="--y:17%" alt=""></div>
+  <div class="mark" aria-hidden="true">“</div>
+  <p class="mast">Your Brand</p>
+  <h1 class="txt hl" data-fit data-min="50">Switch off the porch light, give your eyes twenty minutes, and the sky starts handing the stars back.</h1>
+  <div class="card"><img class="img" src="assets/sample-portrait.jpg" alt=""></div>
+  <p class="txt body cite"><b>Name Surname</b>Night-sky guide, Your Brand</p>
+</main>
+</body>
+</html>

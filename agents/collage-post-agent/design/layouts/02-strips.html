@@ -1,0 +1,33 @@
+<!doctype html>
+<!--
+LAYOUT 02 · STRIPS — use for: a provocative question, a turn in the argument.
+COPY   .hl   the question, 4–9 words, cut into 2–4 strips. Wrap each line in <span class="s">…</span>
+             and put <br> between them (1–3 words per strip). Mark the strip with the key word
+             with .hot (loud paper). Keep the question mark inside the last strip.
+       .dek  1–2 short paragraphs (<p>), 14–30 words, bottom-left; underline one phrase with <u> if it helps.
+IMAGES 1 photo, scene or texture (NOT transparent), shown as a tilted print bleeding off the bottom-right.
+       generate_image kind=scene|texture aspect=portrait — or a public-domain photo/artwork.
+       Classes: .img .duo-pale inside .piece (optional .scissor-torn on the .piece for a torn edge).
+-->
+<html lang="en" data-palette="orchid">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Strips</title>
+<link rel="stylesheet" href="_design/collage.css">
+<script src="_design/collage.js" defer></script>
+</head>
+<body>
+<main class="canvas L-strips grain">
+  <div class="frame-line ring"></div>
+  <div class="piece scissor-torn"><img class="img duo-pale" src="assets/sample-texture.jpg" alt=""></div>
+  <div class="sq"></div>
+  <p class="mast">Your Brand</p>
+  <h1 class="txt hl" data-fit data-min="64"><span class="s">When did</span><br><span class="s">you last see</span><br><span class="s hot">the Milky Way?</span></h1>
+  <div class="txt body dek">
+    <p>For many people in cities the honest answer is years ago.</p>
+    <p>For some, it is <u>never</u>.</p>
+  </div>
+</main>
+</body>
+</html>

@@ -1,0 +1,31 @@
+<!doctype html>
+<!--
+LAYOUT 07 · SHEETS — the LOUD slide. Use once per carousel: 3–4 steps, tips, rules or principles.
+COPY   .hl                 title, 3–7 words, 1–2 lines.
+       .sheet .n / .t      number ("01"…"04") + the item, 4–9 words each, parallel phrasing.
+                           Three items? Delete .k4 and move .k1–.k3 down ~100px each (inline top:).
+IMAGES 1 transparent cutout (figure or object), printed onto the loud colour (multiply), bottom-left.
+       generate_image kind=cutout|object aspect=portrait.
+       Classes: .img .cut  (no duotone: the multiply does the colour).
+-->
+<html lang="en" data-palette="orchid">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sheets</title>
+<link rel="stylesheet" href="_design/collage.css">
+<script src="_design/collage.js" defer></script>
+</head>
+<body>
+<main class="canvas L-sheets grain">
+  <img class="img cut" src="assets/sample-cutout.png" alt="">
+  <div class="frame-line ring"></div>
+  <p class="mast">Your Brand</p>
+  <h1 class="txt hl" data-fit data-min="64">Four ways to win<br>back the night</h1>
+  <div class="txt sheet k1"><span class="n">01</span><span class="t">Point outdoor lights down, never up</span></div>
+  <div class="txt sheet k2"><span class="n">02</span><span class="t">Choose warm bulbs, 3000 K or lower</span></div>
+  <div class="txt sheet k3"><span class="n">03</span><span class="t">Put lights on timers and sensors</span></div>
+  <div class="txt sheet k4"><span class="n">04</span><span class="t">Count stars with a local dark-sky group</span></div>
+</main>
+</body>
+</html>

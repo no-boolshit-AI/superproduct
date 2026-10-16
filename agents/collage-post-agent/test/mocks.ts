@@ -18,19 +18,19 @@ const tpl = (file: string, img: [string, string]) =>
   readFileSync(path.join(LAYOUTS_DIR, file), "utf8")
     .replace(/<!--[\s\S]*?-->\n/, "")
     .replace('data-palette="orchid"', 'data-palette="cobalt"')
-    .replace(img[0], img[1])
+    .replaceAll(img[0], img[1])
     .replace("Your Brand", "Test Brand");
 
 type Block = { type: "text"; text: string } | { type: "tool_use"; id: string; name: string; input: unknown };
 let n = 0;
 const tu = (name: string, input: unknown): Block => ({ type: "tool_use", id: `toolu_${++n}`, name, input });
 const SCRIPT: Block[][] = [
-  [tu("Read", { file_path: STYLEGUIDE }), tu("Write", { file_path: "plan.md", content: "| slide | layout |\n|---|---|\n| 1 | cover |\n| 2 | diagonal |\n" })],
+  [tu("Read", { file_path: STYLEGUIDE }), tu("Write", { file_path: "plan.md", content: "| slide | layout |\n|---|---|\n| 1 | breakout |\n| 2 | strips |\n" })],
   [tu("mcp__collage__generate_image", { images: [
     { subject: "an anonymous Renaissance scholar with a long beard", kind: "scene", medium: "painting", aspect: "cover", filename: "cover-scholar" },
     { subject: "a man in round glasses looking down-left", kind: "cutout", filename: "figure" } ] })],
-  [tu("Write", { file_path: "slide-01.html", content: tpl("01-cover-portrait.html", ["assets/sample-portrait.jpg", "assets/cover-scholar.png"]) }),
-   tu("Write", { file_path: "slide-02.html", content: tpl("02-diagonal-question.html", ["assets/sample-cutout.png", "assets/figure.png"]) })],
+  [tu("Write", { file_path: "slide-01.html", content: tpl("01-breakout.html", ["assets/sample-cutout.png", "assets/figure.png"]) }),
+   tu("Write", { file_path: "slide-02.html", content: tpl("02-strips.html", ["assets/sample-texture.jpg", "assets/cover-scholar.png"]) })],
   [tu("mcp__collage__render_slides", { inspect: "slide-01.html" })],
   [tu("Write", { file_path: "../escape.html", content: "<p>denied</p>" }), tu("Write", { file_path: "_design/collage.css", content: "x" }), tu("Read", { file_path: "/etc/hostname" }), tu("Write", { file_path: "slide-09.html", content: '<iframe src="/Users/me/.env"></iframe>' })],
   [tu("Write", { file_path: "caption.md", content: "Hook line.\n\n## Alt text\n1. Cover\n2. Question\n" })],

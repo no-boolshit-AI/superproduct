@@ -40,7 +40,7 @@
       "id": "collage-post",
       "dir": "agents/collage-post-agent",
       "title": "Collage social post (single post or carousel)",
-      "summary": "Brief → editorial collage posts (1080×1350): cutouts, duotones, torn paper, bold type; the product's 'brand' palette, fonts and masthead (or nine stock palettes), seven layouts. GPT Image ingredients, public-domain Wikimedia photos for real people. PNGs, HTML, caption, zip.",
+      "summary": "Brief → editorial collage posts (1080×1350): cutouts, duotones, torn paper, bold type; the product's 'brand' palette, fonts and masthead (or nine stock palettes), eight layouts. GPT Image ingredients, public-domain Wikimedia photos for real people. PNGs, HTML, caption, zip.",
       "command": "npm run post --",
       "example": "npm run post -- --file ../../workspace/briefs/2026-10-07-explorers.md --slides 5",
       "productFlag": "--product <dir|none>",

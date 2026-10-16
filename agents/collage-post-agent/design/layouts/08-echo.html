@@ -1,0 +1,32 @@
+<!doctype html>
+<!--
+LAYOUT 08 · ECHO — use for: community, "it's not just you", examples today, the closing call to action.
+COPY   .hl   2 short lines, 2–6 words.
+       .dek  1–2 sentences, 10–22 words; underline the call to action with <u>.
+IMAGES 1–4 transparent cutouts (people or objects). One cutout repeated in four tints (as here),
+       or up to four different ones. They grow left to right and stand on the stage band.
+       generate_image kind=cutout aspect=portrait — or kind=object.
+       Classes: .img .e .e1–.e4 with .duo-t1 … .duo-t4 (one tint each) and .edge-bg (separates the overlaps).
+       Three figures? Delete .e1.
+-->
+<html lang="en" data-palette="orchid">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Echo</title>
+<link rel="stylesheet" href="_design/collage.css">
+<script src="_design/collage.js" defer></script>
+</head>
+<body>
+<main class="canvas L-echo grain">
+  <img class="img e e1 duo-t1 edge-bg" src="assets/sample-cutout.png" alt="">
+  <img class="img e e2 duo-t2 edge-bg" src="assets/sample-cutout.png" alt="">
+  <img class="img e e3 duo-t3 edge-bg" src="assets/sample-cutout.png" alt="">
+  <img class="img e e4 duo-t4 edge-bg" src="assets/sample-cutout.png" alt="">
+  <div class="shape stage loud"></div>
+  <p class="mast">Your Brand</p>
+  <h1 class="txt hl" data-fit data-min="64">Look up,<br>together.</h1>
+  <p class="txt body dek">Find the dark-sky place nearest you and <u>plan one night under real stars.</u></p>
+</main>
+</body>
+</html>

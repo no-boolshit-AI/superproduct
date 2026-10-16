@@ -24,15 +24,15 @@ export interface PaletteBase {
   ink: string;
   /** Pale tint of ink: body copy on the loud background. */
   ink2: string;
-  /** Saturated background of the "loud" slide (lineage layout). */
+  /** Saturated background of the "loud" slide (sheets layout); cutout outlines, hot strips, the stage band. */
   loud: string;
-  /** Deep secondary for wedges / bars. */
+  /** Deep secondary for bars and rules. */
   deep: string;
-  /** Large angular slab behind cutouts (layered collage). */
+  /** The tilted slab the cover cutout breaks out of (breakout layout). */
   slab: string;
-  /** Filmstrip frame colour. */
+  /** Backing behind prints, panes and the quote's eye strip. */
   frame: string;
-  /** Text colour on an ink-filled band. */
+  /** Text colour on ink: paper strips, stickers, the note sheet. */
   onInk: string;
 }
 
@@ -43,14 +43,14 @@ export interface Palette extends PaletteBase {
 }
 
 export const DUO_NAMES = [
-  "hero", // full-bleed cover image: dark, moody, low-key
-  "cut", // main cutout portrait: saturated mid, pale highlights
-  "pale", // secondary cutout: deep shadows, very pale highlights
-  "loud", // filmstrip / loud frames: loud -> ink
-  "mono", // neutral greyscale (cards on ink squares, multiply)
-  "ghost", // background texture at low opacity
-  "shade", // torn background fragments, almost-black
-  "t1", "t2", "t3", "t4", "t5", "t6", // mosaic tile tints
+  "hero", // dark, low-key prints (a split pane, a full photo)
+  "cut", // main cutout (breakout, figure): saturated mid, pale highlights
+  "pale", // the strips print, a washed-out pane: deep shadows, very pale highlights
+  "loud", // the quote's eye strip, a colour pane: loud -> ink
+  "mono", // neutral greyscale (black-and-white panes; multiplied cards and figures)
+  "ghost", // faint fragments behind the note
+  "shade", // dark fragments behind the note, almost-black
+  "t1", "t2", "t3", "t4", "t5", "t6", // echo figure tints
 ] as const;
 export type DuoName = (typeof DUO_NAMES)[number];
 

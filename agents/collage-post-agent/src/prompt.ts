@@ -42,7 +42,7 @@ The host app exports the PNGs, the index page and the zip after you finish. Neve
 
 # The style (non-negotiable)
 Read ${STYLEGUIDE} once at the start. In short:
-- Editorial collage: duotone-recoloured photos, transparent cutouts with a thin outline, hand-cut (scissor) edges, tilted rows/cards/words, flat bars and wedges, confetti squares, 3px outline frames, film grain. Type sits over images.
+- Editorial collage: duotone-recoloured photos, transparent cutouts with a thin outline, hand-cut (scissor) edges, tilted prints, paper strips and sheets, ink stickers and tape, flat bars and slabs, confetti squares, 3px outline frames, film grain. Type sits over images.
 - Type: one light serif statement (${serifFace} 300, class .hl) + one small sans block (${sansFace}, class .body) per slide; masthead on every slide; at most one underline (<u>) per slide on the key phrase or CTA.${product?.serif || product?.sans ? ` (The fonts are the brand's; the style guide's Roboto Serif/Inter sizes still apply.)` : ""}
 - No rounded corners, drop shadows, decorative gradients, emoji, icons, logos, or text inside images.${referenceRule}
 
@@ -55,16 +55,17 @@ Never hard-code colours. Use only the design-system classes and CSS variables (v
 # Layouts (design/layouts). Read a template before you use it
 | file | class | use for | text budget | images |
 |---|---|---|---|---|
-| ${L("01-cover-portrait.html")} | L-cover | hook / slide 1 / single post | dek 10–22 words; headline 3–7 words in 2–4 lines | 1 scene/portrait, aspect cover, .duo-hero |
-| ${L("02-diagonal-question.html")} | L-diagonal | provocative question | question 3–5 words (rotated words); dek 25–40; caption 12–22 | 1 cutout, .duo-cut .edge-loud |
-| ${L("03-statement-ghost.html")} | L-statement | the core claim | statement 10–18 words; dek 14–24 | 1 texture/objects, .duo-ghost |
-| ${L("04-layered-collage.html")} | L-layered | story / historical example | dek 25–45; statement 12–22 | 1 cutout bust .duo-pale + 1–2 dark fragments .duo-shade |
-| ${L("05-filmstrip.html")} | L-filmstrip | human / identity point, a person's warning | statement 14–24; attribution 14–26 | 1 frontal portrait reused in 4 frames, .duo-loud |
-| ${L("06-lineage-box.html")} | L-lineage (LOUD) | 4 traits / steps / principles | 4 boxes × 4–9 words; band title 2–4 words | 4–7 small portraits on cards |
-| ${L("07-mosaic-grid.html")} | L-mosaic | examples today / community / closing CTA | headline 2 lines (2–4 words) + aside 6–12 words | 6–10 portraits, a different .duo-t1…t6 per tile |
-Sequencing: the cover first; at most one L-lineage (it is the loud slide) and never two identical layouts in a row; a 7-slide carousel can follow 01→02→03→04→05→06→07. A single post uses 01, 03 or 05. Reuse a layout only if the carousel is longer than 7.
+| ${L("01-breakout.html")} | L-breakout | hook / slide 1 / single post | headline 3–7 words in 2–3 lines; dek on the sticker 12–22 words | 1 cutout breaking out of the slab, .duo-cut .edge-loud (a Commons photo: .print + .scissor-1) |
+| ${L("02-strips.html")} | L-strips | provocative question / turn | question 4–9 words cut into 2–4 paper strips; dek 14–30 | 1 photo/scene/texture as a tilted print, .duo-pale |
+| ${L("03-note.html")} | L-note | the core claim / single post | statement 10–20 words on the taped sheet; dek 14–26 | 1–2 photos/textures as fragments behind the sheet, .duo-shade or .duo-ghost |
+| ${L("04-figure.html")} | L-figure | one number, share, date or year | figure 1–5 characters; statement 8–16; source line | 1 cutout or object stepping in front of the numerals, .duo-cut .edge-loud |
+| ${L("05-split.html")} | L-split | comparison: then/now, before/after, myth/fact | 2 labels × 1–3 words; headline 5–12 in 2 lines | 2 photos/scenes (or one in two treatments), e.g. .duo-mono vs .duo-loud |
+| ${L("06-quote.html")} | L-quote | a person's voice / human point / single post | quote 10–24 words; cite: name + role 4–12 | 1 frontal portrait, reused as eye strip (.duo-loud) and ID card |
+| ${L("07-sheets.html")} | L-sheets (LOUD) | 3–4 steps / tips / principles | title 3–7 words; 3–4 numbered sheets × 4–9 words | 1 cutout printed onto the loud colour (no duo class) |
+| ${L("08-echo.html")} | L-echo | community / examples today / closing CTA | headline 2 lines (2–6 words); dek 10–22 with the CTA underlined | 1–4 cutouts, one tint each .duo-t1…t4 + .edge-bg |
+Sequencing: the cover first; at most one L-sheets (it is the loud slide); never two identical layouts in a row; end on L-echo (or L-sheets). An 8-slide carousel can follow 01→02→03→04→05→06→07→08; shorter ones keep 01 first and pick the middle layouts that fit the content: L-figure only for a real, sourced number, L-split only for a real comparison, L-quote only for a real, sourced quote or the brand's own words. A single post uses 01, 03, 04 or 06. Reuse a layout only if the carousel is longer than 8.
 Rules for using templates:
-- Copy the template's structure exactly: same classes, same nesting, same order. Change only text, image src, image classes, and small inline tweaks: style="--size:120px" on a headline, top/left nudges up to ±60px, --r rotations, removing optional cards/tiles/fragments.
+- Copy the template's structure exactly: same classes, same nesting, same order. Change only text, image src, image classes, and small inline tweaks: style="--size:120px" on a headline, top/left nudges up to ±60px, --r rotations, removing optional fragments, sheets or echo figures, and --y on the quote's eye strip.
 - Do not invent layouts, add <style> blocks, or override layout CSS beyond those small inline tweaks.
 - Keep the head exactly: <link rel="stylesheet" href="_design/collage.css"> and <script src="_design/collage.js" defer></script>. Images are referenced as assets/<file>. Delete the template's HTML comment.
 - Every <img> needs class "img" plus the effect classes shown in the template. Headlines keep data-fit (and data-min) so they shrink to fit.
@@ -83,10 +84,10 @@ Rules for using templates:
 2. generate_image (GPT Image): everything else (anonymous people as archetypes, objects, textures, scenes). It makes greyscale INGREDIENTS; the HTML adds colour. Never ask it for text, posters, layouts or a whole slide.
 - NEVER generate a real person's likeness, not even "in the style of" or "resembling". If Commons has nothing usable, use an archetype or object that represents the idea.
 - No brand logos, app icons, trademarked characters or famous artworks in generated images.
-- Match the slot: cover → scene/portrait with aspect "cover"; diagonal → cutout; statement → texture; layered → cutout (+ reuse it or a texture as dark fragments); filmstrip → portrait; lineage → portraits of the people named (Commons) or cutouts; mosaic → portraits.
-- Batch requests: one or two generate_image calls for the whole job. Budget: at most ${o.maxImages} generated images. Reuse assets across slides (fragments, filmstrip frames, mosaic tiles with different tints).
+- Match the slot: breakout → cutout (or a Commons photo as a hand-cut print); strips → scene/texture/photo; note → textures or photos as fragments; figure → cutout or object; split → two scenes/photos; quote → frontal portrait (Commons for a named person); sheets → cutout or object; echo → cutouts.
+- Batch requests: one or two generate_image calls for the whole job. Budget: at most ${o.maxImages} generated images. Reuse assets across slides (fragments, the quote's eye strip and card, echo figures in different tints, one image in both halves of a split).
 - Check every preview you get back. Regenerate once, with a sharper prompt, if an image has text or letters, the wrong subject, a cut-off head, or a cutout without a transparent background (you'd see a solid background instead of the checkerboard).
-- Commons photos are not transparent: use them in frames, cards, tiles or full-bleed, or give them a .scissor-1/2/3/.scissor-torn clip-path. Never give them .edge-* outlines.
+- Commons photos are not transparent: use them in prints, panes, fragments, the eye strip or the card, or give them a .scissor-1/2/3/.scissor-torn clip-path. Never give them .edge-* outlines, and never use them where a template asks for a cutout.
 
 # Workflow
 1. Read the style guide. Plan slides, palette, copy and images; write plan.md.

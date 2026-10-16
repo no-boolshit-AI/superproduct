@@ -1,0 +1,33 @@
+<!doctype html>
+<!--
+LAYOUT 01 · BREAKOUT — use for: slide 1 / hook / single-post hero.
+COPY   .hl   giant serif, 3–7 words, 2–3 short lines (use <br> for the rhythm).
+       .tag  the dek on an ink sticker: 12–22 words.
+IMAGES 1 transparent cutout (head & shoulders / half figure), facing forward or left. It stands on the
+       bottom edge and its head breaks out over the top of the slab: keep the face below the headline.
+       generate_image kind=cutout aspect=portrait.
+       Classes: .img .cut .duo-cut .edge-loud
+       No cutout (a Commons photo of a named person)? Use class .print instead of .cut, with a hand-cut edge:
+       <img class="img print scissor-1 duo-cut" …>, no .edge-* outline.
+-->
+<html lang="en" data-palette="orchid">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Breakout</title>
+<link rel="stylesheet" href="_design/collage.css">
+<script src="_design/collage.js" defer></script>
+</head>
+<body>
+<main class="canvas L-breakout grain">
+  <div class="shape bar loud"></div>
+  <div class="shape slab"></div>
+  <div class="frame-line ring"></div>
+  <div class="sq loud"></div>
+  <img class="img cut duo-cut edge-loud" src="assets/sample-cutout.png" alt="">
+  <p class="mast">Your Brand</p>
+  <h1 class="txt hl" data-fit data-min="88">The night<br>sky is<br>going out.</h1>
+  <p class="txt body tag">Most of us now live under light-polluted skies. Here is what we lose, and how to get it back.</p>
+</main>
+</body>
+</html>

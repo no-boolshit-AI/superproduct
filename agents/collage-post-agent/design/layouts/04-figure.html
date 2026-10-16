@@ -1,0 +1,31 @@
+<!doctype html>
+<!--
+LAYOUT 04 · FIGURE — use for: one number, share, date or year that carries the point.
+COPY   .num  the figure itself, 1–5 characters ("1/3", "80%", "1859", "×10"), one line, outline numerals.
+             Add .solid for filled numerals.
+       .hl   serif statement that completes the figure, 8–16 words, max 6 short lines.
+       .src  the source: author/organisation, title, year. Required for any statistic.
+IMAGES 1 transparent cutout (figure or object) stepping in front of the numerals from the right;
+       keep the numerals readable: the cutout may cover only part of the last character.
+       generate_image kind=cutout|object aspect=portrait.
+       Classes: .img .cut .duo-cut .edge-loud
+-->
+<html lang="en" data-palette="orchid">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Figure</title>
+<link rel="stylesheet" href="_design/collage.css">
+<script src="_design/collage.js" defer></script>
+</head>
+<body>
+<main class="canvas L-figure grain">
+  <p class="mast">Your Brand</p>
+  <p class="txt num" data-fit data-min="220">1/3</p>
+  <img class="img cut duo-cut edge-loud" src="assets/sample-cutout.png" alt="">
+  <div class="shape rule loud"></div>
+  <h1 class="txt hl" data-fit data-min="44">of humanity can no longer see the Milky Way from where they live.</h1>
+  <p class="txt body src">Source: Falchi et al., “The new world atlas of artificial night sky brightness”, Science Advances, 2016.</p>
+</main>
+</body>
+</html>

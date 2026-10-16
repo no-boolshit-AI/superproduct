@@ -1,0 +1,30 @@
+<!doctype html>
+<!--
+LAYOUT 05 · SPLIT — use for: a comparison: then / now, before / after, myth / fact, two people or places.
+COPY   .tag.label  one per print, 1–3 words each ("Then" / "Now", "1969" / "Today").
+       .hl         serif statement across the bottom, 5–12 words, 2 lines.
+IMAGES 2 photos or scenes (NOT transparent), one per print, portrait format. Two different images,
+       or the same image twice with contrasting treatments (as here: black-and-white then, colour now).
+       generate_image kind=scene|portrait aspect=portrait — or public-domain photos.
+       Classes: one treatment per print: .duo-mono (black and white), .duo-hero (dark), .duo-loud or .duo-pale (colour).
+-->
+<html lang="en" data-palette="orchid">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Split</title>
+<link rel="stylesheet" href="_design/collage.css">
+<script src="_design/collage.js" defer></script>
+</head>
+<body>
+<main class="canvas L-split grain">
+  <div class="pane pa"><img class="img duo-mono punch" src="assets/sample-texture.jpg" alt=""></div>
+  <div class="pane pb scissor-3"><img class="img duo-loud soft" src="assets/sample-texture.jpg" alt=""></div>
+  <div class="sq loud"></div>
+  <p class="mast">Your Brand</p>
+  <p class="txt tag label ta">Then</p>
+  <p class="txt tag label loud tb">Now</p>
+  <h1 class="txt hl" data-fit data-min="56">The same sky,<br>one streetlight later.</h1>
+</main>
+</body>
+</html>

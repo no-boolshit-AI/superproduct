@@ -45,11 +45,11 @@ assert.ok(existsSync(path.join(dir, "_design", "fonts", "brand", "acme-sans.woff
 const css = readFileSync(path.join(dir, "_design", "palettes.css"), "utf8");
 assert.match(css, /font-family:"Acme Sans"/);
 assert.match(css, /html:root\{--sans:"Acme Sans"/);
-copyFileSync(path.join(SAMPLES_DIR, "sample-portrait.jpg"), path.join(dir, "assets", "p.jpg"));
-const tpl = readFileSync(path.join(LAYOUTS_DIR, "01-cover-portrait.html"), "utf8")
+copyFileSync(path.join(SAMPLES_DIR, "sample-cutout.png"), path.join(dir, "assets", "p.png"));
+const tpl = readFileSync(path.join(LAYOUTS_DIR, "01-breakout.html"), "utf8")
   .replace(/<!--[\s\S]*?-->\n/, "")
   .replace('data-palette="orchid"', 'data-palette="brand"')
-  .replace("assets/sample-portrait.jpg", "assets/p.jpg")
+  .replaceAll("assets/sample-cutout.png", "assets/p.png")
   .replace("Your Brand", o.brand);
 writeFileSync(path.join(dir, "slide-01.html"), tpl);
 try {

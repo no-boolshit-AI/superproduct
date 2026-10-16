@@ -1,6 +1,6 @@
 # Collage style guide
 
-The spec behind the seven layout templates in `design/layouts/`: the **collage look and the layouts**. The templates are drawn in one palette (`orchid`: orchid type on espresso, a signal-red loud slide), which is only one of nine; a product folder adds a tenth (`brand`).
+The spec behind the eight layout templates in `design/layouts/`: the **collage look and the layouts**. The templates are drawn in one palette (`orchid`: orchid type on espresso, a signal-red loud slide), which is only one of nine; a product folder adds a tenth (`brand`).
 
 ## 1. Format
 
@@ -16,12 +16,14 @@ The spec behind the seven layout templates in `design/layouts/`: the **collage l
 
 | Role | Face | Size @1080 | Leading | Notes |
 |---|---|---|---|---|
-| Display headline | Roboto Serif, weight 300, width 112 % | 66–136 px by layout | 0.95–1.0 | Sentence case, tracking −1.2 %, set in 2–5 short lines, `<br>` for rhythm |
-| Body / dek | Inter 400 | 30–31 px | 1.28–1.30 | Short paragraphs, 1.25 em gap; never more than about 45 words per block |
+| Display headline | Roboto Serif, weight 300, width 112 % | 62–142 px by layout | 0.94–1.02 | Sentence case, tracking −1.2 %, set in 2–5 short lines, `<br>` for rhythm |
+| Figure | Roboto Serif 300, outline (4 px stroke) or solid | up to 480 px | 0.92 | One number, share or year per slide (`L-figure`) |
+| Body / dek | Inter 400 | 30–31 px | 1.28–1.30 | Short paragraphs, 1.25 em gap; never more than about 30 words per block |
+| Sticker | Inter 500 (labels: 600, caps, +8 % tracking) | 27 px (labels 23 px) | 1.26 | Ink slip with `--on-ink` type: the cover dek, then/now labels |
 | Masthead | Inter 400 | 25 px | 1 | Centred |
 | Emphasis | Underline, 2 px (4 px on headlines), offset 0.22 em | | | Used once per slide, on the key phrase or call to action |
 
-Line pitch at 1080 px: cover headline 129 px, statement 98 px, filmstrip 72 px, layered 65 px; body line pitch 44 px. The headline face is a close open-source match: a light, wide transitional serif with ball terminals. Both fonts are bundled in `design/fonts` (SIL OFL), including Latin Extended, so Romanian diacritics (ă â î ș ț) render.
+Line pitch at 1080 px, at the default sizes (headlines shrink to fit): cover headline 133 px, strips 139 px (the strip height is 1.21 em), echo 100 px, note 88 px, split 84 px, quote 78 px, figure statement 63 px; body line pitch 40 px. The headline face is a close open-source match: a light, wide transitional serif with ball terminals. Both fonts are bundled in `design/fonts` (SIL OFL), including Latin Extended, so Romanian diacritics (ă â î ș ț) render.
 
 ## 3. Colour system (tokens)
 
@@ -30,54 +32,55 @@ Every colour on a slide comes from eight tokens. Photos are re-coloured with duo
 | Token | Role | Value in `orchid` |
 |---|---|---|
 | `--bg` | Canvas: a near-black with a tint | `#1F110D` espresso |
-| `--ink` | All type, outlines, the band, confetti | `#E95BCF` orchid |
-| `--ink2` | Body copy on the loud background | `#F4C3ED` |
-| `--loud` | Background of the loud slide; cutout outline | `#CB2B29` signal red |
-| `--deep` | Wedges and bars | `#691568` plum |
-| `--slab` | Large angular slab behind a cutout | `#821D23` oxblood |
-| `--frame` | Filmstrip frame | `#1D081E` |
-| `--on-ink` | Title text on the ink band | `= --bg` |
+| `--ink` | All type, outlines, strips, stickers, the note sheet, confetti | `#E95BCF` orchid |
+| `--ink2` | Title on the loud slide, type on loud strips and labels, tape | `#F4C3ED` |
+| `--loud` | Background of the loud slide; cutout outline, the hot strip, the stage band, the quotation mark | `#CB2B29` signal red |
+| `--deep` | Bars and rules | `#691568` plum |
+| `--slab` | The tilted slab the cover cutout breaks out of | `#821D23` oxblood |
+| `--frame` | Backing behind prints, panes and the eye strip | `#1D081E` |
+| `--on-ink` | Type on ink: strips, stickers, the note sheet | `= --bg` |
 
 Image treatments (filters, applied in HTML):
 
 | Class | Used for | Mapping (shadow → highlight) |
 |---|---|---|
-| `duo-hero` | Full-bleed cover | 4 stops, weighted dark: low-key, moody |
-| `duo-cut` | Main cutout | deep loud/plum → ink → pale ink |
-| `duo-pale` | Secondary cutout | deep → pale lavender/tint |
-| `duo-loud` | Filmstrip frames | dark loud → loud → ink |
-| `duo-mono` / multiply | Lineage cards | greyscale multiplied onto an ink square |
-| `duo-ghost` | Background textures | bg → mid ink, shown at about 40 % opacity |
-| `duo-shade` | Torn background fragments | almost black → dark loud |
-| `duo-t1 … t6` | Mosaic tiles | six different tints of the palette |
+| `duo-hero` | Dark, low-key prints (a split pane, a full photo) | 4 stops, weighted dark: low-key, moody |
+| `duo-cut` | Main cutout (breakout, figure) | deep loud/plum → ink → pale ink |
+| `duo-pale` | The strips print; a washed-out pane | deep → pale lavender/tint |
+| `duo-loud` | The quote's eye strip; a colour pane | dark loud → loud → ink |
+| `duo-mono` / multiply | Black-and-white panes; the quote card and the sheets figure are greyscale multiplied onto their colour | neutral greyscale |
+| `duo-ghost` | Faint fragments behind the note | bg → mid ink |
+| `duo-shade` | Dark fragments behind the note | almost black → dark loud |
+| `duo-t1 … t6` | Echo figures | six different tints of the palette |
 
 Palettes (`src/palettes.ts`): `orchid` (the templates' own), `cobalt`, `acid`, `ember`, `ultraviolet`, `verdigris`, `saffron`, `newsprint` (light), `graphite`. The agent picks one per carousel from the topic, and avoids `orchid` unless asked, so the feed does not all turn pink and red.
 
 ## 4. Collage vocabulary
 
-1. **Duotone everything.** No photo appears in its original colours, except a ghost texture, which may keep faint colour.
+1. **Duotone everything.** No photo appears in its original colours.
 2. **Cutouts.** Transparent-background figures, often with a 3 px outline in `--loud`, bleeding off a canvas edge.
 3. **Hand cuts.** Photos without transparency get irregular "scissor" edges (`scissor-1/2/3`, `scissor-torn`).
-4. **Tilt.** Rows, cards and words rotate between −30° and +30°. Nothing important sits perfectly square, except text boxes and the band.
-5. **Layering.** Type sits *over* images. Dark fragments sit *under* everything. Colour bars cut across.
-6. **Geometry.** Flat bars, wedges, slabs, small confetti squares, 3 px outline frames. No rounded corners, drop shadows, gradients-as-decoration or emoji.
-7. **Repetition.** The same image repeats with variations: photo-booth frames, double exposures, a mosaic of tints.
+4. **Tilt.** Prints, panes, strips, sheets, stickers and slabs rotate between −7° and +7°; tape and confetti up to ±25°. Nothing important sits perfectly square, except the text blocks themselves.
+5. **Layering.** Type sits *over* images. Fragments sit *under* everything. A cutout may break *out of* its frame or step in front of the giant figure, never over a headline. Colour bars cut across.
+6. **Paper and geometry.** Paper strips, ink stickers, torn sheets, translucent tape, flat bars, slabs, small confetti squares, 3 px outline frames offset from what they frame. No rounded corners, drop shadows, gradients-as-decoration or emoji.
+7. **Repetition.** The same image repeats with variations: one cutout echoed in four tints, a portrait as eye strip and ID card, one photo in two treatments.
 8. **Grain.** A light film grain over the whole canvas (`.grain`).
-9. **Restraint in type.** One serif statement, one small sans block, at most one underline per slide.
+9. **Restraint in type.** One serif statement, one small sans block (or a sticker), at most one underline per slide.
 
 ## 5. Layouts
 
 | # | Layout | Role in a carousel | Text | Images |
 |---|---|---|---|---|
-| 01 | `L-cover`: cover portrait | Hook / slide 1 | Dek top-right (10–22 words); giant headline bottom-left (3–7 words) | 1 full-bleed portrait or scene, `duo-hero` |
-| 02 | `L-diagonal`: diagonal question | Provocation / turn | Question as rotated, stair-stepped words (3–5); dek top-right; caption bottom-left with underline | 1 transparent cutout bleeding bottom-right, `duo-cut` + outline |
-| 03 | `L-statement`: statement + ghost | Core claim | Statement (10–18 words) top; short dek lower right | 1 texture/object, tilted −24°, faded |
-| 04 | `L-layered`: layered collage | Story / example from history | Dek top-left; statement across the bottom (12–22 words) | 1 cutout bust (`duo-pale`), 1–2 dark fragments, bars, slab |
-| 05 | `L-filmstrip`: filmstrip | Human / identity point | Statement right (14–24 words); attribution below | 1 frontal portrait reused in 4 frames (crop / plain / double / offset) |
-| 06 | `L-lineage`: lineage box (**loud**) | List of 3–4 traits or steps | 4 outlined boxes (4–9 words each) + a title band (2–4 words) | 4–7 small portraits on tilted ink squares |
-| 07 | `L-mosaic`: mosaic grid | Examples today / CTA / closer | 2-line headline + aside with an underlined CTA | 6–10 portraits in three tilted rows, a different tint per tile |
+| 01 | `L-breakout`: breakout | Hook / slide 1 / single post | Giant headline on top (3–7 words); dek on an ink sticker (12–22 words) | 1 cutout standing on the bottom edge, breaking out over a tilted slab and outline frame, `duo-cut` + outline |
+| 02 | `L-strips`: strips | Question / turn | The question cut into 2–4 tilted paper strips (4–9 words, the key strip loud); dek bottom-left | 1 photo or texture as a tilted, torn print bleeding bottom-right, `duo-pale` |
+| 03 | `L-note`: note | Core claim / single post | Statement (10–20 words) on a torn ink sheet taped at the corners; dek bottom-right | 1–2 photos or textures as fragments peeking out behind the sheet, `duo-shade` / `duo-ghost` |
+| 04 | `L-figure`: figure | One number, share or year | Giant outline numerals (1–5 characters); statement (8–16 words) below; source line | 1 cutout or object stepping in front of the numerals, `duo-cut` + outline |
+| 05 | `L-split`: split | Comparison: then/now, before/after | A label sticker on each print (1–3 words); headline across the bottom (5–12 words) | 2 prints tilted against each other, the right one hand-cut; two images or one in two treatments |
+| 06 | `L-quote`: quote | A person's voice / single post | Quote (10–24 words) under a giant loud quotation mark; name + role next to the card | 1 frontal portrait: an eye strip across the top (`duo-loud`) and a small ID card |
+| 07 | `L-sheets`: sheets (**loud**) | 3–4 steps, tips or principles | Title (3–7 words); numbered paper sheets (4–9 words each) stacked down the right | 1 cutout printed onto the loud colour (multiply), an outline frame |
+| 08 | `L-echo`: echo | Community / examples / CTA / closer | 2-line headline + dek with the underlined call to action, below the band | 1–4 cutouts growing left to right on a loud stage band, one tint each (`duo-t1…t4`) |
 
-Typical 7-slide carousel: 01 → 02 → 03 → 04 → 05 → 06 → 07. Shorter carousels keep 01 first and end on 07 or 06. A single post uses 01, 03 or 05.
+Typical 8-slide carousel: 01 → 02 → 03 → 04 → 05 → 06 → 07 → 08. Shorter carousels keep 01 first, end on 08 (or 07), and use 04, 05 and 06 only when the content has a sourced number, a real comparison or a real quote. A single post uses 01, 03, 04 or 06.
 
 Templates with exact geometry live in `design/layouts/`. Run `npm run preview` to see every layout in every palette.
 
