@@ -71,6 +71,8 @@ export interface ToolContext {
   phase?: "storyboard" | "video";
   /** the version this run's storyboard gets (1 for the first, +1 per revision) */
   storyboardVersion?: number;
+  /** --storyboard-images: the storyboard phase generates its pictures too, so the sheet shows them */
+  storyboardImages?: boolean;
   /** e.g. "4:5 portrait · about 45 s · silent", for the review document */
   formatLine?: string;
   storyboard?: StoryboardPresented;
@@ -206,7 +208,9 @@ export function storyboardReview(ctx: ToolContext, sb: StoryboardInput, shot: Sh
     "",
     shot?.ok ? `![The storyboard sheet](${path.basename(shot.file!)})` : `_The sheet couldn't be photographed${shot?.error ? ` (${shot.error})` : ""}: open \`project/storyboard.html\` in a browser._`,
     "",
-    "The sketch sheet itself: `project/storyboard.html` (open it in a browser). Pictures, narration and motion are made after approval; grey shapes on the sheet stand for pictures not made yet.",
+    ctx.storyboardImages
+      ? "The sketch sheet itself: `project/storyboard.html` (open it in a browser). The pictures on the sheet are the generated ones (the build uses them as they are); narration and motion are made after approval."
+      : "The sketch sheet itself: `project/storyboard.html` (open it in a browser). Pictures, narration and motion are made after approval; grey shapes on the sheet stand for pictures not made yet.",
   ].filter((l, i, a) => l !== "" || a[i - 1] !== "");
   const frames = sb.frames.map((f) =>
     `### ${f.id} · ${f.name.trim()} — ${Number(f.seconds).toFixed(1)} s\n\n` +
@@ -224,7 +228,7 @@ export function storyboardReview(ctx: ToolContext, sb: StoryboardInput, shot: Sh
   return [
     head.join("\n"),
     `## Frames\n\n${frames.join("\n\n")}`,
-    pictures.length && `## Pictures to make (after approval)\n\n${pictures.join("\n")}`,
+    pictures.length && `## ${ctx.storyboardImages ? "Pictures (generated with the storyboard)" : "Pictures to make (after approval)"}\n\n${pictures.join("\n")}`,
     `## Placeholders to fill\n\n${ph.length ? ph.map((p) => `- ${p}`).join("\n") : "None."}`,
     sb.questions?.length && `## Questions for you\n\n${sb.questions.map((q) => `- ${q.trim()}`).join("\n")}`,
     `## Next\n\n- Approve and build the video: \`npm run video -- --approve ${id}\` (add a short note in quotes for last small changes)\n- Change the storyboard: \`npm run video -- --revise ${id} "frame 03: …"\``,
@@ -355,7 +359,7 @@ function presentTool(ctx: ToolContext) {
         )
         .min(1)
         .max(40),
-      pictures: z.array(z.object({ name: z.string(), kind: z.string().optional(), shows: z.string(), treatment: z.string().optional() })).optional().describe("Pictures to generate after approval"),
+      pictures: z.array(z.object({ name: z.string(), kind: z.string().optional(), shows: z.string(), treatment: z.string().optional() })).optional().describe("The pictures: to generate after approval, or (with generate_images in this run) the ones made for the sheet"),
       placeholders: z.array(z.string()).optional().describe("Facts the brief didn't give, shown as [X] on screen, e.g. '[X] hours — frame 02'"),
       questions: z.array(z.string()).optional().describe("Choices the person may want to change: the analogy, the look, the length, a fact to confirm"),
       sheet: z.string().optional().describe("The sketch sheet, project-relative (default storyboard.html)"),
@@ -385,53 +389,58 @@ function presentTool(ctx: ToolContext) {
   );
 }
 
-/** The tools this job offers: present_storyboard while the storyboard is made; deliver plus the media tools its keys and options allow while the video is built. */
+/** generate_images, when the job has an image provider (none otherwise). */
+function imageTools(ctx: ToolContext) {
+  const media = ctx.media;
+  if (!media?.images) return [];
+  const status = (message: string) => ctx.emit({ type: "status", message });
+  const { settings, style } = media.images;
+  return [
+    tool(
+      "generate_images",
+      `Generate pictures for the motion layers with ${settings.mock ? "placeholders (IMAGE_MOCK=1, no cost)" : `OpenAI ${settings.model}`}, in this product's illustration style (${style.references.length ? `${style.references.length} reference illustration${style.references.length > 1 ? "s" : ""} and ` : ""}a style description go with every request: describe only the subject). Saves PNGs to assets/images/<name>.png and shows you a preview of each. Up to 8 per call, generated in parallel; at most ${settings.max} new pictures per run; an identical request reuses the earlier file for free.`,
+      {
+        images: z
+          .array(
+            z.object({
+              name: z.string().min(1).max(60).describe("File stem: 'ana' → assets/images/ana.png. The same name again replaces that picture"),
+              prompt: z.string().min(8).max(4000).describe("What to show: the subject, pose, angle, framing and props. The house style is added for you. Never ask for words, numbers, labels or logos"),
+              kind: z
+                .enum(IMAGE_KINDS)
+                .describe("cutout: one subject on a transparent ground, for anything that moves · ui: an interface element (window, card, button, dial, inbox, chat bubble…) drawn in the house style, transparent, text areas blank · illustration: a small complete picture on paper white · scene: a full-bleed background"),
+              aspect: z.string().optional().describe("square | portrait | landscape | wide (16:9) | tall (9:16) | frame (this video's canvas) | WIDTHxHEIGHT in multiples of 16. Default: square for cutout and illustration, landscape for ui, frame for scene"),
+              refs: z.array(z.string()).max(8).optional().describe("Project-relative pictures to keep identical, e.g. ['assets/images/ana.png'] in every later picture of Ana"),
+              transparent: z.boolean().optional().describe("Override the kind's background (scene is always opaque)"),
+            }),
+          )
+          .min(1)
+          .max(8),
+      },
+      async (a) => {
+        try {
+          const results = await generateImages(a.images, { projectDir: ctx.projectDir, canvas: { width: ctx.width, height: ctx.height }, style, settings, store: media.store });
+          const made = results.filter((r) => !(r instanceof Error) && !r.cached).length;
+          const reused = results.filter((r) => !(r instanceof Error) && r.cached).length;
+          const failed = results.filter((r) => r instanceof Error).length;
+          status(`Images: ${made} new${reused ? `, ${reused} reused` : ""}${failed ? `, ${failed} failed` : ""}`);
+          const left = Math.max(0, settings.max - madeThisRun(media.store, "image"));
+          return imagesReply(results, a.images.map((i) => i.name), left);
+        } catch (e) {
+          return text(`Image generation failed: ${(e as Error).message}`, true);
+        }
+      },
+    ),
+  ];
+}
+
+/** The tools this job offers: present_storyboard while the storyboard is made (plus generate_images with --storyboard-images); deliver plus the media tools its keys and options allow while the video is built. */
 export function explainerTools(ctx: ToolContext) {
-  if (ctx.phase === "storyboard") return [presentTool(ctx)];
+  if (ctx.phase === "storyboard") return [presentTool(ctx), ...(ctx.storyboardImages ? imageTools(ctx) : [])];
   const inProject = (p: string) => path.resolve(ctx.projectDir, p);
   const media = ctx.media;
   const status = (message: string) => ctx.emit({ type: "status", message });
   const extra = [];
-
-  if (media?.images) {
-    const { settings, style } = media.images;
-    extra.push(
-      tool(
-        "generate_images",
-        `Generate pictures for the motion layers with ${settings.mock ? "placeholders (IMAGE_MOCK=1, no cost)" : `OpenAI ${settings.model}`}, in this product's illustration style (${style.references.length ? `${style.references.length} reference illustration${style.references.length > 1 ? "s" : ""} and ` : ""}a style description go with every request: describe only the subject). Saves PNGs to assets/images/<name>.png and shows you a preview of each. Up to 8 per call, generated in parallel; at most ${settings.max} new pictures per run; an identical request reuses the earlier file for free.`,
-        {
-          images: z
-            .array(
-              z.object({
-                name: z.string().min(1).max(60).describe("File stem: 'ana' → assets/images/ana.png. The same name again replaces that picture"),
-                prompt: z.string().min(8).max(4000).describe("What to show: the subject, pose, angle, framing and props. The house style is added for you. Never ask for words, numbers, labels or logos"),
-                kind: z
-                  .enum(IMAGE_KINDS)
-                  .describe("cutout: one subject on a transparent ground, for anything that moves · ui: an interface element (window, card, button, dial, inbox, chat bubble…) drawn in the house style, transparent, text areas blank · illustration: a small complete picture on paper white · scene: a full-bleed background"),
-                aspect: z.string().optional().describe("square | portrait | landscape | wide (16:9) | tall (9:16) | frame (this video's canvas) | WIDTHxHEIGHT in multiples of 16. Default: square for cutout and illustration, landscape for ui, frame for scene"),
-                refs: z.array(z.string()).max(8).optional().describe("Project-relative pictures to keep identical, e.g. ['assets/images/ana.png'] in every later picture of Ana"),
-                transparent: z.boolean().optional().describe("Override the kind's background (scene is always opaque)"),
-              }),
-            )
-            .min(1)
-            .max(8),
-        },
-        async (a) => {
-          try {
-            const results = await generateImages(a.images, { projectDir: ctx.projectDir, canvas: { width: ctx.width, height: ctx.height }, style, settings, store: media.store });
-            const made = results.filter((r) => !(r instanceof Error) && !r.cached).length;
-            const reused = results.filter((r) => !(r instanceof Error) && r.cached).length;
-            const failed = results.filter((r) => r instanceof Error).length;
-            status(`Images: ${made} new${reused ? `, ${reused} reused` : ""}${failed ? `, ${failed} failed` : ""}`);
-            const left = Math.max(0, settings.max - madeThisRun(media.store, "image"));
-            return imagesReply(results, a.images.map((i) => i.name), left);
-          } catch (e) {
-            return text(`Image generation failed: ${(e as Error).message}`, true);
-          }
-        },
-      ),
-    );
-  }
+  extra.push(...imageTools(ctx));
 
   const sound = media?.sound;
   if (media && sound?.narration) {

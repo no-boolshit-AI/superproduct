@@ -107,6 +107,9 @@ npm run video -- --approve <job-id> ["a last small note"]                       
   argument. `--style default` lets HyperFrames pick one of its own presets. A product sets its default with
   `product.json → agents.explainer.style`.
 - `--no-storyboard` (or `STORYBOARD=off` in the agent's `.env`): one run straight to the video, no review.
+- `--storyboard-images` (on the first run or a `--revise`): the pictures are generated with the storyboard and shown
+  on the sheet instead of grey shapes; the build reuses them. OpenAI then bills before approval. Use it when the user
+  wants to judge the pictures before approving.
 - Silent by default: on-screen text carries the story. `--voice` adds narration and word-timed captions (ElevenLabs
   when its key is set). `--music auto` composes a bed from the story's mood, `--music "dry upright piano, 90 bpm"`
   one to a brief, `--music bed.mp3` lays your file; `--sfx` adds effects made for the video.
@@ -123,7 +126,7 @@ npm run video -- --approve <job-id> ["a last small note"]                       
   storyboard is a small part; the build starts a fresh session from the approved files). A 13-frame, 100-second
   vox-collage video ran past the $15 cap and needed a `--revise` to finish: for long videos, raise `--budget` (ask
   first) or cut beats. Run it in the background and follow `workspace/out/explainer/<job>/events.jsonl`. OpenAI and
-  ElevenLabs bill separately, outside `--budget`, and only after approval.
+  ElevenLabs bill separately, outside `--budget`, and only after approval (OpenAI before it with `--storyboard-images`).
 
 ## Outputs (`workspace/out/explainer/<job-id>/`)
 

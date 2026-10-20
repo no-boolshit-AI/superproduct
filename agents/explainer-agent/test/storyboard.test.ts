@@ -36,6 +36,8 @@ type Reply = { content: { type: string; text?: string; data?: string; mimeType?:
 const tools = explainerTools(ctx);
 assert.deepEqual(tools.map((t) => t.name), ["present_storyboard"], "the storyboard phase offers only present_storyboard");
 assert.ok(explainerTools({ ...ctx, phase: "video" }).some((t) => t.name === "deliver") && !explainerTools({ ...ctx, phase: "video" }).some((t) => t.name === "present_storyboard"), "the video phase delivers");
+assert.deepEqual(explainerTools({ ...ctx, storyboardImages: true }).map((t) => t.name), ["present_storyboard", "generate_images"], "--storyboard-images: the storyboard phase makes the pictures too");
+assert.deepEqual(explainerTools({ ...ctx, storyboardImages: true, media: undefined }).map((t) => t.name), ["present_storyboard"], "--storyboard-images without an image provider: nothing to generate with");
 const txt = (r: Reply) => String(r.content[0]?.text ?? "");
 const present = (a: Partial<StoryboardInput> & { sheet?: string } = {}) => tools[0].handler({ ...INPUT, ...a } as never, {} as never) as Promise<Reply>;
 

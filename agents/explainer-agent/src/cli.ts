@@ -28,6 +28,8 @@ until you approve it with --approve <job-id>. --no-storyboard builds in one go.
                            the topic, stated in the storyboard)
       --no-storyboard      Build the video in one go, without the storyboard review (STORYBOARD=off in .env does
                            the same for every run)
+      --storyboard-images  Generate the pictures with the storyboard, so the sheet shows them instead of grey
+                           shapes (OpenAI bills before approval; the build reuses them). Also works on --revise
   -l, --length <seconds>   Target length (default ${DEFAULT_LENGTH_SEC}; explainers work best at 30–90)
       --voice              Add narration and word-timed captions (ElevenLabs when ELEVENLABS_API_KEY is set, else
                            HyperFrames TTS: HeyGen → local Kokoro)
@@ -88,6 +90,7 @@ const { values, positionals } = parseArgs({
     revise: { type: "string" },
     approve: { type: "string" },
     "no-storyboard": { type: "boolean" },
+    "storyboard-images": { type: "boolean" },
     look: { type: "string" },
     quiet: { type: "boolean", short: "q" },
     help: { type: "boolean", short: "h" },
@@ -153,6 +156,7 @@ const options: JobOptions = {
   style: values.style as JobOptions["style"],
   look: lookOf(values.look),
   storyboard: values["no-storyboard"] ? false : DEFAULT_STORYBOARD,
+  storyboardImages: values["storyboard-images"],
   url: values.url,
   quality: values.quality as JobOptions["quality"],
   // absolute paths, so a revision started from another folder (or the web UI) finds the same files

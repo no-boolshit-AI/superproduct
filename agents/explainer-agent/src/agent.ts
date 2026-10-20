@@ -322,9 +322,12 @@ export async function runJob(args: RunArgs): Promise<JobRecord> {
       maxBudgetUsd: o.maxBudgetUsd ?? job.options.maxBudgetUsd,
       quality: o.quality ?? job.options.quality,
       product: o.product ?? job.options.product,
+      // --storyboard-images on a revision turns it on for the rest of the job (the build reuses the pictures)
+      storyboardImages: o.storyboardImages ?? job.options.storyboardImages,
       brief: job.brief,
       inputs: o.inputs,
     });
+    job.options.storyboardImages = o.storyboardImages;
   } else {
     const id = args.jobId ?? newJobId(o.brief);
     const dir = jobDirFor(id);
@@ -453,6 +456,7 @@ export async function runJob(args: RunArgs): Promise<JobRecord> {
     media,
     phase,
     storyboardVersion: mode === "storyboard-revision" ? (job.storyboard?.version ?? 0) + 1 : (job.storyboard?.version ?? 1),
+    storyboardImages: !!o.storyboardImages && !!media.images,
     formatLine: `${f.ratio} ${f.id} ${f.width}×${f.height} · about ${o.lengthSec ?? 45} s · ${o.voice ? "narrated, with captions" : "silent, on-screen text"}`,
   };
   const roots = rootsFor(dir, projectDir, PLUGIN_DIR, ROOT);
@@ -467,6 +471,7 @@ export async function runJob(args: RunArgs): Promise<JobRecord> {
     phase,
     look,
     reviewed: phase === "video" && !!job.storyboard?.approvedAt,
+    storyboardImages: !!o.storyboardImages && !!media.images,
     projectDir,
     jobDir: dir,
     pluginDir: PLUGIN_DIR,

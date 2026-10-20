@@ -35,6 +35,8 @@ export interface PromptContext {
   kitDir?: string;
   /** what this job may generate (absent: nothing) */
   media?: PromptMedia;
+  /** --storyboard-images: the pictures are generated with the storyboard and shown on the sheet; the build reuses them */
+  storyboardImages?: boolean;
 }
 
 export interface PromptMedia {
@@ -94,6 +96,14 @@ export function imagePolicy(c: PromptContext): string {
   const im = c.media?.images;
   if (!im) return "";
   const refs = im.refs.length ? `${im.refs.map((r) => `\`${r}\``).join(", ")} (look at ${im.refs.length > 1 ? "them" : "it"} once) and ` : "";
+  if (c.phase === "storyboard" && c.storyboardImages)
+    return `## Pictures: generated now, shown on the sheet
+The person asked to see the real pictures on the storyboard, so \`mcp__explainer__generate_images\` is yours in this run (${im.mock ? "placeholders, IMAGE_MOCK=1" : `OpenAI ${im.model}`}). It makes pictures in this product's illustration style: ${refs}a style description go with every request, so describe only the subject.
+- Where a picture carries the beat: the people and objects of the story, its setting, the tools and screens it talks about; one element per picture (each enters, moves and layers on its own). \`cutout\` for anything that moves or is layered, \`ui\` for interface elements with blank text areas, \`illustration\` for a small complete picture, \`scene\` for a full-bleed background. A 60-second video usually needs 4–10; at most ${im.max} new pictures this run.
+- When: once STORYBOARD.md lists them in Video direction (file, kind, what it shows, size${c.kitDir ? ", treatment" : ""}), generate them in one or two calls of up to 8, a recurring character or prop first, then its file in \`refs\` for every later picture of it. Check the previews and regenerate (same name) a picture with the wrong style, stray text, a cropped subject or a ground that should be transparent and isn't.
+- On the sheet: place each picture in its cell, in its planned place and size, as \`<img src="assets/images/<name>.png">\` at the file's ratio (with the style's treatment where the sheet can show it). No grey placeholder for a picture that exists. Pass the list to present_storyboard.
+- On a storyboard revision, regenerate only the pictures the change touches; an identical request reuses the earlier file for free. After approval the build uses these files as they are.
+- No text, logos or real people in pictures; type is HTML.`;
   if (c.phase === "storyboard")
     return `## Pictures: planned now, generated after approval
 After approval you get \`mcp__explainer__generate_images\` (${im.mock ? "placeholders, IMAGE_MOCK=1" : `OpenAI ${im.model}`}), which makes pictures in this product's illustration style (${refs}a style description go with every request). In this run, plan them:
@@ -105,7 +115,7 @@ After approval you get \`mcp__explainer__generate_images\` (${im.mock ? "placeho
 - Use them where a picture carries the beat: the people and objects of the story, its setting, the tools and screens it talks about. Type-only frames stay type-only; a 60-second video usually needs 4–10 pictures. At most ${im.max} new pictures this run.
 - Made for motion: one element per picture, so each can enter, move and layer on its own (the person, the desk and the machine as separate cut-outs rather than one flat scene). \`cutout\` (transparent PNG) for anything that moves or is layered; \`ui\` for interface elements drawn in the house style — windows, cards, buttons, dials, an inbox, chat bubbles — with blank areas where text goes, the real text set in HTML on top; \`illustration\` for a small complete picture on paper; \`scene\` for a full-bleed background (aspect \`frame\`).
 - When: once STORYBOARD.md's shot sequences are written, before the frame packets. List every picture in Video direction (file, kind, what it shows, size), generate them in one or two calls of up to 8, then name the file and its size in every frame block that uses it (scene lines and roles), so each worker's packet carries it.
-- Consistency: generate a recurring character or prop first, then pass its file in \`refs\` for every later picture of it.
+- Consistency: generate a recurring character or prop first, then pass its file in \`refs\` for every later picture of it.${c.storyboardImages ? "\n- The storyboard's pictures are already in `assets/images/` (the person approved them on the sheet): use them as they are, and generate only new ones or the ones a change asks for." : ""}
 - No text in pictures: no words, numbers, labels, logos or interface copy — all type is HTML. No real people, no brands or product logos (Claude, Anthropic, OpenAI and the rest are plain text), no copyrighted characters.
 - Check the previews and regenerate (same name) a picture with the wrong style, stray text, a cropped subject or a ground that should be transparent and isn't. An identical request reuses the earlier file for free.
 - Frames place them as \`<img src="assets/images/<name>.png" width height>\` at the file's ratio: never stretched, recoloured or redrawn as SVG.`;
@@ -173,7 +183,7 @@ function modeSection(o: JobOptions, c: PromptContext, q: string, fps: number | u
 The person reviews the plan before anything is built. BRIEF.md says \`flow: automation\` and \`storyboard: yes\`: the workflow's review loop happens, with the plan and the sketch sheet reviewed together at ONE checkpoint, outside this session.
 - Do now: Step 0–2 (BRIEF.md, build-frame → frame.md), Step 3 (STORYBOARD.md${o.voice ? " and SCRIPT.md" : ""}, written with \`hyperframes:clear-explainer\`), then the parts of Step 4 the sheet needs — the \`## Video direction\` block and each frame's \`blueprint\`, \`focal\` and pictures. The time-coded Scene lines come after approval.
 - Then sketch the storyboard sheet, \`storyboard.html\` in the project root (\`hyperframes:clear-explainer\` → references/storyboard-sheet.md; the review-loop's sketch pass), mark each frame \`built\` in STORYBOARD.md as its cell lands, and call \`mcp__explainer__present_storyboard\`. Look at the photographed sheet it returns, fix what's broken, then end your turn with one short line.
-- Not in this run (the harness refuses them until approval): generating pictures, voices, music or effects; frame packets and frame workers; assembly, transitions, captions; snapshots and renders.
+- Not in this run (the harness refuses them until approval): generating ${c.storyboardImages && c.media?.images ? "" : "pictures, "}voices, music or effects; frame packets and frame workers; assembly, transitions, captions; snapshots and renders.
 - Never ask questions: nobody is there to answer until the review. Where the workflow would ask (preset, voice, caption look, sign-in, sketches or not), decide, and list the choices the person may want to change as questions in present_storyboard.
 ${never}
 ${limits}`;

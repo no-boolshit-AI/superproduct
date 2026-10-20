@@ -61,6 +61,8 @@ export interface JobOptions {
   look?: Look;
   /** Review a storyboard before anything is built (default true): the run stops at the storyboard; --approve builds it. */
   storyboard?: boolean;
+  /** Generate the planned pictures while the storyboard is made, so the sketch sheet shows them (OpenAI bills before approval); the build reuses them. */
+  storyboardImages?: boolean;
   /** Website for product-launch-video. */
   url?: string;
   quality?: Quality;
