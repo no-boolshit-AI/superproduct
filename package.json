@@ -29,6 +29,8 @@
   },
   "scripts": {
     "agents": "node scripts/agents.mjs",
+    "setup": "node scripts/agents.mjs setup",
+    "keys": "node scripts/agents.mjs keys",
     "status": "node scripts/agents.mjs status",
     "outputs": "node scripts/agents.mjs outputs",
     "install:agents": "node scripts/agents.mjs install all",
@@ -37,6 +39,7 @@
     "product:check": "node scripts/product.mjs check",
     "workspace": "node scripts/workspace.mjs",
     "test:product": "node --test lib/product.test.mjs && node scripts/product.mjs check --product lib/fixtures/acme",
-    "test:workspace": "node --test lib/workspace.test.mjs"
+    "test:workspace": "node --test lib/workspace.test.mjs",
+    "test:env": "node --test lib/env-file.test.mjs"
   }
 }

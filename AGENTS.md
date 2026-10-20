@@ -21,7 +21,19 @@ Everything is done for one product, described in **`workspace/product/`**: brand
 and development notes. Read `workspace/product/BRIEF.md` at the start of a session. The agents read the folder
 themselves, so a brief only needs what is specific to the job (see "The product folder" below). If there is no product
 folder yet (a fresh clone), offer to set one up from the user's links and documents first (skill `product`); the agents
-also run without one, on their built-in defaults.
+also run without one, on their built-in defaults. On a fresh clone, run `setup` first (see "Setup and missing pieces").
+
+## Talking to the user
+
+Many users aren't developers. Write for them:
+
+- Keep it short and plain. Name things by what they do ("the video agent", "a key from OpenAI", "a free tool for video
+  files"), not by `npm`, `.env` or flags. Show a command only when the user has to run it, and then exactly, ready to
+  paste.
+- Ask one question at a time, with options and the recommended one first.
+- Before a run, say in one line what's running, about how long it takes and the most it can cost.
+- When something fails, say in one sentence what went wrong and what you'll do next. No stack traces.
+- For results, say what was made and where it is, and offer to open it (`open <file>` on a Mac).
 
 ## The kit and the workspace
 
@@ -61,10 +73,10 @@ Every agent also takes `--product <dir|id|none>` (landing-page: `-p`); the defau
 names a product in `workspace/products/`.
 
 Each agent has a skill with its full usage: brief template, options, outputs, revisions, pitfalls. The `product` skill
-covers the product folder and `campaign` covers multi-agent work.
+covers the product folder, `campaign` covers multi-agent work, and `setup` covers installing and keys.
 
-- **Skills:** `skills/<id>/SKILL.md`. `node scripts/agents.mjs init` links them into `.claude/skills`, where Claude
-  Code loads them automatically. If `.claude/skills` is missing, run `init` once on your computer. Anywhere else
+- **Skills:** `skills/<id>/SKILL.md`. `node scripts/agents.mjs setup` (or `init`) links them into `.claude/skills`,
+  where Claude Code loads them automatically. If `.claude/skills` is missing, run it once on your computer. Anywhere else
   (Cowork, other coding agents), read the agent's `SKILL.md` before you use the agent.
 - **Registry:** `agents.json` is the same table in machine-readable form.
 - **Agent READMEs:** `agents/<name>/README.md` are the source of truth if anything disagrees.
@@ -88,11 +100,15 @@ covers the product folder and `campaign` covers multi-agent work.
 ## Helpers: `node scripts/*.mjs`
 
 ```bash
-node scripts/agents.mjs init                # once: .claude/skills + permissions, and workspace/ (your computer)
-node scripts/agents.mjs status [agent]      # ready? (installed, keys present by name only, Chromium, Docker, FFmpeg) + latest output
+node scripts/agents.mjs setup [agent…]      # first time / something missing: checks the computer and agents, lists what you can install and what needs the user
+node scripts/agents.mjs init                # once: .claude/skills + permissions, and workspace/ (your computer; setup does it too)
+node scripts/agents.mjs status [agent]      # ready? (installed, keys present by name only, Chromium, Docker, FFmpeg) + latest output; each problem with its fix
 node scripts/agents.mjs outputs [agent]     # newest results with their key files
 node scripts/agents.mjs list                # agents + commands
-node scripts/agents.mjs install <agent|all> # npm install + setup steps (not in the Cowork VM)
+node scripts/agents.mjs install <agent…|all> # npm install + setup steps + the agent's .env (not in the Cowork VM)
+node scripts/agents.mjs keys                # each key: what it's for, cost, how to get it, which agents need it, where it's set (names only)
+node scripts/agents.mjs keys ask <NAME>     # opens the key's web page and a Terminal window that asks for it and saves it (Mac)
+node scripts/agents.mjs keys set <NAME> [agent…]   # saves a key in every agent that needs it (asks hidden, or reads stdin)
 node scripts/agents.mjs test <agent|all>    # zero-cost self-tests (no Claude spend)
 node scripts/agents.mjs run <agent> [args]  # = cd agents/<dir> && <command> [args]
 node scripts/agents.mjs web <agent>         # start an agent's web UI
@@ -109,9 +125,8 @@ node scripts/product.mjs fetch                   # download missing assets liste
 node scripts/product.mjs init --name … --website … [--archive]   # start a new product (skill product)
 ```
 
-Run `init` once per machine. Run `status` before the first run of an agent in a session; its first lines are the
-workspace and the product with its check result. If it says "not installed", run `install` (on the user's computer,
-not in the Cowork VM). If keys are missing, ask the user to put them in that agent's `.env`.
+Run `status` before the first run of an agent in a session. Its first lines are the workspace and the product with its
+check result, and every problem comes with its fix. If anything is missing, see "Setup and missing pieces".
 
 ## Where you are running
 
@@ -147,12 +162,49 @@ You run the agents directly, natively.
 - The workspace must be inside the connected folder: the VM can't follow a symlink out of it.
 - Show images and PDFs to yourself by staging them, and to the user by naming the file in the folder.
 
+## Setup and missing pieces
+
+Setting up is your job. The user should only have to do the steps that need them.
+
+- **First session, fresh clone, or "get me started":** run `node scripts/agents.mjs setup`. It links the skills,
+  creates the workspace and the agents' settings files, and checks the computer and every agent. It ends with a to-do
+  list in three parts: what you can do, what needs the user, and optional extras. Sum it up in a few plain lines
+  instead of pasting it.
+- **Before a job,** `status <agent>` is enough. Fix only what that agent needs. Don't install everything for one
+  carousel.
+- **A missing agent or program: offer to install it yourself.** Ask one question for the whole batch, saying what it
+  is and how long it takes: "To make videos I need to install the video agent and FFmpeg, a free video tool. That
+  takes about 5 minutes. Shall I?" On a yes, run the commands `setup` or `status` printed. Installs take minutes, so
+  run them in the background. Then run `status` again and say what's ready. Never install anything without that yes.
+- **Steps that need the user:**
+  - passwords (`sudo`, the Homebrew installer);
+  - an app's first start (Docker Desktop);
+  - logging in through the browser (`claude auth login`, `gh auth login --web`);
+  - getting keys.
+
+  Give one step at a time, with the link, and wait until they're done.
+- **Keys: make getting one easy.**
+  - Say what the key unlocks, whether it's optional and what it costs (`node scripts/agents.mjs keys`).
+  - Run `node scripts/agents.mjs keys ask <NAME>`. On a Mac it opens the page where the key is made, plus a small
+    Terminal window that asks for the key (hidden) and saves it in every agent that needs it.
+  - Walk the user through the numbered steps it prints, then check with `keys`.
+  - If they paste a key into the chat instead, save it with
+    `printf '%s' '<key>' | node scripts/agents.mjs keys set <NAME>`. Never repeat the key.
+- **Node missing** (`node: command not found`, so none of the helpers run): if Homebrew is installed, offer
+  `brew install node`. Otherwise send the user to https://nodejs.org for the LTS installer, then ask them to reopen the
+  editor.
+- **In Cowork** you can't install anything or open windows on the computer. Give the exact command to paste into
+  Terminal there, with the `cd`, then check with `status`.
+
+The `setup` skill has the details: which agent needs which key, subscription or API key, and fixes for failed installs.
+
 ## How to handle a request
 
 1. **Understand it.** Ask only what changes the output: format, audience, length, language, must-have facts, deadline.
    The brand, voice and standing facts come from the product folder; ask about the brand only for work for someone
    else. Otherwise choose sensible defaults and say which.
-2. **Check readiness:** `node scripts/agents.mjs status <agent>`.
+2. **Check readiness:** `node scripts/agents.mjs status <agent>`. If something is missing, offer to fix it first (see
+   "Setup and missing pieces").
 3. **Write the brief** to `workspace/briefs/YYYY-MM-DD-<slug>.md`.
    - Use the template in the agent's skill.
    - Put inputs (data files, images, logos) in `workspace/briefs/YYYY-MM-DD-<slug>/` and pass them with the agent's
@@ -180,7 +232,7 @@ You run the agents directly, natively.
    - skim `post.md` / `caption.md` / `storyline.md`;
    - check the placeholder lists, the QA warnings, and that the files exist.
 7. **Report:**
-   - what was made and the paths of the key files;
+   - what was made and the paths of the key files, with an offer to open them;
    - which product/brand it used, if it wasn't the default;
    - the spend;
    - placeholders the user must fill;
@@ -276,8 +328,8 @@ few minutes. Details are in the dev skill.
 
 ## Rules
 
-- **Secrets.** Never print, `cat`, copy or commit `.env`, `secrets.env` or tokens. `status` tells you which names are
-  set. Keys go into the agent's own `.env`.
+- **Secrets.** Never print, `cat`, copy or commit `.env`, `secrets.env` or tokens. `status` and `keys` tell you which
+  names are set. Keys go into the agents' `.env` files through `keys ask` or `keys set`.
 - **Money.**
   - Every run spends Claude credit (and OpenAI for images in carousel, collage-post, explainer and optionally deck;
     ElevenLabs for explainer narration, music and sound effects, or HeyGen for narration, when their keys are set).
@@ -310,8 +362,9 @@ few minutes. Details are in the dev skill.
      `outputDir(<agent id>)` from `lib/workspace.mjs`, overridable with `OUTPUT_DIR`;
    - zero-cost tests with a mock Claude API, with `PRODUCT_DIR=none` and `OUTPUT_DIR` in a temporary folder (tests
      never write into the workspace), plus a product test on `lib/fixtures/acme`.
-2. Add it to `agents.json` (`outputs.dir` relative to the workspace, `outputs.env` for its override), and its default
-   context profiles to `DEFAULT_PROFILES` in `lib/product.mjs`.
+2. Add it to `agents.json` (`outputs.dir` relative to the workspace, `outputs.env` for its override; a new key also
+   goes into `keys`, with what it's for, its cost, the page that makes it and the steps), and its default context
+   profiles to `DEFAULT_PROFILES` in `lib/product.mjs`.
 3. Write `skills/<id>/SKILL.md`, with a description that says when to use it.
 4. Add a row to the table above, to `README.md`, and to "How the agents use it" in `templates/product/README.md` (and
    the workspace's `product/README.md`).

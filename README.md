@@ -138,14 +138,20 @@ and FFmpeg for the explainer agent.
 ```bash
 git clone https://github.com/no-boolshit-AI/superproduct.git
 cd superproduct
-node scripts/agents.mjs init            # links skills/ into .claude/skills, adds .claude/settings.json, creates workspace/
-node scripts/agents.mjs install all     # npm install, Chromium and setup steps for every agent
-node scripts/agents.mjs test all        # zero-cost self-tests against a mock Claude API
 ```
 
-Fill in each agent's `.env` from its `.env.example` (see [Keys](#keys)), then check that everything is ready:
+**The easy way:** open the folder in Claude Code (or Cowork) and say *"Set me up."* Claude checks your computer, offers
+to install what's missing, and walks you through each key: it opens the page where the key is made and a small window
+to paste it into. You never edit a settings file.
+
+**By hand:**
 
 ```bash
+node scripts/agents.mjs setup           # checks this computer and the agents, lists what's missing and how to fix it
+node scripts/agents.mjs install all     # npm install, Chromium and setup steps for every agent
+node scripts/agents.mjs keys            # which keys each agent needs, what they cost, where to get them
+node scripts/agents.mjs keys set OPENAI_API_KEY   # shows how to get it, asks for it, saves it for every agent that uses it
+node scripts/agents.mjs test all        # zero-cost self-tests against a mock Claude API
 node scripts/agents.mjs status          # installed? keys set (names only)? Chromium? Docker? FFmpeg?
 ```
 
@@ -197,7 +203,11 @@ Every agent also runs by hand from its folder; its README lists the commands, fo
 | dev | `ANTHROPIC_API_KEY` or `CLAUDE_CODE_OAUTH_TOKEN` (from `claude setup-token`) | `GITHUB_TOKEN`, Docker |
 | explainer | the Claude Code login on your computer, or `ANTHROPIC_API_KEY` | `OPENAI_API_KEY` for pictures; `ELEVENLABS_API_KEY` for narration, music and sound effects, or `HEYGEN_API_KEY` for narration (all optional) |
 
-Keys go in each agent's own `.env`, which is git-ignored. `status` reports which names are set, never their values.
+Keys go in each agent's own `.env`, which is git-ignored. You don't have to edit those files:
+`node scripts/agents.mjs keys set <NAME>` shows how to get the key, asks for it without showing it, and saves it for every
+agent that uses it. On a Mac, `keys ask <NAME>` also opens the page where the key is made. `keys` lists every
+key, what it costs and where it's set; like `status`, it reports names, never values. A Claude API key is billed per use:
+`keys set` leaves the agents that use your Claude Code login on your subscription unless you name them.
 
 ## Running in Cowork
 
@@ -212,12 +222,12 @@ terminal, and follows the run through its output files. `status`, `outputs`, the
 ├─ CLAUDE.md             instructions for the main Claude: routing, briefs, budgets, review, rules
 ├─ agents.json           registry: commands, install and test steps, required keys, outputs
 ├─ agents/               the six agents
-├─ skills/               one skill per agent, plus product and campaign (multi-agent work)
+├─ skills/               one skill per agent, plus product, campaign (multi-agent work) and setup (installs, keys)
 ├─ lib/product.mjs       product folder loader: find, validate, tokens to colours and fonts, compiled context
 ├─ lib/workspace.mjs     where the workspace is and what goes where (+ workspace-migrate.mjs from the old layout)
 ├─ lib/fixtures/acme/    fictional example product, used by the tests
 ├─ schemas/              JSON Schema for product.json
-├─ scripts/agents.mjs    init · list · status · outputs · install · test · run · web · pending · answer
+├─ scripts/agents.mjs    setup · init · list · status · outputs · install · keys · test · run · web · pending · answer
 ├─ scripts/product.mjs   init · show · check · context · tokens · index · fetch
 ├─ scripts/workspace.mjs show · init · migrate
 ├─ templates/product/    blank product folder and its spec

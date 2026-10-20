@@ -2,6 +2,9 @@
   "permissions": {
     "allow": [
       "Bash(node scripts/agents.mjs list:*)",
+      "Bash(node scripts/agents.mjs setup:*)",
+      "Bash(node scripts/agents.mjs keys)",
+      "Bash(node scripts/agents.mjs keys --json)",
       "Bash(node scripts/agents.mjs status:*)",
       "Bash(node scripts/agents.mjs outputs:*)",
       "Bash(node scripts/agents.mjs pending:*)",

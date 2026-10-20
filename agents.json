@@ -18,6 +18,96 @@
     "cli": "node scripts/product.mjs",
     "skill": "skills/product/SKILL.md"
   },
+  "keys": {
+    "$comment": "The keys the agents read from their .env: what each is for, what it costs, and how a non-technical user gets one (page to open, steps). Which agent needs which: agents[].env and agents[].claudeAuth. `node scripts/agents.mjs keys` lists them; `keys ask <NAME>` opens the page and a Terminal window to paste the key into; `keys set <NAME>` saves it in every agent that uses it. prefix: what a valid value starts with (a warning only). run: a command the Terminal window runs first. secret: false shows what is typed.",
+    "ANTHROPIC_API_KEY": {
+      "label": "Claude API key",
+      "for": "Claude, paid per use. Agents that use your Claude Code login don't need it; set for one of them, it bills that agent's runs to the API instead of your subscription.",
+      "cost": "pay per use, billed by Anthropic",
+      "open": "https://platform.claude.com/settings/keys",
+      "steps": [
+        "Sign in, or create an account, at https://platform.claude.com",
+        "Add credit: Settings → Billing (a few dollars is enough to start)",
+        "Settings → API keys → Create key, name it superproduct, and copy it (it's shown only once)"
+      ],
+      "prefix": ["sk-ant-api"]
+    },
+    "CLAUDE_CODE_OAUTH_TOKEN": {
+      "label": "Claude subscription token",
+      "for": "Claude on your Pro or Max plan where the Claude Code login can't reach (dev's Docker runs)",
+      "cost": "included in your Claude plan",
+      "run": "claude setup-token",
+      "steps": [
+        "Run claude setup-token in a terminal (the window Claude opens does it for you)",
+        "Sign in and approve in the browser page it opens",
+        "Copy the token it prints (it starts with sk-ant-oat)"
+      ],
+      "prefix": ["sk-ant-oat"]
+    },
+    "OPENAI_API_KEY": {
+      "label": "OpenAI API key",
+      "for": "generated pictures and images",
+      "cost": "pay per image, billed by OpenAI",
+      "open": "https://platform.openai.com/api-keys",
+      "steps": [
+        "Sign in, or sign up, at https://platform.openai.com",
+        "Add credit: Settings → Billing → Add payment details",
+        "API keys (https://platform.openai.com/api-keys) → Create new secret key → copy it (it's shown only once)",
+        "If pictures later fail with \"organization must be verified\": Settings → Organization → General → Verify Organization"
+      ],
+      "prefix": ["sk-"]
+    },
+    "ELEVENLABS_API_KEY": {
+      "label": "ElevenLabs API key",
+      "for": "narration, music and sound effects in explainer videos",
+      "cost": "your ElevenLabs plan (the free plan has a small monthly allowance)",
+      "open": "https://elevenlabs.io/app/developers/api-keys",
+      "steps": [
+        "Sign in, or sign up, at https://elevenlabs.io",
+        "Developers → API keys → Create API key (leave its access unrestricted) → copy it"
+      ]
+    },
+    "HEYGEN_API_KEY": {
+      "label": "HeyGen API key",
+      "for": "explainer narration, if you don't use ElevenLabs",
+      "cost": "your HeyGen plan",
+      "open": "https://app.heygen.com/settings?nav=API",
+      "steps": [
+        "Sign in, or sign up, at https://app.heygen.com",
+        "Settings → API → copy your API token"
+      ]
+    },
+    "GITHUB_TOKEN": {
+      "label": "GitHub token",
+      "for": "pushing branches and opening draft pull requests. Not needed if the GitHub CLI is logged in (gh auth login --web), which is easier",
+      "cost": "free",
+      "open": "https://github.com/settings/personal-access-tokens/new",
+      "steps": [
+        "Sign in at https://github.com/settings/personal-access-tokens/new",
+        "Name it superproduct dev; under Repository access pick Only select repositories and choose your repositories",
+        "Permissions → Repository permissions: Contents and Pull requests, both Read and write",
+        "Generate token → copy it (it's shown only once)"
+      ],
+      "prefix": ["github_pat_", "ghp_", "gho_"]
+    },
+    "CONTEXT7_API_KEY": {
+      "label": "Context7 API key",
+      "for": "higher rate limits when looking up library docs",
+      "cost": "free plan available",
+      "open": "https://context7.com/dashboard",
+      "steps": [
+        "Sign in at https://context7.com/dashboard",
+        "Create an API key → copy it"
+      ]
+    },
+    "WIKIMEDIA_CONTACT": {
+      "label": "contact for Wikimedia",
+      "for": "your email or website, sent with photo downloads as Wikimedia's policy asks",
+      "cost": "free",
+      "steps": ["Not a key: type your email address or website"],
+      "secret": false
+    }
+  },
   "agents": [
     {
       "id": "carousel",
