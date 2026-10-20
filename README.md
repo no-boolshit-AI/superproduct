@@ -16,7 +16,7 @@ back. [How it works](#how-it-works) shows the whole loop.
 
 | Agent | Makes | Needs |
 |---|---|---|
-| [**carousel**](agents/carousel-agent) | LinkedIn document carousels in a consulting look (hero numbers, frosted-glass cover): PDF, PNGs, caption | Claude; OpenAI for imagery (optional) |
+| [**carousel**](agents/carousel-agent) | LinkedIn document carousels and single graphic posts in six styles (consulting, bold poster, minimal, editorial, tech launch, paper showcase): PDF, PNGs, caption | Claude; OpenAI for imagery (optional) |
 | [**collage-post**](agents/collage-post-agent) | Editorial collage posts and carousels, 1080×1350 (cutouts, duotones, torn paper, loud type): PNGs, caption | Claude, OpenAI |
 | [**deck**](agents/deck-agent) | 16:9 decks and A4 reports from a brief and your data, with charts, tables and diagrams: searchable PDF | Claude; OpenAI for images (optional) |
 | [**explainer**](agents/explainer-agent) | Explainer and motion-graphics videos that teach a newcomer (TED-Ed-style), 4:5 by default (9:16, 1:1, 16:9), made with [HyperFrames](https://github.com/heygen-com/hyperframes) and all its skills: a storyboard to approve first, then the video in a cinematic editorial style (B&W cut-outs on brand colour, camera moves, callouts) or a Vox-style paper collage; pictures generated in the product's illustration style; narration, music and sound effects: MP4, contact sheet, caption | Claude, FFmpeg; OpenAI for pictures, ElevenLabs for narration, music and effects (both optional; HeyGen or a free local voice also narrate) |

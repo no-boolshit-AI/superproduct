@@ -50,7 +50,7 @@ Output paths in the last column are inside `workspace/`.
 
 | Agent (`id`) | Use it for | Command (run inside the agent folder) | Main output |
 |---|---|---|---|
-| **carousel** · `agents/carousel-agent` | LinkedIn document carousels in the consulting look: hero numbers, frosted-glass cover, in the product's brand. Case studies, launches, data stories. 4 to 6 slides, square or portrait. | `npm run generate -- --file <brief> [--slides 5] [--format square\|portrait] [--asset img] [--budget 3]` | `out/carousel/<run>/carousel.pdf`, `png/`, `post.md` (caption, alt text) |
+| **carousel** · `agents/carousel-agent` | LinkedIn document carousels (4 to 6 slides) or a **single graphic post**, in the product's brand, in one of six styles: `consulting` (hero numbers, frosted glass), `bold` (community poster: stickers, gradient, devices, avatars), `minimal` (typographic statement), `editorial` (magazine), `tech` (dark product launch), `paper` (tool showcase). The agent picks the style unless `--style` fixes it. Square or portrait. | `npm run generate -- --file <brief> [--slides 5] [--style auto\|consulting\|bold\|…] [--single] [--format square\|portrait] [--asset img] [--budget 3]` | `out/carousel/<run>/carousel.pdf` (not for `--single`), `png/`, `post.md` (caption, alt text) |
 | **collage-post** · `agents/collage-post-agent` | Editorial collage posts (Instagram/LinkedIn, 1080×1350): cutouts, duotones, torn paper, loud type, in the product's `brand` palette. Culture, history, people, opinion pieces. Single post or carousel. | `npm run post -- --file <brief> [--slides 5] [--palette brand\|auto\|cobalt\|…]` · revise: `--revise <job-id> "change"` | `out/collage-post/<job>/png/`, `caption.md`, `index.html`, `<job>.zip` |
 | **deck** · `agents/deck-agent` | Business presentations (16:9) and A4 reports from a brief and data files, in the product's colours, fonts and logo. Board decks, strategy, market studies, QBRs; McKinsey-style method with `--theme strategy`. | `npm run deck -- --file <brief> [--format auto\|deck\|report] [--theme strategy\|corporate\|executive\|swiss\|editorial] [--pages 12] [-i data.csv]…` · revise: `--revise <job-id> "change"` | `out/deck/<job>/presentation.pdf` or `report.pdf`, `png/`, `storyline.md` |
 | **explainer** · `agents/explainer-agent` | Explainer and short motion-graphics videos (MP4) from a brief, in the product's brand, that teach a newcomer (TED-Ed-style: one question, ≤ 3 main points, plain words, a recap). **Storyboard first**: a run stops at a storyboard for the user to approve; `--approve` builds the video. HyperFrames with all its skills bundled. Default style **editorial** (cinematic: B&W halftone cut-outs on brand-colour fields, type behind the subject, spotlight and connector callouts, camera push with parallax, film grain; the look — colour-field, paper-data, documentary, duotone — picked from the brand or `--look`); `--style vox-collage` for a Vox-style paper collage. 4:5 portrait by default (9:16, 1:1, 16:9); silent with on-screen text; generated pictures (OpenAI); narration (`--voice`), music (`--music auto\|"<mood>"`) and effects (`--sfx`) with ElevenLabs. | `npm run video -- --file <brief> [--format portrait\|vertical\|square\|landscape] [--length 45] [--style editorial\|vox-collage] [--look …] [--voice] [--music auto] [--sfx] [--no-images] [-i image.png]…` → storyboard · change it: `--revise <job-id> "change"` · build: `--approve <job-id> ["note"]` · `--no-storyboard`: one go | `out/explainer/<job>/storyboard.md` + `storyboard.jpg` (for review), then `video.mp4`, `contact-sheet.jpg`, `post.md` (caption, alt text, placeholders) |
@@ -71,7 +71,10 @@ covers the product folder and `campaign` covers multi-agent work.
 
 **Routing hints.** Several of these need a quick question to the user:
 
-- "LinkedIn post": carousel, unless the user wants the collage look or a single image post (then collage-post).
+- "LinkedIn post": carousel (a swipeable carousel, or `--single` for one image), unless the user wants the cut-paper
+  collage look (then collage-post). Name a carousel `--style` when the user describes a look: a loud event or community
+  poster → `bold`; a question or opinion → `minimal`; an article or author post → `editorial`; a product update →
+  `tech`; a tool roundup → `paper`; a case study with numbers → `consulting`. Otherwise leave it on `auto`.
 - "Presentation"/"deck"/"report": deck. "Website"/"page": landing-page.
 - "Video", "explainer", "animation", "reel", "motion graphic": explainer (`--format vertical` for Reels/Shorts/TikTok).
   Cinematic, editorial, documentary, magazine look: the default editorial style (`--look` to pin colour-field,
@@ -187,7 +190,8 @@ You run the agents directly, natively.
    - explainer, another format without Claude: `npm run render -- <job-id> --format mov` (ProRes for Resolve);
    - landing-page: re-run with the same `-s <slug> --replace`, or edit `workspace/sites/<slug>` and run
      `npm run check -- <slug>`;
-   - carousel: re-run, or edit `workspace/out/carousel/<run>/slides/*.html` and run `npm run render -- <run>`;
+   - carousel: re-run (with `--style` for another look), or edit `workspace/out/carousel/<run>/slides/*.html` and run
+     `npm run render -- <run>` (keeps the run's style);
    - dev: `revise <run-id>`.
 
 ## Multi-agent work (campaigns)
@@ -216,8 +220,9 @@ copy: `templates/product/README.md`); the `product` skill covers creating, updat
 - **Trust levels:** files marked `verified` are facts; `draft` files are direction and the agents are told never to
   quote them as facts; `template` files are empty. `knowledge/open-questions.md` lists contradictions to resolve.
 - **How each agent uses it:**
-  - carousel: canvas, accent, glass, fonts and logo from the tokens; the context (brief, voice, messaging, facts) in
-    its prompt;
+  - carousel: the consulting canvas, accent and glass from the tokens; for the other styles a palette of the colour
+    roles plus the product's bright highlight colours (stickers, markers); fonts by role, logos and the mark; the house
+    style in `agents.carousel.style`; the context (brief, voice, messaging, facts) in its prompt;
   - collage-post: the `brand` palette, the product's fonts and wordmark; `PRODUCT.md` in the job folder;
   - deck: the product's colours, fonts and logo on every theme, the house theme by default, the context incl. offers
     and sales pitch;

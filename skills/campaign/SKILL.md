@@ -12,7 +12,8 @@ what's specific to this launch, kept identical across outputs. Start from `works
 ## 1. Scope it with the user (one short round)
 - Which outputs:
   - landing page;
-  - LinkedIn carousel (consulting look) and/or collage post (editorial look);
+  - LinkedIn carousel or single graphic post (carousel agent; fix one `--style` across the campaign's posts) and/or
+    collage post (cut-paper editorial look);
   - deck or report (pitch, partner, internal);
   - a product change (dev-agent).
 - Audience, the one CTA (and its URL; default: the product's primary action), language(s), deadline.

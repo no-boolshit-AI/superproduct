@@ -1,0 +1,94 @@
+/* Paper: a warm-paper tool showcase. Off-white paper with a faint grid or speckle, app-icon tiles, browser-framed
+   screenshots, letter-spaced coloured kickers, bold black headlines, soft shadows, a swipe progress bar.
+   Brand colours arrive as --c-* (src/palette.ts); the fallbacks are the style's own palette. */
+:root {
+  --p-paper: var(--c-paper, #f6f1e7);
+  --p-ink: var(--c-ink, #161616);
+  --p-primary: var(--c-primary-on-paper, #2d48dc);
+  --p-brand: var(--c-primary, #2d48dc);
+  --p-on-brand: var(--c-on-primary, #ffffff);
+  --p-accent: var(--c-accent, #161616);
+  --p-on-accent: var(--c-on-accent, #ffffff);
+  --p-dark: var(--c-dark, #161616);
+  --p-tag: var(--c-hl-1, #dcf27a);
+  --p-on-tag: var(--c-on-hl-1, #161616);
+
+  --st1-bg: var(--p-tag); --st1-fg: var(--p-on-tag);
+  --st2-bg: var(--c-hl-2, #ffd6a5); --st2-fg: var(--c-on-hl-2, #161616);
+  --st3-bg: var(--c-hl-3, #ffffff); --st3-fg: var(--c-on-hl-3, #161616);
+  --st-ink-bg: var(--p-ink);
+
+  --head-weight: 800; --head-tracking: -0.045em; --head-leading: 1;
+  --fs-hero: 150px; --hero-tracking: -0.055em; --hero-leading: 0.95;
+  --fs-h1: 88px; --fs-h2: 72px; --fs-h3: 54px;
+  --statement-weight: 700; --statement-tracking: -0.035em;
+  --lead-font: var(--font-body); --lead-weight: 500; --fs-lead: 44px; --lead-tracking: -0.02em;
+  --kicker-weight: 600; --kicker-tracking: 0.22em; --fs-kicker: 30px;
+  --tag-bg: var(--p-tag); --tag-fg: var(--p-on-tag); --tag-radius: var(--c-radius, 999px);
+  --tag-weight: 500; --fs-tag: 34px; --tag-pad: 14px 36px 16px;
+  --btn-weight: 600; --btn-radius: var(--c-radius, 999px);
+  --pill-weight: 600; --pill-bg: var(--p-ink); --pill-fg: var(--p-paper);
+  --fs-display-xl: 88px;
+  --mark-bg: var(--p-tag); --mark-fg: var(--p-on-tag);
+  --hl: var(--p-primary);
+  --progress: var(--p-primary);
+  --card-bg: #ffffff; --card-radius: 24px; --card-shadow: 0 18px 44px rgb(40 30 10 / 0.08); --card-value: var(--p-primary);
+  --panel-radius: 24px; --panel-shadow: 0 22px 50px rgb(40 30 10 / 0.1);
+  --photo-radius: 24px; --window-radius: 16px;
+  --badge-weight: 700; --step-title-weight: 700;
+  --shape: var(--p-tag);
+  --neon: var(--p-tag); --on-neon: var(--p-on-tag);
+  --duo-dark: color-mix(in srgb, var(--p-brand), #000 35%); --duo-light: color-mix(in srgb, var(--p-brand), #fff 50%); --duo-2: var(--p-tag);
+  --glow-1: var(--p-tag); --glow-2: color-mix(in srgb, var(--p-brand), #fff 40%);
+  --glass-base: var(--p-brand); --glass-tint: color-mix(in srgb, var(--p-brand), #fff 30%);
+  --photo-bg: color-mix(in srgb, var(--p-paper), #000 10%);
+  --shade-rgb: var(--c-shade-rgb, 40 30 10);
+  --wordmark-font: var(--font-display); --wordmark-weight: 800; --fs-wordmark: 34px;
+}
+
+/* Light-tone canvases first: warm paper is the default */
+.slide, .slide--light, .slide--white {
+  --bg: var(--p-paper);
+  --fg: var(--p-ink);
+  --fg-muted: color-mix(in srgb, var(--p-ink) 62%, transparent);
+  --rule: color-mix(in srgb, var(--p-ink) 14%, transparent);
+  --accent: var(--p-primary);
+  --btn: var(--p-accent);
+  --on-btn: var(--p-on-accent);
+  --soft: color-mix(in srgb, var(--p-ink) 10%, transparent);
+  --bar-fill: var(--p-primary);
+  --grid-line: color-mix(in srgb, var(--p-ink) 6.5%, transparent);
+  --ghost-blend: multiply;
+  --wm: var(--p-ink);
+  --logo: var(--logo-on-light, var(--logo-on-dark, none));
+  --kicker: var(--p-primary);
+  --band-bg: color-mix(in srgb, var(--p-tag) 40%, var(--p-paper));
+}
+.slide--white { --bg: #ffffff; --card-bg: var(--p-paper); }
+.slide--brand, .slide--dark, .slide--deep {
+  --bg: var(--p-dark);
+  --fg: #f6f1e7;
+  --fg-muted: rgb(246 241 231 / 0.7);
+  --rule: rgb(246 241 231 / 0.18);
+  --accent: var(--p-tag);
+  --btn: var(--p-tag);
+  --on-btn: var(--p-on-tag);
+  --soft: rgb(246 241 231 / 0.14);
+  --bar-fill: var(--p-tag);
+  --grid-line: rgb(246 241 231 / 0.07);
+  --ghost-blend: screen;
+  --wm: #f6f1e7;
+  --logo: var(--logo-on-dark, none);
+  --kicker: var(--p-tag);
+  --hl: var(--p-tag);
+  --progress: var(--p-tag);
+  --band-bg: color-mix(in srgb, var(--p-dark), #fff 8%);
+}
+.slide--brand { --bg: var(--p-brand); --fg: var(--p-on-brand); }
+.glass { --fg: #ffffff; --fg-muted: rgb(255 255 255 / 0.82); --rule: rgb(255 255 255 / 0.3); --accent: var(--p-tag); color: #ffffff; }
+
+:where(.next) {
+  --next-bg: transparent; --next-fg: var(--accent);
+  --next-icon: var(--arrow-long); --next-icon-size: 100% 40px;
+  --next-w: 150px; --next-h: 48px; --next-top: 64px; --next-bottom: auto;
+}

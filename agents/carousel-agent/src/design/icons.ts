@@ -35,20 +35,88 @@ export const ICONS: Record<string, string> = {
   heart: s(`<path d="M12 20s-8-4.6-8-10.4A4.4 4.4 0 0 1 12 7a4.4 4.4 0 0 1 8 2.6C20 15.4 12 20 12 20z"/>`),
   flag: s(`<path d="M5 21V4"/><path d="M5 4h11l-2 4 2 4H5"/>`),
   calendar: s(`<rect x="3.5" y="5" width="17" height="15.5" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/>`),
+  hourglass: s(`<path d="M6.5 3h11M6.5 21h11"/><path d="M7.5 3c0 4.5 4.5 6 4.5 9s-4.5 4.5-4.5 9M16.5 3c0 4.5-4.5 6-4.5 9s4.5 4.5 4.5 9"/>`),
+  monitor: s(`<rect x="2.5" y="4" width="19" height="12.5" rx="1.6"/><path d="M8.5 20.5h7M12 16.5v4"/>`),
+  laptop: s(`<rect x="4.5" y="5" width="15" height="10.5" rx="1.4"/><path d="M2 18.5h20l-1.4-3H3.4z"/>`),
+  phone: s(`<rect x="6.5" y="2.5" width="11" height="19" rx="2.4"/><path d="M10.5 18.5h3"/>`),
+  pin: s(`<path d="M12 21s-6.5-6-6.5-11a6.5 6.5 0 0 1 13 0c0 5-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.4"/>`),
+  ticket: s(`<path d="M3 8a2 2 0 0 0 0 4v0a2 2 0 0 1 0 4v2h18v-2a2 2 0 0 1 0-4 2 2 0 0 1 0-4V6H3z"/><path d="M14 6v12" stroke-dasharray="2 2.2"/>`),
+  mic: s(`<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21M8.5 21h7"/>`),
+  video: s(`<rect x="2.5" y="6" width="13.5" height="12" rx="2"/><path d="M16 10.5l5.5-3v9l-5.5-3"/>`),
+  chat: s(`<path d="M4 5h16v10.5H9.5L5 19.5v-4H4z"/><path d="M8 9.5h8M8 12.5h5"/>`),
+  star: s(`<path d="M12 3.2l2.7 5.6 6.1.8-4.5 4.2 1.1 6.1L12 17l-5.4 2.9 1.1-6.1-4.5-4.2 6.1-.8z"/>`),
+  sparkle: s(`<path d="M12 3c.6 4.6 2.4 6.4 7 7-4.6.6-6.4 2.4-7 7-.6-4.6-2.4-6.4-7-7 4.6-.6 6.4-2.4 7-7z"/><path d="M19 16.5c.2 1.4.8 2 2.2 2.2-1.4.2-2 .8-2.2 2.2-.2-1.4-.8-2-2.2-2.2 1.4-.2 2-.8 2.2-2.2z"/>`),
+  code: s(`<path d="M8.5 7l-5 5 5 5M15.5 7l5 5-5 5M13.5 4.5l-3 15"/>`),
+  terminal: s(`<rect x="2.5" y="4" width="19" height="16" rx="2"/><path d="M6.5 9l3 3-3 3M12 15.5h5.5"/>`),
+  doc: s(`<path d="M6 2.5h8l4.5 4.5v14.5H6z"/><path d="M14 2.5V7h4.5M9 12h6.5M9 15.5h6.5"/>`),
+  mail: s(`<rect x="2.5" y="5" width="19" height="14" rx="2"/><path d="M3 6.5l9 6.5 9-6.5"/>`),
+  play: s(`<circle cx="12" cy="12" r="9"/><path d="M10 8.5v7l6-3.5z"/>`),
+  lock: s(`<rect x="4.5" y="10.5" width="15" height="10.5" rx="2"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/>`),
+  puzzle: s(`<path d="M4 8h4a2 2 0 1 1 4 0h4v4a2 2 0 1 1 0 4v4H4v-4a2 2 0 1 0 0-4z"/>`),
+  compass: s(`<circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/>`),
+  pen: s(`<path d="M4 20l1-4.5L15.5 5a2.1 2.1 0 0 1 3 3L8 18.5z"/><path d="M13.5 7l3 3"/>`),
+  megaphone: s(`<path d="M3.5 10v4h3l9 5V5l-9 5z"/><path d="M6.5 14l1.5 6h2.5l-1.4-5.4M19 9.5a3.5 3.5 0 0 1 0 5"/>`),
+  trophy: s(`<path d="M7.5 3.5h9v5a4.5 4.5 0 0 1-9 0z"/><path d="M7.5 5.5H4a3 3 0 0 0 3.5 4M16.5 5.5H20a3 3 0 0 1-3.5 4M12 13v4M8.5 20.5h7l-1-3.5h-5z"/>`),
+  database: s(`<ellipse cx="12" cy="5.5" rx="7.5" ry="2.8"/><path d="M4.5 5.5v13c0 1.5 3.4 2.8 7.5 2.8s7.5-1.3 7.5-2.8v-13M4.5 12c0 1.5 3.4 2.8 7.5 2.8s7.5-1.3 7.5-2.8"/>`),
+  plus: s(`<path d="M12 5v14M5 12h14"/>`),
+  x: s(`<path d="M6 6l12 12M18 6L6 18"/>`),
+  question: s(`<circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.4 2.3c-.6.3-.9.8-.9 1.5v.7"/><circle cx="12" cy="17" r=".9" fill="#000"/>`),
+  chevrons: s(`<path d="M5 6l6 6-6 6M13 6l6 6-6 6"/>`),
 };
 
+/** Big geometric shapes for `.shape--NAME` (masks; the fill comes from --shape). */
+export const SHAPES: Record<string, string> = {
+  chevron: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" preserveAspectRatio="none"><path d="M0 0h46l54 50-54 50H0l54-50z"/></svg>`,
+  arrow: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" preserveAspectRatio="none"><path d="M0 34h56V8l44 42-44 42V66H0z"/></svg>`,
+  step: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" preserveAspectRatio="none"><path d="M100 0v100H0V58h40L100 0z"/></svg>`,
+  slash: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" preserveAspectRatio="none"><path d="M62 0h38L38 100H0z"/></svg>`,
+  circle: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="50"/></svg>`,
+  ring: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path fill-rule="evenodd" d="M50 0a50 50 0 1 1 0 100A50 50 0 0 1 50 0zm0 22a28 28 0 1 0 0 56 28 28 0 0 0 0-56z"/></svg>`,
+  half: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 50" preserveAspectRatio="none"><path d="M0 50a50 50 0 0 1 100 0z"/></svg>`,
+  quarter: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" preserveAspectRatio="none"><path d="M0 0h100v100A100 100 0 0 1 0 0z"/></svg>`,
+  burst: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path d="${burst(12, 50, 36)}"/></svg>`,
+  asterisk: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><g transform="translate(50 50)">${[0, 60, 120].map((a) => `<rect x="-8" y="-50" width="16" height="100" rx="3" transform="rotate(${a})"/>`).join("")}</g></svg>`,
+};
+
+function burst(points: number, outer: number, inner: number) {
+  const pts: string[] = [];
+  for (let k = 0; k < points * 2; k++) {
+    const r = k % 2 ? inner : outer;
+    const a = (Math.PI * k) / points - Math.PI / 2;
+    pts.push(`${(50 + r * Math.cos(a)).toFixed(2)} ${(50 + r * Math.sin(a)).toFixed(2)}`);
+  }
+  return `M${pts.join("L")}z`;
+}
+
 const CHEVRONS = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 66 34" fill="none" stroke="#000" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 3l14 14L4 31"/><path d="M26 3l14 14-14 14"/><path d="M48 3l14 14-14 14"/></svg>`;
+
+const ARROW_THIN = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 48" fill="none" stroke="#000" stroke-width="3.4" stroke-linecap="square"><path d="M2 24h56M38 4l20 20-20 20"/></svg>`;
+const ARROW_LONG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 150 40" preserveAspectRatio="xMaxYMid meet" fill="none" stroke="#000" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M2 20h144M128 3l18 17-18 17"/></svg>`;
+const FLAG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 30 26"><path d="M0 0h30l-9 13 9 13H0z"/></svg>`;
+const SPECKLE = `<svg xmlns="http://www.w3.org/2000/svg" width="340" height="340"><filter id="s"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="7" stitchTiles="stitch"/><feColorMatrix values="0 0 0 0 0.25  0 0 0 0 0.2  0 0 0 0 0.15  0 0 0 9 -6.3"/></filter><rect width="100%" height="100%" filter="url(#s)"/></svg>`;
+const NOISE_COARSE = `<svg xmlns="http://www.w3.org/2000/svg" width="160" height="160"><filter id="c"><feTurbulence type="fractalNoise" baseFrequency="1.15" numOctaves="1" seed="3" stitchTiles="stitch"/><feColorMatrix values="0 0 0 0 0.5  0 0 0 0 0.5  0 0 0 0 0.5  0 0 0 2.4 -0.7"/><feComponentTransfer><feFuncR type="discrete" tableValues="0 1"/><feFuncG type="discrete" tableValues="0 1"/><feFuncB type="discrete" tableValues="0 1"/></feComponentTransfer></filter><rect width="100%" height="100%" filter="url(#c)"/></svg>`;
 
 const NOISE = `<svg xmlns="http://www.w3.org/2000/svg" width="220" height="220"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="3" stitchTiles="stitch"/><feColorMatrix values="0 0 0 0 0.5  0 0 0 0 0.5  0 0 0 0 0.5  0 0 0 1.4 -0.2"/></filter><rect width="100%" height="100%" filter="url(#n)"/></svg>`;
 
 export const svgUrl = (svg: string) => `url("data:image/svg+xml;utf8,${encodeURIComponent(svg)}")`;
 
-/** CSS that registers every icon as `.icon--<name>` plus shared mask variables. */
+/** CSS that registers every icon as `.icon--<name>`, every shape as `.shape--<name>`, plus shared mask variables. */
 export function iconCss(): string {
-  const rules = Object.entries(ICONS)
-    .map(([name, svg]) => `.icon--${name}{--i:${svgUrl(svg)}}`)
-    .join("\n");
-  return `:root{--chevrons:${svgUrl(CHEVRONS)};--arrow-right:${svgUrl(ICONS["arrow-right"])};--noise:${svgUrl(NOISE)};}\n${rules}`;
+  const icons = Object.entries(ICONS).map(([name, svg]) => `.icon--${name}{--i:${svgUrl(svg)}}`);
+  const shapes = Object.entries(SHAPES).map(([name, svg]) => `.shape--${name}{--m:${svgUrl(svg)}}`);
+  const vars = {
+    "--chevrons": CHEVRONS,
+    "--arrow-right": ICONS["arrow-right"],
+    "--arrow-thin": ARROW_THIN,
+    "--arrow-long": ARROW_LONG,
+    "--flag": FLAG,
+    "--noise": NOISE,
+    "--noise-coarse": NOISE_COARSE,
+    "--speckle": SPECKLE,
+  };
+  const root = Object.entries(vars).map(([k, svg]) => `${k}:${svgUrl(svg)};`).join("");
+  return `:root{${root}}\n${[...icons, ...shapes].join("\n")}`;
 }
 
 export const ICON_NAMES = Object.keys(ICONS);
+export const SHAPE_NAMES = Object.keys(SHAPES);

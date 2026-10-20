@@ -1,0 +1,86 @@
+/* Minimal: a typographic statement. Paper canvas, oversized medium-weight grotesk in two colours (the brand colour
+   for the question, ink for the answer), nothing else but a small mark.
+   Brand colours arrive as --c-* (src/palette.ts); the fallbacks are the style's own palette. */
+:root {
+  --m-primary: var(--c-primary-on-paper, #2f5bff);
+  --m-brand: var(--c-primary, #2f5bff);
+  --m-on-brand: var(--c-on-primary, #ffffff);
+  --m-paper: var(--c-paper, #f3f0ea);
+  --m-ink: var(--c-ink, #100d2c);
+  --m-dark: var(--c-dark, #100d2c);
+  --m-accent: var(--c-accent, #100d2c);
+  --m-on-accent: var(--c-on-accent, #ffffff);
+
+  --st1-bg: var(--c-hl-1, #dfe6ff); --st1-fg: var(--c-on-hl-1, #100d2c);
+  --st2-bg: var(--c-hl-2, #100d2c); --st2-fg: var(--c-on-hl-2, #ffffff);
+  --st3-bg: var(--c-hl-3, #ffffff); --st3-fg: var(--c-on-hl-3, #100d2c);
+  --st-ink-bg: var(--m-ink);
+
+  --head-weight: 500; --head-tracking: -0.045em; --head-leading: 1;
+  --fs-hero: 152px; --hero-tracking: -0.055em; --hero-leading: 0.95;
+  --fs-h1: 96px; --fs-h2: 80px; --fs-h3: 60px;
+  --statement-weight: 500; --statement-tracking: -0.04em; --fs-display-xl: 96px;
+  --lead-weight: 500; --fs-lead: 52px; --lead-tracking: -0.03em;
+  --kicker-weight: 500; --kicker-tracking: 0.1em;
+  --btn-weight: 500; --btn-radius: var(--c-radius, 999px);
+  --pill-weight: 500; --pill-bg: var(--m-ink); --pill-fg: var(--m-paper);
+  --tag-bg: var(--st1-bg); --tag-fg: var(--st1-fg);
+  --mark-bg: var(--st1-bg); --mark-fg: var(--st1-fg);
+  --quote-weight: 500;
+  --card-radius: 20px; --card-bg: #ffffff; --card-value: var(--m-primary);
+  --panel-radius: 20px; --panel-shadow: none;
+  --badge-weight: 500;
+  --shape: var(--m-brand);
+  --neon: var(--m-ink); --on-neon: var(--m-paper);
+  --duo-dark: var(--m-ink); --duo-light: var(--m-paper); --duo-2: var(--m-brand);
+  --glass-base: var(--m-brand); --glass-tint: color-mix(in srgb, var(--m-brand), #fff 30%);
+  --photo-bg: var(--m-ink); --photo-radius: 20px;
+  --shade-rgb: var(--c-shade-rgb, 16 13 44);
+  --wordmark-font: var(--font-display); --wordmark-weight: 600; --fs-wordmark: 32px;
+  --mark-size: 104px;
+}
+
+/* Light-tone canvases first: paper is the default */
+.slide, .slide--light, .slide--white {
+  --bg: var(--m-paper);
+  --fg: var(--m-ink);
+  --fg-muted: color-mix(in srgb, var(--m-ink) 64%, transparent);
+  --rule: color-mix(in srgb, var(--m-ink) 16%, transparent);
+  --accent: var(--m-primary);
+  --btn: var(--m-accent);
+  --on-btn: var(--m-on-accent);
+  --soft: color-mix(in srgb, var(--m-ink) 9%, transparent);
+  --bar-fill: var(--m-primary);
+  --grid-line: color-mix(in srgb, var(--m-ink) 6%, transparent);
+  --ghost-blend: multiply;
+  --wm: var(--m-ink);
+  --logo: var(--logo-on-light, var(--logo-on-dark, none));
+  --kicker: var(--fg-muted);
+  --band-bg: color-mix(in srgb, var(--m-brand) 10%, var(--m-paper));
+}
+.slide--white { --bg: #ffffff; }
+.slide--brand, .slide--dark, .slide--deep {
+  --bg: var(--m-brand);
+  --fg: var(--m-on-brand);
+  --fg-muted: color-mix(in srgb, var(--m-on-brand) 78%, transparent);
+  --rule: color-mix(in srgb, var(--m-on-brand) 26%, transparent);
+  --accent: var(--m-on-brand);
+  --btn: var(--m-on-brand);
+  --on-btn: var(--m-brand);
+  --soft: color-mix(in srgb, var(--m-on-brand) 16%, transparent);
+  --bar-fill: var(--m-on-brand);
+  --grid-line: color-mix(in srgb, var(--m-on-brand) 8%, transparent);
+  --ghost-blend: screen;
+  --wm: var(--m-on-brand);
+  --logo: var(--logo-on-dark, none);
+  --kicker: var(--fg-muted);
+  --band-bg: color-mix(in srgb, var(--m-brand), #000 25%);
+}
+.slide--dark, .slide--deep { --bg: var(--m-dark); --fg: #ffffff; --accent: color-mix(in srgb, var(--m-brand), #fff 35%); --btn: #ffffff; --on-btn: var(--m-dark); }
+.glass { --fg: #ffffff; --fg-muted: rgb(255 255 255 / 0.82); --rule: rgb(255 255 255 / 0.3); --accent: #ffffff; color: #ffffff; }
+
+:where(.next) {
+  --next-bg: transparent; --next-fg: var(--fg); --next-ring: inset 0 0 0 2.5px var(--fg);
+  --next-icon: var(--arrow-right); --next-icon-size: 40px 40px;
+  --next-w: 96px; --next-h: 96px;
+}

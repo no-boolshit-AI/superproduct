@@ -1,0 +1,5 @@
+/* Consulting: the base's own look (saturated brand canvas, light type, hero numbers, hairlines, frosted glass).
+   Its colours come from the brand's consulting tokens (--brand, --hi, --accent-on-canvas…), not the --c-* palette. */
+:root {
+  --kicker-tracking: 0.12em;
+}

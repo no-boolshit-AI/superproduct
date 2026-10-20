@@ -6,13 +6,15 @@ import { parseArgs } from "node:util";
 import type { SDKMessage } from "@anthropic-ai/claude-agent-sdk";
 import { describeAuth, resolveBrand, runCarouselAgent } from "./agent.js";
 import { isMockMode } from "./images/generate.js";
-import type { Format } from "./config.js";
+import { isStyleId, STYLE_IDS, type Format, type StyleId } from "./config.js";
 
 const HELP = `Usage: npm run generate -- [brief text] [options]
 
   -f, --file <path>       Read the brief from a file (markdown, txt). Combined with inline text if both given.
-  -n, --slides <n>        Exact number of slides (default: agent decides, 4–6)
-      --format <f>        square (1080×1080, default) | portrait (1080×1350)
+  -n, --slides <n>        Exact number of slides (default: agent decides, 4–6; 1 = a single post)
+  -s, --style <s>         auto (default: the agent picks, preferring the product's house style) | ${STYLE_IDS.join(" | ")}
+      --single            One standalone graphic (an image post) instead of a carousel
+      --format <f>        square (1080×1080) | portrait (1080×1350). Default: square, portrait for --single
   -a, --asset <path>      Your own image to use (photo, product shot). Repeatable.
       --brand <path>      Brand file; overrides the product folder's brand (default: the product's, else $BRAND_FILE,
                           else ./brand.json)
@@ -23,8 +25,9 @@ const HELP = `Usage: npm run generate -- [brief text] [options]
       --budget <usd>      Stop when the run's Claude spend reaches this (default: $MAX_BUDGET_USD)
   -q, --quiet             Only print the final summary
 
-Example:
+Examples:
   npm run generate -- --file ../../workspace/briefs/reckitt.md --slides 5 --format portrait
+  npm run generate -- --file ../../workspace/briefs/call-for-trainers.md --style bold --single
 `;
 
 const { values, positionals } = parseArgs({
@@ -32,6 +35,8 @@ const { values, positionals } = parseArgs({
   options: {
     file: { type: "string", short: "f" },
     slides: { type: "string", short: "n" },
+    style: { type: "string", short: "s" },
+    single: { type: "boolean" },
     format: { type: "string" },
     asset: { type: "string", short: "a", multiple: true },
     brand: { type: "string" },
@@ -49,8 +54,11 @@ if (values.help || !brief) {
   console.log(HELP);
   process.exit(values.help ? 0 : 1);
 }
-const format = (values.format ?? "square") as Format;
-if (!["square", "portrait"].includes(format)) throw new Error(`--format must be square or portrait`);
+const format = values.format as Format | undefined;
+if (format && !["square", "portrait"].includes(format)) throw new Error(`--format must be square or portrait`);
+const style = (values.style ?? "auto") as StyleId | "auto";
+if (style !== "auto" && !isStyleId(style)) throw new Error(`--style must be auto or one of ${STYLE_IDS.join(", ")}`);
+const single = !!values.single || values.slides === "1";
 
 const dim = (s: string) => `\x1b[2m${s}\x1b[0m`;
 const short = (v: unknown, n = 110) => {
@@ -61,6 +69,7 @@ const short = (v: unknown, n = 110) => {
 const resolved = resolveBrand({ brandPath: values.brand, product: values.product });
 console.log(dim(`Claude auth: ${describeAuth()}`));
 console.log(dim(`Brand: ${resolved.brand.name} (${resolved.brand.source ?? "brand file"})${resolved.product ? `  ·  product context: ${resolved.product.name}` : "  ·  no product folder"}`));
+console.log(dim(`Post: ${single ? "single graphic" : "carousel"}  ·  style: ${style === "auto" ? `auto${resolved.brand.houseStyle ? ` (house style ${resolved.brand.houseStyle})` : ""}` : style}`));
 console.log(dim(`Images: ${isMockMode() ? "MOCK placeholders (no OPENAI_API_KEY or IMAGE_MOCK=1)" : process.env.OPENAI_IMAGE_MODEL || "gpt-image-2.5-flare"}`));
 
 function log(msg: SDKMessage) {
@@ -77,6 +86,7 @@ function log(msg: SDKMessage) {
         const input = block.input as Record<string, unknown>;
         const detail =
           name === "write_slide" ? `#${input.index}`
+          : name === "set_style" ? `${input.style}${input.reason ? `: ${short(input.reason, 90)}` : ""}`
           : name === "generate_image" ? `${input.name} [${input.style ?? "3d-mono"}] ${short(input.prompt, 80)}`
           : short(input, 80);
         console.log(dim(`→ ${name} ${detail}`));
@@ -97,6 +107,8 @@ function log(msg: SDKMessage) {
 const run = await runCarouselAgent({
   brief,
   format,
+  style,
+  single,
   slides: values.slides ? Number(values.slides) : undefined,
   outDir: values.out,
   brandPath: values.brand,

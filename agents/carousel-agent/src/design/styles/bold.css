@@ -1,0 +1,97 @@
+/* Bold: a loud community poster. Saturated brand gradient, black-weight headlines, tilted stickers in the highlight
+   colours, a huge faint logo, white rounded panels, bright CTA buttons.
+   Brand colours arrive as --c-* (src/palette.ts); the fallbacks are the style's own palette. */
+:root {
+  --b-primary: var(--c-primary, #4b3bff);
+  --b-on-primary: var(--c-on-primary, #ffffff);
+  --b-accent: var(--c-accent, #ff5a1f);
+  --b-on-accent: var(--c-on-accent, #ffffff);
+  --b-paper: var(--c-paper, #fbfaff);
+  --b-ink: var(--c-ink, #17152b);
+  --b-dark: var(--c-dark, #17152b);
+
+  --st1-bg: var(--c-hl-1, #ffe14d); --st1-fg: var(--c-on-hl-1, #17152b);
+  --st2-bg: var(--c-hl-2, #c6ff4f); --st2-fg: var(--c-on-hl-2, #17152b);
+  --st3-bg: var(--c-hl-3, #ffffff); --st3-fg: var(--c-on-hl-3, #17152b);
+  --st-ink-bg: var(--b-ink); --st-ink-fg: #ffffff;
+
+  --head-weight: 900; --head-tracking: -0.035em; --head-leading: 1;
+  --hero-tracking: -0.045em; --hero-leading: 0.95;
+  --fs-hero: 140px; --fs-h1: 92px; --fs-h2: 76px; --fs-h3: 56px;
+  --statement-weight: 800; --statement-tracking: -0.03em;
+  --lead-weight: 700; --fs-lead: 54px; --lead-tracking: -0.025em;
+  --kicker-weight: 700; --kicker-tracking: 0.16em;
+  --btn-font: var(--font-display); --btn-weight: 800; --btn-radius: var(--c-radius, 999px); --btn-pad: 26px 52px 28px; --fs-btn: 38px;
+  --pill-weight: 700; --pill-bg: #ffffff; --pill-fg: var(--b-primary);
+  --fs-display-xl: 88px;
+  --tag-weight: 700; --tag-radius: 10px; --tag-bg: var(--st1-bg); --tag-fg: var(--st1-fg);
+  --sticker-weight: 800;
+  --mark-bg: var(--st1-bg); --mark-fg: var(--st1-fg);
+  --panel-radius: 32px; --panel-shadow: 0 30px 70px rgb(20 16 80 / 0.16);
+  --card-bg: #ffffff; --card-radius: 28px; --card-shadow: 0 24px 60px rgb(20 16 80 / 0.14); --card-value: var(--b-primary);
+  --card-brand-bg: var(--b-primary); --card-brand-fg: var(--b-on-primary);
+  --badge-weight: 800; --step-title-weight: 800; --meta-weight: 700; --list-weight: 700;
+  --quote-weight: 800; --fs-quote-base: 66px; --quote-mark: var(--accent);
+  --shape: var(--st1-bg);
+  --neon: var(--st1-bg); --on-neon: var(--st1-fg);
+  --band-bg: color-mix(in srgb, var(--b-primary), #000 20%); --band-cut: 20%;
+  --duo-dark: color-mix(in srgb, var(--b-primary), #000 45%);
+  --duo-light: color-mix(in srgb, var(--b-primary), #fff 40%);
+  --duo-2: var(--b-accent);
+  --glow-1: color-mix(in srgb, var(--b-primary), #fff 45%); --glow-2: var(--b-accent);
+  --glass-base: var(--b-primary); --glass-tint: color-mix(in srgb, var(--b-primary), #fff 30%);
+  --photo-bg: color-mix(in srgb, var(--b-primary), #000 30%); --photo-radius: 28px;
+  --shade-rgb: var(--c-shade-rgb, 14 10 70);
+  --wordmark-font: var(--font-display); --wordmark-weight: 900; --fs-wordmark: 40px;
+  --wm-w: 270px; --wm-h: 96px;
+  --watermark: 0.06;
+  --card-title-weight: 800; --ci-bg: var(--b-primary); --ci-fg: var(--b-on-primary);
+  --avatar-ring: #ffffff;
+}
+
+/* Dark-tone canvases (the default is the brand gradient) */
+.slide, .slide--brand, .slide--dark, .slide--deep {
+  --bg: linear-gradient(140deg, color-mix(in srgb, var(--b-primary), #fff 14%) 0%, var(--b-primary) 50%, color-mix(in srgb, var(--b-primary), #000 16%) 100%);
+  --fg: var(--b-on-primary);
+  --fg-muted: color-mix(in srgb, var(--b-on-primary) 84%, transparent);
+  --rule: color-mix(in srgb, var(--b-on-primary) 30%, transparent);
+  --accent: var(--st1-bg);
+  --btn: var(--b-accent);
+  --on-btn: var(--b-on-accent);
+  --soft: color-mix(in srgb, var(--b-on-primary) 18%, transparent);
+  --bar-fill: var(--st1-bg);
+  --grid-line: color-mix(in srgb, var(--b-on-primary) 9%, transparent);
+  --ghost-blend: screen;
+  --wm: var(--b-on-primary);
+  --logo: var(--logo-on-dark, none);
+  --kicker: var(--fg-muted);
+}
+.slide--dark { --bg: var(--b-dark); --fg: #ffffff; --fg-muted: rgb(255 255 255 / 0.78); --band-bg: color-mix(in srgb, var(--b-dark), #fff 8%); }
+.slide--deep { --bg: color-mix(in srgb, var(--b-primary), #000 42%); }
+/* Light-tone canvases: a pale tinted gradient */
+.slide--light, .slide--white {
+  --bg: linear-gradient(165deg, #ffffff 0%, color-mix(in srgb, var(--b-primary) 9%, var(--b-paper)) 55%, color-mix(in srgb, var(--b-accent) 7%, var(--b-paper)) 100%);
+  --fg: var(--b-ink);
+  --fg-muted: color-mix(in srgb, var(--b-ink) 68%, transparent);
+  --rule: color-mix(in srgb, var(--b-ink) 14%, transparent);
+  --accent: var(--c-primary-on-paper, var(--b-primary));
+  --btn: var(--b-accent);
+  --on-btn: var(--b-on-accent);
+  --soft: color-mix(in srgb, var(--b-ink) 8%, transparent);
+  --bar-fill: var(--b-primary);
+  --grid-line: color-mix(in srgb, var(--b-ink) 7%, transparent);
+  --ghost-blend: multiply;
+  --wm: var(--b-ink);
+  --logo: var(--logo-on-light, var(--logo-on-dark, none));
+  --kicker: var(--fg-muted);
+  --band-bg: color-mix(in srgb, var(--b-primary) 12%, #ffffff);
+  --watermark: 0.045;
+}
+.slide--white { --bg: #ffffff; }
+
+:where(.next) {
+  --next-icon: var(--arrow-right); --next-icon-size: 48px 48px;
+  --next-w: 104px; --next-h: 104px; --next-radius: 50%;
+}
+.sticker { box-shadow: 0 12px 28px rgb(10 8 60 / 0.25), inset 0 -3px 0 rgb(0 0 0 / 0.08); }
+.panel .kicker { letter-spacing: 0.18em; }

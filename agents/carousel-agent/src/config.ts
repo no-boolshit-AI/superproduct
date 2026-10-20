@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { outputDir } from "../../../lib/workspace.mjs";
+import { paletteFromBrandColors, type Palette } from "./palette.js";
 
 export const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 export const DESIGN_DIR = path.join(ROOT, "src", "design");
@@ -14,12 +15,20 @@ export const FORMATS: Record<Format, { width: number; height: number; label: str
   portrait: { width: 1080, height: 1350, label: "1080×1350 (4:5)" },
 };
 
-type FontFiles = Partial<Record<"300" | "400" | "500" | "600", string>> | null;
+/** Visual styles (src/styles.ts, src/design/styles/<id>.css). One per post. */
+export const STYLE_IDS = ["consulting", "bold", "minimal", "editorial", "tech", "paper"] as const;
+export type StyleId = (typeof STYLE_IDS)[number];
+export const isStyleId = (s: unknown): s is StyleId => STYLE_IDS.includes(s as StyleId);
+
+type FontFiles = Partial<Record<"300" | "400" | "500" | "600" | "700" | "800" | "900", string>> | null;
 
 export interface Brand {
   name: string;
-  /** logo: shown on brand-coloured (dark) slides; logoOnLight: on light/white slides (defaults to logo). */
-  wordmark: { text: string; logo: string | null; logoOnLight?: string | null; font?: "serif" | "sans" };
+  /**
+   * logo: shown on brand-coloured (dark) slides; logoOnLight: on light/white slides (defaults to logo);
+   * mark: a square monogram or app icon (`.logo-mark`).
+   */
+  wordmark: { text: string; logo: string | null; logoOnLight?: string | null; mark?: string | null; font?: "serif" | "sans" };
   colors: {
     /** The slide canvas: a colour that carries light type. */
     primary: string;
@@ -44,11 +53,26 @@ export interface Brand {
     /** Bottom colour of the frosted glass panel (default: primaryLight). */
     glassTint?: string;
   };
+  /** A face counts as the brand's when it has files (or fontFaceCss covers it); otherwise each style uses its own. */
   fonts: {
     sans: { family: string; files: FontFiles };
     serif: { family: string; files: FontFiles };
+    /** Headline face (a product's font.family.display). */
+    display?: { family: string; files: FontFiles };
+    /** A narrow headline face (a product's font.family.condensed). */
+    condensed?: { family: string; files: FontFiles };
+    mono?: { family: string; files: FontFiles };
   };
   imageStyle: string;
+  /**
+   * The brand's colour roles for the styles other than consulting (which uses `colors`). Set for a product folder and
+   * for an explicit brand file; absent for the default brand.json, so each style shows its own designed palette.
+   */
+  palette?: Palette;
+  /** "brand" (default): the brand's fonts in every style; "style": each style keeps its own type. */
+  fontsMode?: "brand" | "style";
+  /** The product's house style (product.json → agents.carousel.style), preferred when the agent picks. */
+  houseStyle?: StyleId;
   /** Ready-made @font-face rules (from the product folder); families it covers need no `files`. */
   fontFaceCss?: string;
   /** Where the brand came from (brand file path or product folder), for logs and run.json. */
@@ -65,11 +89,14 @@ export function loadBrand(brandPath = process.env.BRAND_FILE?.trim() || DEFAULT_
   const resolve = (p: string | null | undefined) => (p ? path.resolve(base, p) : null);
   brand.wordmark.logo = resolve(brand.wordmark.logo);
   if (brand.wordmark.logoOnLight !== undefined) brand.wordmark.logoOnLight = resolve(brand.wordmark.logoOnLight);
-  for (const key of ["sans", "serif"] as const) {
-    const files = brand.fonts[key].files;
+  for (const key of ["sans", "serif", "display", "mono", "condensed"] as const) {
+    const files = brand.fonts[key]?.files;
     if (files) for (const [w, p] of Object.entries(files)) (files as Record<string, string>)[w] = resolve(p)!;
   }
+  if (brand.wordmark.mark) brand.wordmark.mark = resolve(brand.wordmark.mark);
   brand.source ??= `brand file: ${path.relative(process.cwd(), abs) || abs}`;
+  // An explicit brand file colours every style; the default one only defines the classic consulting look.
+  if (abs !== DEFAULT_BRAND_FILE) brand.palette ??= paletteFromBrandColors(brand.colors);
   return brand;
 }
 
@@ -79,6 +106,19 @@ export interface RunContext {
   brand: Brand;
   /** The product this carousel is for (from the product folder), if any. */
   product?: { dir: string; name: string; context: string };
+  /** The visual style; null until the agent picks one with set_style (--style auto). */
+  style: StyleId | null;
+  /** True when the user fixed the style (--style <id>): set_style can't change it. */
+  styleFixed?: boolean;
+  /** One standalone graphic (an image post) instead of a swipeable carousel. */
+  single?: boolean;
+}
+
+/** run.json: what a run used, so `npm run render` can rebuild it the same way. */
+export function updateRunRecord(dir: string, patch: Record<string, unknown>) {
+  const file = path.join(dir, "run.json");
+  const run = fs.existsSync(file) ? JSON.parse(fs.readFileSync(file, "utf8")) : {};
+  fs.writeFileSync(file, JSON.stringify({ ...run, ...patch }, null, 2));
 }
 
 export function createRunDir(outRoot: string, slug: string): string {

@@ -1,0 +1,100 @@
+/* Editorial: magazine and newsletter. Serif headlines, photo-led splits, small uppercase tags, a highlighter mark,
+   mono labels; paper, deep navy or near-black canvases; an optional grainy gradient poster on the brand canvas.
+   Brand colours arrive as --c-* (src/palette.ts); the fallbacks are the style's own palette. */
+:root {
+  --e-paper: var(--c-paper, #f4f1ea);
+  --e-ink: var(--c-ink, #16150f);
+  --e-primary: var(--c-primary, #2b45ff);
+  --e-on-primary: var(--c-on-primary, #ffffff);
+  --e-navy: color-mix(in srgb, var(--c-primary, #2a37a8), #000 72%);
+  --e-black: var(--c-dark, #131510);
+  --e-accent: var(--c-accent, #2b45ff);
+  --e-on-accent: var(--c-on-accent, #ffffff);
+  --e-mark: var(--c-hl-1, #7fcab9);
+  --e-on-mark: var(--c-on-hl-1, #131510);
+
+  --st1-bg: var(--e-mark); --st1-fg: var(--e-on-mark);
+  --st2-bg: var(--c-hl-2, #f2d36b); --st2-fg: var(--c-on-hl-2, #131510);
+  --st3-bg: var(--c-hl-3, #ffffff); --st3-fg: var(--c-on-hl-3, #131510);
+  --st-ink-bg: var(--e-ink);
+
+  --head-weight: 400; --head-tracking: -0.02em; --head-leading: 1.04;
+  --fs-hero: 124px; --hero-tracking: -0.03em; --hero-leading: 1;
+  --fs-h1: 92px; --fs-h2: 72px; --fs-h3: 54px;
+  --statement-weight: 400; --statement-tracking: -0.02em;
+  --lead-font: var(--font-body); --lead-weight: 400; --fs-lead: 42px; --lead-tracking: -0.01em;
+  --kicker-font: var(--font-mono); --kicker-weight: 500; --kicker-tracking: 0.12em; --fs-kicker: 24px;
+  --tag-font: var(--font-condensed); --tag-case: uppercase; --tag-tracking: 0.06em; --tag-weight: 600;
+  --fs-tag: 30px; --tag-pad: 7px 28px 9px; --tag-radius: var(--c-radius, 999px);
+  --tag-bg: var(--e-primary); --tag-fg: var(--e-on-primary);
+  --mark-bg: var(--e-mark); --mark-fg: var(--e-on-mark); --mark-radius: 6px;
+  --quote-weight: 400;
+  --btn-weight: 500; --btn-radius: var(--c-radius, 999px);
+  --pill-weight: 500; --pill-bg: var(--e-primary); --pill-fg: var(--e-on-primary);
+  --fs-display-xl: 84px;
+  --sticker-font: var(--font-condensed); --sticker-weight: 600; --sticker-radius: 4px;
+  --card-radius: 8px; --card-value: var(--e-primary);
+  --panel-radius: 8px; --panel-shadow: 0 18px 50px rgb(0 0 0 / 0.12);
+  --photo-radius: 8px;
+  --window-radius: 12px;
+  --shape: var(--e-primary);
+  --neon: var(--e-mark); --on-neon: var(--e-on-mark);
+  --duo-dark: var(--e-navy); --duo-light: color-mix(in srgb, var(--e-primary), #fff 40%); --duo-2: #ff8a65;
+  --glow-1: color-mix(in srgb, var(--e-primary), #fff 40%); --glow-2: #ff8a65;
+  --glass-base: var(--e-navy); --glass-tint: color-mix(in srgb, var(--e-navy), #fff 12%);
+  --photo-bg: var(--e-navy);
+  --shade-rgb: var(--c-shade-rgb, 8 10 30);
+  --wordmark-font: var(--font-display); --fs-wordmark: 34px;
+  --wm-w: 200px; --wm-h: 64px;
+  --step-title-weight: 600;
+}
+
+/* Light-tone canvases first: paper is the default */
+.slide, .slide--light, .slide--white {
+  --bg: var(--e-paper);
+  --fg: var(--e-ink);
+  --fg-muted: color-mix(in srgb, var(--e-ink) 66%, transparent);
+  --rule: color-mix(in srgb, var(--e-ink) 18%, transparent);
+  --accent: var(--c-primary-on-paper, var(--e-primary));
+  --btn: var(--e-accent);
+  --on-btn: var(--e-on-accent);
+  --soft: color-mix(in srgb, var(--e-ink) 8%, transparent);
+  --bar-fill: var(--c-primary-on-paper, var(--e-primary));
+  --grid-line: color-mix(in srgb, var(--e-ink) 6%, transparent);
+  --ghost-blend: multiply;
+  --wm: var(--e-ink);
+  --logo: var(--logo-on-light, var(--logo-on-dark, none));
+  --kicker: var(--fg-muted);
+  --card-bg: #ffffff;
+  --band-bg: color-mix(in srgb, var(--e-primary) 9%, var(--e-paper));
+}
+.slide--white { --bg: #ffffff; }
+.slide--brand, .slide--dark, .slide--deep {
+  --bg: var(--e-navy);
+  --fg: #ffffff;
+  --fg-muted: rgb(255 255 255 / 0.74);
+  --rule: rgb(255 255 255 / 0.22);
+  --accent: var(--e-mark);
+  --btn: var(--e-accent);
+  --on-btn: var(--e-on-accent);
+  --soft: rgb(255 255 255 / 0.14);
+  --bar-fill: var(--e-mark);
+  --grid-line: rgb(255 255 255 / 0.07);
+  --ghost-blend: screen;
+  --wm: #ffffff;
+  --logo: var(--logo-on-dark, none);
+  --kicker: var(--fg-muted);
+  --card-bg: rgb(255 255 255 / 0.08); --card-fg: #ffffff; --card-value: var(--e-mark);
+  --band-bg: color-mix(in srgb, var(--e-navy), #fff 8%);
+}
+.slide--deep { --bg: var(--e-black); }
+.slide--brand { --bg: var(--e-primary); --fg: var(--e-on-primary); --accent: var(--e-on-primary); --tag-bg: var(--e-on-primary); --tag-fg: var(--e-primary); }
+
+:where(.next) {
+  --next-bg: transparent; --next-fg: var(--fg); --next-ring: inset 0 0 0 2px var(--fg);
+  --next-icon: var(--arrow-right); --next-icon-size: 40px 40px;
+  --next-w: 96px; --next-h: 96px;
+}
+.glass { --fg: #ffffff; --fg-muted: rgb(255 255 255 / 0.8); --rule: rgb(255 255 255 / 0.28); --accent: var(--e-mark); color: #ffffff; }
+.topbar { font-size: 24px; }
+.mark { padding: 0 0.12em 0.04em; }

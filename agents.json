@@ -22,8 +22,8 @@
     {
       "id": "carousel",
       "dir": "agents/carousel-agent",
-      "title": "LinkedIn carousel, consulting style",
-      "summary": "Brief → 4-6 slide LinkedIn document carousel in the top-consulting-firm look (hero numbers, frosted-glass cover over a 3D render) in the product's brand (electric blue without a product folder). HTML slides + OpenAI imagery → PNGs, swipeable PDF, caption.",
+      "title": "LinkedIn carousel or single graphic post, six styles",
+      "summary": "Brief → 4-6 slide LinkedIn document carousel or a single graphic post in the product's brand, in one of six styles (consulting, bold, minimal, editorial, tech, paper; the agent picks unless --style fixes it), from a library of 20 layouts. HTML slides + OpenAI imagery → PNGs, swipeable PDF, caption.",
       "command": "npm run generate --",
       "example": "npm run generate -- --file ../../workspace/briefs/2026-10-07-q3-case.md --slides 5 --format portrait",
       "productFlag": "--product <dir|none>",

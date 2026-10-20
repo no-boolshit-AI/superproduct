@@ -1,7 +1,7 @@
 {
   "name": "carousel-agent",
   "version": "0.1.0",
-  "description": "Claude Agent SDK agent that designs consulting-style LinkedIn carousels as HTML, uses OpenAI images for imagery, and exports PNG + PDF.",
+  "description": "Claude Agent SDK agent that designs LinkedIn carousels and single graphic posts as HTML in six visual styles, uses OpenAI images for imagery, and exports PNG + PDF.",
   "license": "AGPL-3.0-or-later",
   "scripts": {
     "setup": "playwright install chromium",
@@ -9,11 +9,14 @@
     "demo": "tsx src/demo.ts",
     "render": "tsx src/rerender.ts",
     "smoke": "tsx src/smoke.ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "gallery": "tsx src/gallery.ts"
   },
   "dependencies": {
     "@anthropic-ai/claude-agent-sdk": "^0.3.291",
+    "@fontsource/barlow-condensed": "^5.3.0",
     "@fontsource/inter-tight": "^5.3.0",
+    "@fontsource/jetbrains-mono": "^5.3.0",
     "@fontsource/source-serif-4": "^5.3.0",
     "dotenv": "^18.0.5",
     "openai": "^7.28.0",

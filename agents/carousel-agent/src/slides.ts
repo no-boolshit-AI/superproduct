@@ -4,6 +4,7 @@ import { PDFDocument } from "pdf-lib";
 import { FORMATS, listSlides, slideFile, type RunContext } from "./config.js";
 import { composeSlideDocument, sanitizeFragment } from "./render/compose.js";
 import { renderHtmlFile, renderHtmlString, type Diagnostics } from "./render/renderer.js";
+import { STYLES } from "./styles.js";
 
 export interface SlideResult {
   index: number;
@@ -15,7 +16,8 @@ export interface SlideResult {
 }
 
 function build(ctx: RunContext, name: string, fragment: string) {
-  const doc = composeSlideDocument(fragment, { runDir: ctx.dir, format: ctx.format, brand: ctx.brand });
+  if (!ctx.style) throw new Error("No style chosen yet: call set_style first.");
+  const doc = composeSlideDocument(fragment, { runDir: ctx.dir, format: ctx.format, brand: ctx.brand, style: ctx.style });
   const buildPath = path.join(ctx.dir, "build", `${name}.html`);
   fs.mkdirSync(path.dirname(buildPath), { recursive: true });
   fs.writeFileSync(buildPath, doc);
@@ -32,16 +34,49 @@ export async function writeSlide(ctx: RunContext, index: number, html: string): 
   return renderSlide(ctx, index, notes);
 }
 
+/** The style's composition rules for the layout QA. */
+const qaFor = (ctx: RunContext) => ({ maxBand: ctx.style ? STYLES[ctx.style].maxBand : 1 });
+
 export async function renderSlide(ctx: RunContext, index: number, notes: string[] = []): Promise<SlideResult> {
   const name = slideFile(index);
   const fragmentPath = path.join(ctx.dir, "slides", `${name}.html`);
   const buildPath = build(ctx, name, fs.readFileSync(fragmentPath, "utf8"));
   const { width, height } = FORMATS[ctx.format];
-  const { buffer, diagnostics } = await renderHtmlFile(buildPath, { width, height, scale: 1, type: "jpeg", quality: 84, diagnose: true });
+  const { buffer, diagnostics } = await renderHtmlFile(buildPath, { width, height, scale: 1, type: "jpeg", quality: 84, diagnose: true, qa: qaFor(ctx) });
   const previewPath = path.join(ctx.dir, "preview", `${name}.jpg`);
   fs.mkdirSync(path.dirname(previewPath), { recursive: true });
   fs.writeFileSync(previewPath, buffer);
+  fs.writeFileSync(path.join(ctx.dir, "build", `${name}.qa.json`), JSON.stringify(diagnostics));
   return { index, fragmentPath, previewPath, preview: buffer, diagnostics: diagnostics!, notes };
+}
+
+/**
+ * Cross-slide consistency: the logo should sit in one place, and left-aligned headlines should share one left edge.
+ * Reads the marks each render saved in build/slide-NN.qa.json.
+ */
+export function consistencyNotes(ctx: RunContext): string[] {
+  const marks = listSlides(ctx.dir).map((f, i) => {
+    const qa = path.join(ctx.dir, "build", path.basename(f, ".html") + ".qa.json");
+    const m = fs.existsSync(qa) ? (JSON.parse(fs.readFileSync(qa, "utf8")) as Diagnostics).marks ?? {} : {};
+    return { n: i + 1, ...m };
+  });
+  const groups = (key: "logo" | "heading", axis: number[]) => {
+    const by = new Map<string, number[]>();
+    for (const m of marks) {
+      const p = m[key];
+      if (!p) continue;
+      const k = axis.map((a) => Math.round(p[a] / 8) * 8).join(",");
+      by.set(k, [...(by.get(k) ?? []), m.n]);
+    }
+    return [...by.entries()];
+  };
+  const list = (g: [string, number[]][]) => g.map(([k, ns]) => `slide${ns.length > 1 ? "s" : ""} ${ns.join(", ")} at (${k})`).join("; ");
+  const notes: string[] = [];
+  const logos = groups("logo", [0, 1]);
+  if (logos.length > 1) notes.push(`The logo moves between slides: ${list(logos)}. Keep it in one place (wordmark--top, or wordmark--inline in a top row, land on the same spot).`);
+  const heads = groups("heading", [0]);
+  if (heads.length > 1) notes.push(`Left-aligned headlines start at different x: ${list(heads)}. Keep one left edge.`);
+  return notes;
 }
 
 export function removeSlide(ctx: RunContext, index: number) {
@@ -69,13 +104,14 @@ export async function contactSheet(ctx: RunContext): Promise<Buffer | null> {
 
 export interface ExportResult {
   pngs: string[];
-  pdf: string;
+  /** carousel.pdf; null for a single post. */
+  pdf: string | null;
   post: string;
   manifest: string;
   warnings: string[];
 }
 
-/** Final export: high-res PNG per slide, a LinkedIn-ready PDF carousel, and post copy. */
+/** Final export: high-res PNG per slide, a LinkedIn-ready PDF carousel (not for a single post), and post copy. */
 export async function exportCarousel(
   ctx: RunContext,
   opts: { caption?: string; altText?: string[]; scale?: number },
@@ -84,13 +120,14 @@ export async function exportCarousel(
   const { width, height } = FORMATS[ctx.format];
   const slides = listSlides(ctx.dir);
   if (!slides.length) throw new Error("No slides to export. Call write_slide first.");
+  if (ctx.single && slides.length > 1) throw new Error(`A single post has one slide, but there are ${slides.length}. Remove the others with remove_slide.`);
   const pngs: string[] = [];
   const warnings: string[] = [];
   const pdf = await PDFDocument.create();
   for (const fragmentPath of slides) {
     const name = path.basename(fragmentPath, ".html");
     const buildPath = build(ctx, name, fs.readFileSync(fragmentPath, "utf8"));
-    const { buffer, diagnostics } = await renderHtmlFile(buildPath, { width, height, scale, type: "png", diagnose: true });
+    const { buffer, diagnostics } = await renderHtmlFile(buildPath, { width, height, scale, type: "png", diagnose: true, qa: qaFor(ctx) });
     for (const e of diagnostics!.errors) warnings.push(`${name}: ${e}`);
     const out = path.join(ctx.dir, "png", `${name}.png`);
     fs.mkdirSync(path.dirname(out), { recursive: true });
@@ -100,10 +137,13 @@ export async function exportCarousel(
     const page = pdf.addPage([width, height]);
     page.drawImage(img, { x: 0, y: 0, width, height });
   }
-  pdf.setTitle(opts.caption?.split("\n")[0]?.slice(0, 120) || "Carousel");
-  pdf.setCreator(ctx.brand.name);
-  const pdfPath = path.join(ctx.dir, "carousel.pdf");
-  fs.writeFileSync(pdfPath, await pdf.save());
+  let pdfPath: string | null = null;
+  if (!ctx.single) {
+    pdf.setTitle(opts.caption?.split("\n")[0]?.slice(0, 120) || "Carousel");
+    pdf.setCreator(ctx.brand.name);
+    pdfPath = path.join(ctx.dir, "carousel.pdf");
+    fs.writeFileSync(pdfPath, await pdf.save());
+  }
 
   const alt = opts.altText ?? [];
   const postPath = path.join(ctx.dir, "post.md");
@@ -118,7 +158,9 @@ export async function exportCarousel(
       "",
       ...pngs.map((p, i) => `${i + 1}. **${path.basename(p)}**: ${alt[i] ?? "_(missing)_"}`),
       "",
-      `Upload \`carousel.pdf\` as a document post (swipeable carousel), or the PNGs as a multi-image post.`,
+      ctx.single
+        ? `Upload \`png/${path.basename(pngs[0])}\` as an image post.`
+        : `Upload \`carousel.pdf\` as a document post (swipeable carousel), or the PNGs as a multi-image post.`,
       "",
     ].join("\n"),
   );
@@ -126,7 +168,16 @@ export async function exportCarousel(
   fs.writeFileSync(
     manifestPath,
     JSON.stringify(
-      { brand: ctx.brand.name, format: ctx.format, size: { width: width * scale, height: height * scale }, slides: pngs.map((p, i) => ({ png: path.relative(ctx.dir, p), alt: alt[i] ?? null })), pdf: "carousel.pdf", caption: opts.caption ?? null },
+      {
+        brand: ctx.brand.name,
+        kind: ctx.single ? "single" : "carousel",
+        style: ctx.style,
+        format: ctx.format,
+        size: { width: width * scale, height: height * scale },
+        slides: pngs.map((p, i) => ({ png: path.relative(ctx.dir, p), alt: alt[i] ?? null })),
+        pdf: pdfPath ? "carousel.pdf" : null,
+        caption: opts.caption ?? null,
+      },
       null,
       2,
     ),

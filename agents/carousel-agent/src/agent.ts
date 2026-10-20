@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { query, type SDKMessage } from "@anthropic-ai/claude-agent-sdk";
-import { createRunDir, DEFAULT_BRAND_FILE, defaultOutDir, loadBrand, type Brand, type Format, type RunContext } from "./config.js";
+import { createRunDir, DEFAULT_BRAND_FILE, defaultOutDir, isStyleId, loadBrand, STYLE_IDS, type Brand, type Format, type RunContext, type StyleId } from "./config.js";
 import { brandFromProduct, productContext, resolveProduct, type Product } from "./product.js";
 import { buildSystemPrompt } from "./prompt.js";
 import { createCarouselServer, SERVER_NAME, TOOL_NAMES } from "./tools.js";
@@ -10,8 +10,13 @@ import { isMockMode } from "./images/generate.js";
 
 export interface CarouselRequest {
   brief: string;
+  /** Default: square for a carousel, portrait (4:5) for a single post. */
   format?: Format;
   slides?: number;
+  /** A style id fixes the look; "auto" (default) lets the agent pick, preferring the product's house style. */
+  style?: StyleId | "auto";
+  /** One standalone graphic (an image post) instead of a carousel. `slides: 1` means the same. */
+  single?: boolean;
   outDir?: string;
   /** Brand file; beats the product folder's brand. */
   brandPath?: string;
@@ -68,10 +73,23 @@ function brandFileUsed(req: Pick<CarouselRequest, "brandPath">, product: Product
 }
 
 export async function runCarouselAgent(req: CarouselRequest): Promise<CarouselRun> {
-  const format = req.format ?? "square";
+  const single = req.single || req.slides === 1;
+  if (single && req.slides && req.slides > 1) throw new Error(`A single post has one slide (got slides: ${req.slides}).`);
+  const format = req.format ?? (single ? "portrait" : "square");
+  const requested = req.style ?? "auto";
+  if (requested !== "auto" && !isStyleId(requested)) throw new Error(`style must be auto or one of ${STYLE_IDS.join(", ")}`);
+  const fixed = requested === "auto" ? null : requested;
   const { brand, product } = resolveBrand(req);
   const dir = createRunDir(req.outDir ?? defaultOutDir(), req.brief.split(/\s+/).slice(0, 6).join(" "));
-  const ctx: RunContext = { dir, format, brand, product: product ? { dir: product.dir, name: product.name, context: productContext(product) } : undefined };
+  const ctx: RunContext = {
+    dir,
+    format,
+    brand,
+    product: product ? { dir: product.dir, name: product.name, context: productContext(product) } : undefined,
+    style: fixed,
+    styleFixed: !!fixed,
+    single,
+  };
 
   const copied: string[] = [];
   for (const src of req.assets ?? []) {
@@ -83,18 +101,31 @@ export async function runCarouselAgent(req: CarouselRequest): Promise<CarouselRu
   if (ctx.product) fs.writeFileSync(path.join(dir, "product-context.md"), ctx.product.context);
   fs.writeFileSync(
     path.join(dir, "run.json"),
-    JSON.stringify({ format, brand: brandFileUsed(req, product), product: ctx.product?.dir ?? null, brandSource: brand.source ?? null }, null, 2),
+    JSON.stringify(
+      {
+        kind: single ? "single" : "carousel",
+        format,
+        style: fixed,
+        styleRequested: requested,
+        brand: brandFileUsed(req, product),
+        product: ctx.product?.dir ?? null,
+        brandSource: brand.source ?? null,
+      },
+      null,
+      2,
+    ),
   );
 
   const prompt = [
-    "Create a LinkedIn carousel from this brief.",
+    single ? "Create a single LinkedIn graphic post (one image) from this brief." : "Create a LinkedIn carousel from this brief.",
     "",
     "<brief>",
     req.brief.trim(),
     "</brief>",
     "",
-    `Slides: ${req.slides ? `exactly ${req.slides}` : "your call (4–6)"}`,
+    single ? "Slides: 1 (a single image post)" : `Slides: ${req.slides ? `exactly ${req.slides}` : "your call (4–6)"}`,
     `Format: ${format}`,
+    fixed ? `Style: ${fixed} (fixed by the user)` : `Style: your choice${brand.houseStyle ? ` (house style: ${brand.houseStyle})` : ""}; call set_style first`,
     copied.length ? `User-provided images (already in the run folder; use directly in slides or as reference_images): ${copied.join(", ")}` : "",
     isMockMode() ? "Note: OPENAI_API_KEY is not set, so generate_image returns mock placeholder art. Design as if they were real." : "",
   ]

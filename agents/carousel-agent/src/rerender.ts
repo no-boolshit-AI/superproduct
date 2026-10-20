@@ -4,7 +4,7 @@
 import "dotenv/config";
 import fs from "node:fs";
 import path from "node:path";
-import { defaultOutDir, listSlides, loadBrand, type Format, type RunContext } from "./config.js";
+import { defaultOutDir, isStyleId, listSlides, loadBrand, type Format, type RunContext } from "./config.js";
 import { brandFromProduct, resolveProduct } from "./product.js";
 import { exportCarousel, renderSlide } from "./slides.js";
 import { closeBrowser } from "./render/renderer.js";
@@ -21,7 +21,14 @@ const run = fs.existsSync(path.join(dir, "run.json")) ? JSON.parse(fs.readFileSy
 const recorded = run.product && fs.existsSync(path.join(run.product, "product.json"));
 if (!run.brand && run.product && !recorded) console.log(`The run's product folder ${run.product} is gone; using the current product folder.`);
 const product = !run.brand && run.product ? resolveProduct(recorded ? run.product : undefined) : null;
-const ctx: RunContext = { dir, format: (run.format ?? "square") as Format, brand: run.brand ? loadBrand(run.brand) : product ? brandFromProduct(product) : loadBrand() };
+// Runs from before styles existed are consulting carousels.
+const ctx: RunContext = {
+  dir,
+  format: (run.format ?? "square") as Format,
+  brand: run.brand ? loadBrand(run.brand) : product ? brandFromProduct(product) : loadBrand(),
+  style: isStyleId(run.style) ? run.style : "consulting",
+  single: run.kind === "single",
+};
 const manifest = fs.existsSync(path.join(dir, "manifest.json")) ? JSON.parse(fs.readFileSync(path.join(dir, "manifest.json"), "utf8")) : {};
 
 try {
@@ -35,7 +42,7 @@ try {
     caption: manifest.caption ?? undefined,
     altText: manifest.slides?.map((s: { alt: string | null }) => s.alt ?? "") ?? [],
   });
-  console.log(`Exported ${out.pngs.length} PNGs and ${path.relative(process.cwd(), out.pdf)}`);
+  console.log(`Exported ${out.pngs.length} PNG(s)${out.pdf ? ` and ${path.relative(process.cwd(), out.pdf)}` : ""} (style ${ctx.style})`);
 } finally {
   await closeBrowser();
 }
