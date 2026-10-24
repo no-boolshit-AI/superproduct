@@ -410,6 +410,7 @@ function sessionBase(ctx: Ctx, label: string, writable: boolean): Omit<SessionSp
       writable: writable ? [ws.repoPath] : [],
       readable: ws.kind === "docker" ? "any" : [ws.repoPath, ws.pluginPath],
       hostShell: ws.kind === "local",
+      inContainer: ws.kind === "docker",
     },
     model: ctx.run.model,
     maxTurns: 200,

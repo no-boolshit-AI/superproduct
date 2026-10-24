@@ -9,6 +9,7 @@ import { insertGap, listPages, movePage, readDoc, readElements, removePage, writ
 import { chartShape, diagramShape, kpiShape, previewSize, tableShape } from "./elements/schema.js";
 import type { ElementSpec } from "./elements/types.js";
 import type { Emit } from "./events.js";
+import { isInside, realPath } from "./guard.js";
 import { generateImage, imagesEnabled, isMockMode } from "./images.js";
 import { LAYOUT_MAP, layoutCatalog, type DocMeta, type PageSpec } from "./layouts.js";
 import { contactSheet, exportDocument, renderElementPreview, renderPagePreview, requireDoc, storylineMarkdown, type Job } from "./pipeline.js";
@@ -199,8 +200,8 @@ export function buildTools(ctx: ToolContext) {
     async (a) => {
       try {
         const abs = path.resolve(job.dir, a.path);
-        const rel = path.relative(job.dir, abs);
-        if (rel.startsWith("..") || path.isAbsolute(rel)) throw new Error("Only files inside the job folder can be read.");
+        // as real paths, like the Read guard: the model may name the file as Claude Code shows it the job folder
+        if (!isInside(realPath(abs), realPath(job.dir))) throw new Error("Only files inside the job folder can be read.");
         if (!fs.existsSync(abs)) throw new Error(`File not found: ${a.path}. Available: ${fs.readdirSync(path.join(job.dir, "inputs")).join(", ") || "none"}`);
         const tables = await loadTables(abs, a.sheet);
         return { content: [text(tables.map((t) => summarize(t, a.max_rows ?? 40)).join("\n\n"))] };

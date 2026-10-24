@@ -175,7 +175,7 @@ await t("bash guard", () => {
 });
 
 await t("file guard", async () => {
-  const h = guardHook({ cwd: "/workspace/repo", writable: ["/workspace/repo"], readable: "any" });
+  const h = guardHook({ cwd: "/workspace/repo", writable: ["/workspace/repo"], readable: "any", inContainer: true });
   const call = (tool_name: string, tool_input: Record<string, unknown>) => h({ hook_event_name: "PreToolUse", tool_name, tool_input } as never, undefined, { signal: new AbortController().signal });
   const decision = async (n: string, i: Record<string, unknown>) => ((await call(n, i)) as { hookSpecificOutput?: { permissionDecision?: string } }).hookSpecificOutput?.permissionDecision ?? "allow";
   assert.equal(await decision("Write", { file_path: "src/a.ts" }), "allow");
@@ -187,6 +187,37 @@ await t("file guard", async () => {
   const ro = guardHook({ cwd: "/r", writable: [], readable: ["/r"], noBash: true });
   const r = (await ro({ hook_event_name: "PreToolUse", tool_name: "Read", tool_input: { file_path: "/etc/hosts" } } as never, undefined, { signal: new AbortController().signal })) as { hookSpecificOutput?: { permissionDecision?: string } };
   assert.equal(r.hookSpecificOutput?.permissionDecision, "deny");
+});
+
+await t("file guard on this machine: real paths", async () => {
+  // a repo reached through a symlink (a DEVAGENT_HOME behind one, or os.tmpdir() on macOS), on any OS: Claude Code reports
+  // the paths it works on with symlinks resolved, and a link counts as where it points
+  const base = fs.realpathSync.native(fs.mkdtempSync(path.join(os.tmpdir(), "devagent-guard-")));
+  const realRepo = path.join(base, "real", "repo");
+  fs.mkdirSync(path.join(realRepo, "src"), { recursive: true });
+  fs.mkdirSync(path.join(realRepo, ".git"));
+  fs.mkdirSync(path.join(base, "plugin"));
+  fs.mkdirSync(path.join(base, "elsewhere"));
+  fs.symlinkSync(path.join(base, "real"), path.join(base, "link"));
+  fs.symlinkSync(path.join(base, "elsewhere"), path.join(realRepo, "out"));
+  fs.symlinkSync(path.join(realRepo, ".git"), path.join(realRepo, "meta"));
+  const linked = (...p: string[]) => path.join(base, "link", ...p);
+  const h = guardHook({ cwd: linked("repo"), writable: [linked("repo")], readable: [linked("repo"), path.join(base, "plugin")], hostShell: true });
+  const decision = async (tool_name: string, tool_input: Record<string, unknown>) =>
+    (((await h({ hook_event_name: "PreToolUse", tool_name, tool_input } as never, undefined, { signal: new AbortController().signal })) as { hookSpecificOutput?: { permissionDecision?: string } }).hookSpecificOutput?.permissionDecision ?? "allow");
+  try {
+    assert.equal(await decision("Write", { file_path: path.join(realRepo, "src", "a.js") }), "allow", "by the real path");
+    assert.equal(await decision("Edit", { file_path: linked("repo", "src", "a.js") }), "allow", "through the link");
+    assert.equal(await decision("Write", { file_path: "src/b.js" }), "allow", "relative");
+    assert.equal(await decision("Read", { file_path: path.join(realRepo, "src", "a.js") }), "allow");
+    assert.equal(await decision("Glob", { pattern: path.join(realRepo, "src", "*.js") }), "allow");
+    assert.equal(await decision("Write", { file_path: path.join(realRepo, "out", "x.js") }), "deny", "a link out of the repo");
+    assert.equal(await decision("Read", { file_path: linked("repo", "out", "x.js") }), "deny", "reading through a link out of the repo");
+    assert.equal(await decision("Write", { file_path: "meta/config" }), "deny", "a link to .git");
+    assert.equal(await decision("Write", { file_path: path.join(realRepo, ".git", "config") }), "deny");
+  } finally {
+    fs.rmSync(base, { recursive: true, force: true });
+  }
 });
 
 // ---------------------------------------------------------------- compose + image

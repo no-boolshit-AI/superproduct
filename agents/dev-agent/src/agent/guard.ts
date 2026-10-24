@@ -1,7 +1,10 @@
 /**
  * PreToolUse guard for every agent session. The container is the main isolation boundary; this adds the
  * workflow rules: the agent edits only the repo, and git history/branches/remotes belong to the host harness.
+ * When Claude Code runs on this machine (setup, RUNTIME=local), paths are compared with symlinks resolved on both sides,
+ * as Claude Code reports them: a link counts as where it points.
  */
+import fs from "node:fs";
 import path from "node:path";
 import type { HookCallback, HookJSONOutput } from "@anthropic-ai/claude-agent-sdk";
 import { pathInside } from "../profile.js";
@@ -17,6 +20,26 @@ export interface GuardOptions {
   noBash?: boolean;
   /** Extra Bash rules for RUNTIME=local. */
   hostShell?: boolean;
+  /** Claude Code runs in the workspace container: its paths are compared as given, since this machine can't resolve them. */
+  inContainer?: boolean;
+}
+
+/**
+ * p with symlinks resolved, through the real path of its nearest existing ancestor (the rest may not exist yet).
+ * Claude Code reports the paths it works on that way (relative ones against its real working directory; on macOS
+ * /var/folders/… is /private/var/folders/…); the native call also gives the on-disk letter case, as Claude Code's
+ * working directory has.
+ */
+export function realPath(p: string): string {
+  const missing: string[] = [];
+  for (let dir = path.resolve(p); ; dir = path.dirname(dir)) {
+    try {
+      return path.join(fs.realpathSync.native(dir), ...missing);
+    } catch {
+      if (path.dirname(dir) === dir) return path.resolve(p);
+      missing.unshift(path.basename(dir));
+    }
+  }
 }
 
 const deny = (reason: string): HookJSONOutput => ({
@@ -50,6 +73,11 @@ function targetPath(input: Record<string, unknown>): string | undefined {
 }
 
 export function guardHook(o: GuardOptions): HookCallback {
+  // the roots resolved once per session; each requested path is resolved per call
+  const real = o.inContainer ? (p: string) => path.resolve(p) : realPath;
+  const cwd = real(o.cwd);
+  const writable = o.writable.map(real);
+  const readable = o.readable === "any" ? "any" : o.readable.map(real);
   return async (input) => {
     if (input.hook_event_name !== "PreToolUse") return {};
     const name = input.tool_name;
@@ -62,15 +90,17 @@ export function guardHook(o: GuardOptions): HookCallback {
     }
 
     const raw = targetPath(ti);
-    const abs = raw ? path.resolve(o.cwd, raw) : undefined;
+    const abs = raw ? path.resolve(cwd, raw) : undefined;
+    const target = abs ? real(abs) : undefined;
     if (["Write", "Edit", "MultiEdit", "NotebookEdit"].includes(name)) {
-      if (!abs) return {};
-      if (!o.writable.some((r) => pathInside(abs, r))) return deny(`You can only change files inside ${o.writable.join(" or ") || "(nothing in this phase)"}.`);
-      if (abs.split(path.sep).includes(".git")) return deny("The .git folder is managed by dev-agent.");
+      if (!abs || !target) return {};
+      if (!writable.some((r) => pathInside(target, r))) return deny(`You can only change files inside ${writable.join(" or ") || "(nothing in this phase)"}.`);
+      // by either name, so a link to .git is caught too
+      if ([abs, target].some((p) => p.split(path.sep).includes(".git"))) return deny("The .git folder is managed by dev-agent.");
       return {};
     }
-    if (["Read", "Glob", "Grep", "LS"].includes(name) && abs && o.readable !== "any") {
-      if (!o.readable.some((r) => pathInside(abs, r))) return deny(`Reading is limited to ${o.readable.join(", ")}.`);
+    if (["Read", "Glob", "Grep", "LS"].includes(name) && target && readable !== "any") {
+      if (!readable.some((r) => pathInside(target, r))) return deny(`Reading is limited to ${readable.join(", ")}.`);
     }
     return {};
   };

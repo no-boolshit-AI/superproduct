@@ -69,7 +69,7 @@ host ─► final PNG export at the chosen scale, CREDITS.md, index.html, zip
 
 - **Design system**: `design/collage.css` (tokens, effects, paper pieces, the 8 layouts), `design/collage.js` (builds duotone/tritone and outline SVG filters from the palette, shrinks headlines to fit, checks for overflow, overlap and broken images), `design/palettes.css` (generated from `src/palettes.ts`).
 - **Image rules**: no text or logos in generated images; generated people are anonymous archetypes; named real people come only from Wikimedia (public domain/CC0 by default, CC BY/BY-SA with `--cc-by`, credits recorded automatically).
-- **Guardrails**: the agent can only write inside its job folder (not `_design/`), can only read the job folder, `design/`, your reference posts (optional, see below) and the style guide, has no shell or web access, ignores MCP servers configured on your machine, and stops at `MAX_BUDGET_USD`. Image generation stops at `MAX_IMAGES` per post.
+- **Guardrails**: the agent can only write inside its job folder (not `_design/`), can only read the job folder, `design/`, your reference posts (optional, see below) and the style guide (paths are compared with symlinks resolved, as Claude Code reports them, so an `OUTPUT_DIR` behind a symlink works and a link out of the job folder or into `_design/` doesn't), has no shell or web access, ignores MCP servers configured on your machine, and stops at `MAX_BUDGET_USD`. Image generation stops at `MAX_IMAGES` per post.
 
 ## Palettes and layouts
 

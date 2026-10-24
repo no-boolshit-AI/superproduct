@@ -138,7 +138,7 @@ The system prompt (`src/prompt.ts`) and the QA encode the method:
 | `export_document` | page PNGs, exhibit PNGs, PDF (text layer + bookmarks), storyline.md, manifest.json |
 | `generate_image` | optional (needs `OPENAI_API_KEY`, or `IMAGE_MOCK=1`): photos/abstract/illustration as raw material only |
 
-The only built-in tool is `Read`, and a hook keeps it inside the job folder. Bash, Write, Edit and Web are disabled. The run also uses `settingSources: []`, `strictMcpConfig` and `permissionMode: "dontAsk"`.
+The only built-in tool is `Read`, and a hook keeps it inside the job folder. The hook and `inspect_data` compare paths with symlinks resolved, as Claude Code reports them, so an `OUTPUT_DIR` behind a symlink works and a link out of the job folder doesn't. Bash, Write, Edit and Web are disabled. The run also uses `settingSources: []`, `strictMcpConfig` and `permissionMode: "dontAsk"`.
 
 ## Layouts
 
@@ -182,8 +182,9 @@ brief + files ──▶ Claude (Agent SDK) ──tools──▶ job folder
 
 ```bash
 npm run typecheck
-npm test          # tool handlers, product folder mapping (fixture product), offline end-to-end with a mock Claude API
-                  # (real SDK + CLI + MCP + hooks), web server. Tests ignore the workspace's product/ (PRODUCT_DIR=none).
+npm test          # tool handlers, the Read guard (on a job folder behind a symlink), product folder mapping (fixture
+                  # product), offline end-to-end with a mock Claude API (real SDK + CLI + MCP + hooks), web server.
+                  # Tests ignore the workspace's product/ (PRODUCT_DIR=none).
 npm run demo      # sample deck + report → workspace/out/deck/demo-*/, in the product's brand when there is one
                   # (--product none for the theme's own look)
 npm run gallery   # every theme → docs/themes-*.jpg (themes' own look; --product <dir> → docs/themes-*-product.jpg)
