@@ -7,7 +7,12 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
-process.env.OUTPUT_DIR = fs.mkdtempSync(path.join(os.tmpdir(), "deck-e2e-"));
+// OUTPUT_DIR behind a symlink, on any OS (on macOS os.tmpdir() is one too): Claude Code reports the job's files by their
+// real paths, and the guard must still let it read them
+const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "deck-e2e-"));
+fs.mkdirSync(path.join(tmp, "real"));
+fs.symlinkSync(path.join(tmp, "real"), path.join(tmp, "out"));
+process.env.OUTPUT_DIR = path.join(tmp, "out");
 process.env.PRODUCT_DIR = "none"; // hermetic: ignore the workspace's product/ folder (test/product.test.ts covers it)
 process.env.EXPORT_DPI = "100";
 const m = await import("./mock-claude.js");

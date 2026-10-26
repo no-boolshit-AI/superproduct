@@ -1,9 +1,10 @@
-import { query, type HookCallback, type HookJSONOutput, type SDKMessage } from "@anthropic-ai/claude-agent-sdk";
+import { query, type SDKMessage } from "@anthropic-ai/claude-agent-sdk";
 import fs from "node:fs";
 import path from "node:path";
 import { OUTPUT_DIR, pageName, slugify } from "./config.js";
 import { initJobDir, listPages, readDoc } from "./document.js";
 import type { Emit, JobEvent, JobOptions, JobRecord } from "./events.js";
+import { guardHook } from "./guard.js";
 import { exportDocument, type Job } from "./pipeline.js";
 import { productContext, resolveBrand } from "./product.js";
 import { initialPrompt, revisionPrompt, systemPrompt } from "./prompt.js";
@@ -53,25 +54,6 @@ export function describeAuth(): string {
   if (process.env.ANTHROPIC_API_KEY?.trim()) return "Anthropic API key (ANTHROPIC_API_KEY)";
   if (process.env.CLAUDE_CODE_OAUTH_TOKEN?.trim()) return "Claude subscription (CLAUDE_CODE_OAUTH_TOKEN)";
   return "Claude subscription via this machine's Claude Code login";
-}
-
-const isInside = (p: string, root: string) => {
-  const rel = path.relative(root, p);
-  return rel === "" || (!rel.startsWith("..") && !path.isAbsolute(rel));
-};
-
-/** Read is the only built-in tool; keep it inside the job folder. */
-function guardHook(jobDir: string): HookCallback {
-  const deny = (reason: string): HookJSONOutput => ({ hookSpecificOutput: { hookEventName: "PreToolUse", permissionDecision: "deny", permissionDecisionReason: reason } });
-  return async (input) => {
-    if (input.hook_event_name !== "PreToolUse") return {};
-    if (input.tool_name !== "Read") return {};
-    const ti = (input.tool_input ?? {}) as Record<string, unknown>;
-    const raw = String(ti.file_path ?? "");
-    const abs = path.resolve(jobDir, raw);
-    if (!isInside(abs, jobDir)) return deny("Reading is limited to the job folder (inputs/, assets/ and the files you created).");
-    return {};
-  };
 }
 
 const KIND: Record<string, string> = { ".csv": "data", ".tsv": "data", ".xlsx": "data", ".xlsm": "data", ".json": "data", ".png": "image", ".jpg": "image", ".jpeg": "image", ".webp": "image", ".svg": "image", ".pdf": "document", ".md": "document", ".txt": "document", ".docx": "document" };

@@ -1,11 +1,12 @@
-import { query, type HookCallback, type HookJSONOutput } from "@anthropic-ai/claude-agent-sdk";
+import { query } from "@anthropic-ai/claude-agent-sdk";
 import { appendFile, mkdir, readFile, readdir, stat, writeFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import path from "node:path";
 import { zipSync } from "fflate";
 import type { JobOptions } from "./config.js";
 import type { Emit, JobEvent, JobRecord } from "./events.js";
-import { DESIGN_DIR, OUTPUT_DIR, REFERENCE_DIR, STYLEGUIDE } from "./paths.js";
+import { guardHook } from "./guard.js";
+import { OUTPUT_DIR } from "./paths.js";
 import { initialPrompt, revisionPrompt, systemPrompt } from "./prompt.js";
 import { writeCreditsMd } from "./tools/commons.js";
 import { renderSlides } from "./tools/render.js";
@@ -39,41 +40,6 @@ export async function readJob(id: string): Promise<JobRecord | null> {
 async function saveJob(job: JobRecord): Promise<void> {
   job.updatedAt = new Date().toISOString();
   await writeFile(path.join(job.dir, "job.json"), JSON.stringify(job, null, 2));
-}
-
-const isInside = (p: string, root: string) => {
-  const rel = path.relative(root, p);
-  return rel === "" || (!rel.startsWith("..") && !path.isAbsolute(rel));
-};
-
-/** Keeps the agent's file access inside the job folder (+ read-only design/reference files). */
-function guardHook(jobDir: string): HookCallback {
-  const deny = (reason: string): HookJSONOutput => ({
-    hookSpecificOutput: { hookEventName: "PreToolUse", permissionDecision: "deny", permissionDecisionReason: reason },
-  });
-  const readable = [jobDir, DESIGN_DIR, REFERENCE_DIR, STYLEGUIDE];
-  return async (input) => {
-    if (input.hook_event_name !== "PreToolUse") return {};
-    const ti = (input.tool_input ?? {}) as Record<string, unknown>;
-    const raw = (ti.file_path ?? ti.path ?? (typeof ti.pattern === "string" && path.isAbsolute(ti.pattern) ? ti.pattern : undefined)) as
-      | string
-      | undefined;
-    if (!raw) return {};
-    const abs = path.resolve(jobDir, raw.replace(/\*.*$/, "") || ".");
-    if (input.tool_name === "Write" || input.tool_name === "Edit") {
-      if (!isInside(abs, jobDir)) return deny(`Only files inside the job folder (${jobDir}) can be written.`);
-      if (isInside(abs, path.join(jobDir, "_design"))) return deny("_design/ is the shared design system and is read-only.");
-      if (["job.json", "events.jsonl", "credits.jsonl", "index.html", "CREDITS.md", "PRODUCT.md"].includes(path.relative(jobDir, abs)))
-        return deny("That file is managed by the host app.");
-      if (!/\.(html|md|txt)$/i.test(abs)) return deny("Only .html, .md and .txt files can be written.");
-      const body = String(ti.content ?? ti.new_string ?? "");
-      if (/<(iframe|object|embed|frame|form|base|meta\s+http-equiv)\b/i.test(body) || /<script(?![^>]*src=["']_design\/collage\.js["'])/i.test(body) || /\b(src|href)\s*=\s*["']?(https?:|\/\/|file:|\.\.\/)/i.test(body))
-        return deny("Slides may not contain iframes/objects/forms, scripts other than _design/collage.js, external URLs or ../ paths.");
-      return {};
-    }
-    if (!readable.some((r) => isInside(abs, r))) return deny("Reading is limited to the job folder, design/, reference/ and STYLEGUIDE.md.");
-    return {};
-  };
 }
 
 function summarizeTool(name: string, input: Record<string, unknown>, jobDir: string): string | null {

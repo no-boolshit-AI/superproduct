@@ -4,13 +4,17 @@
  *   npm test
  */
 import assert from "node:assert/strict";
-import { existsSync, mkdtempSync, readFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, symlinkSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
 process.env.PRODUCT_DIR = "none"; // hermetic: product folders are covered by test/product.test.ts
-// before any project module is loaded (paths.ts reads OUTPUT_DIR once)
-process.env.OUTPUT_DIR = mkdtempSync(path.join(os.tmpdir(), "collage-test-"));
+// before any project module is loaded (paths.ts reads OUTPUT_DIR once). Behind a symlink, on any OS (on macOS
+// os.tmpdir() is one too): Claude Code reports the job's files by their real paths, and the hook must still allow them.
+const tmp = mkdtempSync(path.join(os.tmpdir(), "collage-test-"));
+mkdirSync(path.join(tmp, "real"));
+symlinkSync(path.join(tmp, "real"), path.join(tmp, "out"));
+process.env.OUTPUT_DIR = path.join(tmp, "out");
 const m = await import("./mocks.js");
 const mocks = await m.startMocks();
 const { toolResults, imageRequests } = m;

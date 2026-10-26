@@ -232,6 +232,9 @@ npm run agent -- answer 7d01e9aa --decision approve   # or: --decision revise --
   - It can't commit, push, rebase, merge, switch branches or change remotes/config; the harness does those. With
     `RUNTIME=local` this guard and the HEAD check are the only protection.
   - It has no GitHub CLI.
+  - When Claude Code runs on your machine (setup, `RUNTIME=local`), it compares paths with symlinks resolved, as
+    Claude Code reports them, so a `DEVAGENT_HOME` behind a symlink works and a link out of the repo or to `.git/`
+    doesn't.
   - The setup agent runs on the host with read-only tools and no shell; everything it executes goes through the
     workspace.
 - **The planning and review sessions** have no file-editing tools. Anything they change through the shell is stashed
