@@ -17,6 +17,7 @@
  *   node scripts/agents.mjs web <agent>               start the agent's web UI
  *   node scripts/agents.mjs pending                   dev-agent relay: open questions/approvals (JSON)
  *   node scripts/agents.mjs answer <id> [args…]       dev-agent relay: answer one (same flags as the dev-agent CLI)
+ *   node scripts/dashboard.mjs [--open]               the same in your browser, with results and setup (keys, installs)
  *
  * Everything the agents make, and the product they work for, lives in the workspace (workspace/, see
  * lib/workspace.mjs and node scripts/workspace.mjs show | init | migrate). `status` shows it and the product;
@@ -25,19 +26,13 @@
  * It never prints secret values: `status` and `keys` only report which variable names are set.
  */
 import { spawn, spawnSync } from "node:child_process";
-import { copyFileSync, existsSync, lstatSync, mkdirSync, readFileSync, readdirSync, renameSync, statSync, symlinkSync, writeFileSync } from "node:fs";
-import os from "node:os";
+import { copyFileSync, existsSync, lstatSync, mkdirSync, readFileSync, symlinkSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { ensureEnvFile, readEnvFile, writeEnvValue } from "../lib/env-file.mjs";
-import { checkProduct, findProductDir } from "../lib/product.mjs";
+import { CLAUDE_KEYS, KEYS, REGISTRY, age, agentEnv, agentPath, askDir, coworkVm, findAgent, keyLabel, listPending, nodeMajor, nodeMinor, outputsOf, probeTools, productStatus, statusOf, toolFix, workspaceStatus, writeAnswer } from "../lib/agents.mjs";
+import { ensureEnvFile, writeEnvValue } from "../lib/env-file.mjs";
 import { planMigration } from "../lib/workspace-migrate.mjs";
-import { createWorkspace, workspaceDir } from "../lib/workspace.mjs";
-
-const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const { agents: REGISTRY, keys: KEY_INFO = {} } = JSON.parse(readFileSync(path.join(ROOT, "agents.json"), "utf8"));
-const KEYS = Object.fromEntries(Object.entries(KEY_INFO).filter(([k]) => !k.startsWith("$")));
-const CLAUDE_KEYS = ["ANTHROPIC_API_KEY", "CLAUDE_CODE_OAUTH_TOKEN"];
+import { KIT_ROOT as ROOT, createWorkspace, workspaceDir } from "../lib/workspace.mjs";
 
 const tty = process.stdout.isTTY;
 const c = (code) => (s) => (tty ? `\x1b[${code}m${s}\x1b[0m` : String(s));
@@ -49,10 +44,11 @@ const json = flags.has("--json");
 
 const mac = process.platform === "darwin";
 const win = process.platform === "win32";
-const [nodeMajor, nodeMinor] = process.versions.node.split(".").map(Number);
+/** What's installed on this computer, checked when first asked (lib/agents.mjs). */
+const tools = probeTools();
 
 function agent(id) {
-  const a = REGISTRY.find((x) => x.id === id || path.basename(x.dir) === id || x.dir === id || `${x.id}-agent` === id);
+  const a = findAgent(id);
   if (!a) die(`Unknown agent "${id}". Agents: ${REGISTRY.map((x) => x.id).join(", ")}`);
   return a;
 }
@@ -65,189 +61,9 @@ function die(msg) {
   process.exit(1);
 }
 
-/** The Cowork VM (Linux) shares this folder with the user's computer: installing or running there breaks its node_modules. */
-const coworkVm = process.platform === "linux" && (os.homedir().startsWith("/sessions/") || /^\/sessions\/[^/]+\/mnt\//.test(ROOT));
 function guardHost(action) {
   if (coworkVm && !flags.has("--force"))
     die(`Don't ${action} from the Cowork VM: the agents run on the user's computer (Chromium, Docker, native binaries in node_modules). Give the user the command to paste into Terminal there. --force overrides.`);
-}
-
-const hasCache = new Map();
-const has = (cmd, args = ["--version"]) => {
-  const key = [cmd, ...args].join(" ");
-  if (!hasCache.has(key))
-    try {
-      hasCache.set(key, spawnSync(cmd, args, { stdio: "ignore", timeout: 15000 }).status === 0);
-    } catch {
-      hasCache.set(key, false);
-    }
-  return hasCache.get(key);
-};
-const brew = () => mac && has("brew");
-
-function chromiumInstalled() {
-  const dirs = [process.env.PLAYWRIGHT_BROWSERS_PATH, path.join(os.homedir(), "Library", "Caches", "ms-playwright"), path.join(os.homedir(), ".cache", "ms-playwright")].filter(Boolean);
-  return dirs.some((d) => existsSync(d) && readdirSync(d).some((n) => n.startsWith("chromium")));
-}
-
-/** The Chrome HyperFrames renders with (`hyperframes browser ensure`), or HYPERFRAMES_BROWSER_PATH from the agent's env. */
-function hyperframesChromeInstalled(env) {
-  if (env.HYPERFRAMES_BROWSER_PATH) return existsSync(env.HYPERFRAMES_BROWSER_PATH);
-  const dirs = [path.join(os.homedir(), ".cache", "hyperframes", "chrome"), path.join(os.homedir(), ".cache", "puppeteer", "chrome-headless-shell")];
-  return dirs.some((d) => existsSync(d) && readdirSync(d).length > 0);
-}
-
-/** Claude Code on this computer: "logged-in", "logged-out", "missing", or "unknown" (an older CLI, only the editor extension, the Cowork VM). */
-let claudeCodeState;
-function claudeCode() {
-  if (claudeCodeState) return claudeCodeState;
-  if (coworkVm) return (claudeCodeState = "unknown");
-  if (!has("claude")) return (claudeCodeState = existsSync(path.join(os.homedir(), ".claude")) ? "unknown" : "missing");
-  if (has("claude", ["auth", "status"])) return (claudeCodeState = "logged-in");
-  return (claudeCodeState = has("claude", ["auth", "--help"]) ? "logged-out" : "unknown");
-}
-
-/** How to get a missing program: a command Claude can run once the user agrees (by "claude"), or a step for the user. */
-function toolFix(tool) {
-  switch (tool) {
-    case "node":
-      if (brew()) return { fix: "brew install node", by: "claude" };
-      if (win) return { fix: "winget install OpenJS.NodeJS.LTS", by: "claude" };
-      return { fix: "download the LTS installer from https://nodejs.org, run it, then reopen your terminal or editor", by: "you" };
-    case "git":
-      if (mac) return { fix: "xcode-select --install  (a window asks to install the developer tools: click Install)", by: "you" };
-      return win ? { fix: "winget install Git.Git", by: "claude" } : { fix: "sudo apt install git  (asks for your password)", by: "you" };
-    case "ffmpeg":
-      if (brew()) return { fix: "brew install ffmpeg", by: "claude" };
-      if (win) return { fix: "winget install Gyan.FFmpeg", by: "claude" };
-      if (mac) return { fix: "install Homebrew: paste the command from https://brew.sh into Terminal (it asks for your Mac password); then Claude runs brew install ffmpeg", by: "you" };
-      return { fix: "sudo apt install ffmpeg  (asks for your password)", by: "you" };
-    case "docker":
-      return { fix: "install Docker Desktop from https://www.docker.com/products/docker-desktop/, open it once and accept its terms", by: "you" };
-    case "docker-start":
-      return mac ? { fix: "open -a Docker  (then about a minute until it's running)", by: "claude" } : { fix: "start Docker Desktop and wait until it says it's running", by: "you" };
-  }
-}
-
-const keyFix = (name) => ({ topic: "key", key: name, fix: `node scripts/agents.mjs keys ask ${name}`, by: "you" });
-const keyLabel = (name) => KEYS[name]?.label ?? name;
-
-function age(ms) {
-  const s = Math.round((Date.now() - ms) / 1000);
-  if (s < 90) return `${s}s ago`;
-  if (s < 5400) return `${Math.round(s / 60)}m ago`;
-  if (s < 172800) return `${Math.round(s / 3600)}h ago`;
-  return `${Math.round(s / 86400)}d ago`;
-}
-
-function readJson(file) {
-  try {
-    return JSON.parse(readFileSync(file, "utf8"));
-  } catch {
-    return null;
-  }
-}
-
-/** The environment an agent runs with: its .env, overridden by real environment variables. */
-function agentEnv(a) {
-  return { ...readEnvFile(path.join(ROOT, a.dir, ".env")), ...Object.fromEntries(Object.entries(process.env).filter(([, v]) => v)) };
-}
-
-/**
- * Where an agent's results are: <workspace>/<outputs.dir>, unless the variable named in outputs.env (VAR, or
- * VAR/subfolder) is set; the agent resolves that one from its own folder.
- */
-function outputRoot(a, env = agentEnv(a)) {
-  const [name, ...sub] = (a.outputs.env ?? "").split("/");
-  return name && env[name] ? path.resolve(ROOT, a.dir, env[name], ...sub) : path.join(workspaceDir({ env }), a.outputs.dir);
-}
-
-/** Latest output folders of an agent, newest first, with their key files and recorded status. */
-function outputsOf(a, limit = 5, env = agentEnv(a)) {
-  const base = outputRoot(a, env);
-  if (!existsSync(base)) return [];
-  const ignore = new Set([...(a.outputs.ignore ?? []), ".DS_Store"]);
-  let dirs = [base];
-  for (let d = 0; d < a.outputs.depth; d++)
-    dirs = dirs.flatMap((p) =>
-      readdirSync(p, { withFileTypes: true })
-        .filter((e) => e.isDirectory() && !ignore.has(e.name) && !e.name.startsWith("_") && !e.name.startsWith("."))
-        .map((e) => path.join(p, e.name)),
-    );
-  return dirs
-    .map((dir) => {
-      const rec = readJson(path.join(dir, a.outputs.record));
-      const files = a.outputs.files.filter((f) => existsSync(path.join(dir, f))).map((f) => path.join(dir, f));
-      const mtime = Math.max(statSync(dir).mtimeMs, existsSync(path.join(dir, a.outputs.record)) ? statSync(path.join(dir, a.outputs.record)).mtimeMs : 0);
-      return {
-        id: path.relative(base, dir),
-        dir,
-        mtime,
-        status: rec?.status ?? rec?.state ?? (rec?.ok === true ? "success" : rec?.ok === false ? "failed" : undefined),
-        detail: rec ? (rec.publish?.prUrl ?? rec.publish?.branchUrl ?? rec.branch ?? rec.error ?? undefined) : undefined,
-        costUsd: rec?.costUsd ?? rec?.cost ?? undefined,
-        files,
-      };
-    })
-    .sort((x, y) => y.mtime - x.mtime)
-    .slice(0, limit);
-}
-
-/**
- * Is the agent ready, and if not, what's missing: each problem in plain words with its fix, a command Claude can run
- * once the user agrees (by "claude") or a step for the user (by "you"). `problems` is the same list as text.
- */
-function statusOf(a) {
-  const dir = path.join(ROOT, a.dir);
-  if (!existsSync(dir)) {
-    const fixes = [{ topic: "kit", problem: `the folder ${a.dir} is missing`, fix: "update the kit (git pull) or download it again", by: "you" }];
-    return { id: a.id, dir: a.dir, ready: false, problems: fixes.map((f) => f.problem), fixes, claude: null, optionalMissing: [], latest: null };
-  }
-  const env = agentEnv(a);
-  const set = (k) => !!env[k];
-  const installed = existsSync(path.join(dir, "node_modules"));
-  const fixes = [];
-  const add = (problem, fix) => fixes.push({ problem, ...fix });
-  if (!installed) add("not installed yet", { topic: "install", fix: `node scripts/agents.mjs install ${a.id}`, by: "claude" });
-  else if (!existsSync(path.join(dir, ".env")) && existsSync(path.join(dir, ".env.example"))) add("no settings file (.env) yet", { topic: "env", fix: `node scripts/agents.mjs setup ${a.id}`, by: "claude" });
-  for (const k of a.env.required) if (!set(k) && !CLAUDE_KEYS.includes(k)) add(`needs ${/^[aeiou]/i.test(keyLabel(k)) ? "an" : "a"} ${keyLabel(k)} (${k})`, keyFix(k));
-
-  let claude = null;
-  if (set("ANTHROPIC_API_KEY")) claude = "API key";
-  else if (set("CLAUDE_CODE_OAUTH_TOKEN") && a.claudeAuth !== "key") claude = "subscription token";
-  else if (a.claudeAuth === "login-or-key")
-    claude = { "logged-in": "Claude Code login", unknown: coworkVm ? "Claude Code login on the computer (not checkable from the Cowork VM)" : "Claude Code login (assumed)" }[claudeCode()] ?? null;
-  if (!claude) {
-    if (a.claudeAuth === "key") add("needs a Claude API key (ANTHROPIC_API_KEY): it can't use your Claude login", keyFix("ANTHROPIC_API_KEY"));
-    else if (a.claudeAuth === "token-or-key")
-      add("needs a Claude subscription token or API key: its Docker runs can't use your Claude login", { ...keyFix("CLAUDE_CODE_OAUTH_TOKEN"), fix: "node scripts/agents.mjs keys ask CLAUDE_CODE_OAUTH_TOKEN  (or keys ask ANTHROPIC_API_KEY to pay per use)" });
-    else if (claudeCode() === "logged-out") add("Claude Code isn't logged in", { topic: "claude", fix: "claude auth login  (in a terminal; it opens your browser), or keys ask ANTHROPIC_API_KEY to pay per use", by: "you" });
-    else add("no Claude login found", { topic: "claude", fix: "install Claude Code (https://claude.com/claude-code) and log in, or keys ask ANTHROPIC_API_KEY to pay per use", by: "you" });
-  }
-
-  // Programs on the user's computer; the Cowork VM can't see them
-  if (!coworkVm) {
-    if (a.needs.includes("node22") && nodeMajor < 22) add(`needs Node 22 or newer (this computer has ${process.versions.node})`, { topic: "node", ...toolFix("node") });
-    if (a.needs.includes("ffmpeg") && !has("ffmpeg", ["-version"])) add("FFmpeg, a free tool for video files, isn't installed", { topic: "ffmpeg", ...toolFix("ffmpeg") });
-    if (a.needs.includes("docker")) {
-      if (!has("docker")) add("Docker Desktop isn't installed", { topic: "docker", ...toolFix("docker") });
-      else if (!has("docker", ["version", "--format", "{{.Server.Version}}"])) add("Docker Desktop isn't running", { topic: "docker", ...toolFix("docker-start") });
-    }
-    // install downloads these; only worth a line once the agent is installed
-    if (installed && a.needs.includes("chromium") && !chromiumInstalled()) add("the browser it draws with isn't downloaded", { topic: "install", fix: `node scripts/agents.mjs install ${a.id}`, by: "claude" });
-    if (installed && a.needs.includes("hyperframes-chrome") && !hyperframesChromeInstalled(env)) add("the browser it renders video with isn't downloaded", { topic: "install", fix: `node scripts/agents.mjs install ${a.id}`, by: "claude" });
-  }
-  const latest = outputsOf(a, 1, env)[0];
-  return {
-    id: a.id,
-    dir: a.dir,
-    ready: fixes.length === 0,
-    problems: fixes.map((f) => f.problem),
-    fixes,
-    claude,
-    optionalMissing: a.env.optional.filter((k) => !set(k)),
-    latest: latest ? { id: latest.id, status: latest.status, age: age(latest.mtime) } : null,
-  };
 }
 
 /** Node, git, Homebrew, Claude Code, and Docker/FFmpeg when one of the agents needs them. Fixes only where no agent row has one. */
@@ -256,14 +72,14 @@ function computerChecks(list) {
   const needs = (n) => list.some((a) => a.needs.includes(n));
   const nodeOk = nodeMajor > 20 || (nodeMajor === 20 && nodeMinor >= 12);
   const out = [
-    { name: "Node", ok: nodeOk, detail: nodeOk ? process.versions.node : `${process.versions.node}, needs 20.12 or newer`, ...(!nodeOk && { topic: "node", problem: "Node is too old", ...toolFix("node") }) },
-    { name: "git", ok: has("git"), ...(!has("git") && { topic: "git", problem: "git isn't installed", ...toolFix("git") }) },
+    { name: "Node", ok: nodeOk, detail: nodeOk ? process.versions.node : `${process.versions.node}, needs 20.12 or newer`, ...(!nodeOk && { topic: "node", problem: "Node is too old", ...toolFix("node", tools) }) },
+    { name: "git", ok: tools.git, ...(!tools.git && { topic: "git", problem: "git isn't installed", ...toolFix("git", tools) }) },
   ];
-  if (mac) out.push({ name: "Homebrew", ok: brew(), optional: true, detail: brew() ? "" : "not installed (optional: lets Claude install FFmpeg, Node and other free tools · https://brew.sh)" });
-  const cc = claudeCode();
+  if (mac) out.push({ name: "Homebrew", ok: tools.brew, optional: true, detail: tools.brew ? "" : "not installed (optional: lets Claude install FFmpeg, Node and other free tools · https://brew.sh)" });
+  const cc = tools.claudeCode;
   out.push({ name: "Claude Code", ok: cc === "logged-in" || cc === "unknown", optional: true, detail: { "logged-in": "logged in", unknown: "found (login not checked)", "logged-out": "not logged in", missing: "not found (fine if you use API keys)" }[cc] });
-  if (needs("docker")) out.push({ name: "Docker Desktop", ok: has("docker", ["version", "--format", "{{.Server.Version}}"]), detail: !has("docker") ? "not installed" : has("docker", ["version", "--format", "{{.Server.Version}}"]) ? "running" : "installed, not running" });
-  if (needs("ffmpeg")) out.push({ name: "FFmpeg", ok: has("ffmpeg", ["-version"]), detail: has("ffmpeg", ["-version"]) ? "" : "not installed" });
+  if (needs("docker")) out.push({ name: "Docker Desktop", ok: tools.docker, detail: !tools.dockerInstalled ? "not installed" : tools.docker ? "running" : "installed, not running" });
+  if (needs("ffmpeg")) out.push({ name: "FFmpeg", ok: tools.ffmpeg, detail: tools.ffmpeg ? "" : "not installed" });
   return out;
 }
 
@@ -309,7 +125,7 @@ function keyRole(a, name) {
  * Claude: through the Claude Code login, or (dev) through the other Claude key. It would change how they're billed.
  */
 function keyTargets(name) {
-  const loginWorks = !["logged-out", "missing"].includes(claudeCode());
+  const loginWorks = !["logged-out", "missing"].includes(tools.claudeCode);
   return REGISTRY.filter((a) => {
     const role = keyRole(a, name);
     if (role === "login") return !loginWorks;
@@ -383,42 +199,6 @@ function openTerminal(command) {
   return mac && spawnSync("osascript", ["-e", script], { stdio: "ignore" }).status === 0;
 }
 
-/** The workspace: where it is, whether it's a git repository, and what's still in the old layout. */
-function workspaceStatus() {
-  const dir = workspaceDir();
-  const exists = existsSync(dir);
-  const git = exists && existsSync(path.join(dir, ".git"));
-  const old = planMigration({ workspace: dir }).filter((s) => s.action === "move").map((s) => path.relative(ROOT, s.from));
-  return {
-    dir: path.relative(ROOT, dir).startsWith("..") ? dir : path.relative(ROOT, dir),
-    exists,
-    git,
-    old,
-    summary: !exists ? "not created yet: node scripts/workspace.mjs init" : git ? "its own git repository · node scripts/workspace.mjs show" : "not a git repository yet: node scripts/workspace.mjs init",
-  };
-}
-
-/** The product folder the agents will use (PRODUCT_DIR, else workspace/product), with a validation summary. */
-function productStatus() {
-  try {
-    const dir = findProductDir({ from: ROOT });
-    if (!dir) return { dir: null, name: null, ok: null, summary: "no product folder (node scripts/product.mjs init --name … --website …)" };
-    const r = checkProduct(dir);
-    const docs = r.info.docs ?? {};
-    return {
-      dir: path.relative(ROOT, dir) || ".",
-      name: r.product?.name ?? null,
-      ok: r.ok,
-      errors: r.errors.length,
-      warnings: r.warnings.length,
-      docs,
-      summary: `${r.ok ? "check OK" : `${r.errors.length} error(s)`}, ${r.warnings.length} warning(s) · docs ${docs.verified ?? 0} verified, ${docs.draft ?? 0} draft, ${docs.template ?? 0} template · node scripts/product.mjs check`,
-    };
-  } catch (e) {
-    return { dir: null, name: null, ok: false, summary: `product folder problem: ${e.message}` };
-  }
-}
-
 /**
  * Link skills/ into .claude/skills (Claude Code finds project skills there; skills/ is the canonical copy, also read by
  * Cowork), add .claude/settings.json and create the workspace. Returns [kind, text] lines: "done", "same" or "warn".
@@ -458,7 +238,7 @@ const printInit = (lines) => lines.forEach(([kind, text]) => console.log(kind ==
 function runIn(a, cmd, extra = []) {
   const full = [cmd, ...extra.map(shq)].join(" ");
   console.log(dim(`$ cd ${a.dir} && ${full}`));
-  const r = spawnSync(full, { cwd: path.join(ROOT, a.dir), shell: true, stdio: "inherit" });
+  const r = spawnSync(full, { cwd: agentPath(a), shell: true, stdio: "inherit" });
   return r.status ?? 1;
 }
 
@@ -479,8 +259,8 @@ switch (cmd) {
   case "setup": {
     const list = targets(rest);
     const did = coworkVm ? [] : initKit().filter(([kind]) => kind !== "same");
-    for (const a of list) if (ensureEnvFile(path.join(ROOT, a.dir))) did.push(["done", `${a.dir}/.env (its settings, from .env.example)`]);
-    const rows = list.map(statusOf);
+    for (const a of list) if (ensureEnvFile(agentPath(a))) did.push(["done", `${a.dir}/.env (its settings, from .env.example)`]);
+    const rows = list.map((a) => statusOf(a, { tools }));
     const computer = computerChecks(list);
     const product = productStatus();
     const todo = todoList(computer, rows, product);
@@ -538,7 +318,7 @@ switch (cmd) {
     break;
   }
   case "status": {
-    const rows = targets(rest[0]).map(statusOf);
+    const rows = targets(rest[0]).map((a) => statusOf(a, { tools }));
     const product = productStatus();
     if (coworkVm && !json) console.log(dim("(Cowork VM: Chromium, Docker, FFmpeg and the Claude login are on your computer and aren't checked here)"));
     if (json) {
@@ -584,7 +364,7 @@ switch (cmd) {
     for (const a of targets(rest)) {
       console.log(bold(`\n▸ ${a.id}`) + dim(` · ${a.title}`));
       if (a.needs.includes("node22") && nodeMajor < 22) {
-        console.log(red(`✗ ${a.id} needs Node 22 or newer; this computer has ${process.versions.node}. Fix: ${toolFix("node").fix}`));
+        console.log(red(`✗ ${a.id} needs Node 22 or newer; this computer has ${process.versions.node}. Fix: ${toolFix("node", tools).fix}`));
         failed++;
         continue;
       }
@@ -594,8 +374,8 @@ switch (cmd) {
         failed++;
         continue;
       }
-      if (ensureEnvFile(path.join(ROOT, a.dir))) console.log(dim(`  created ${a.dir}/.env, its settings, from .env.example`));
-      const r = statusOf(a);
+      if (ensureEnvFile(agentPath(a))) console.log(dim(`  created ${a.dir}/.env, its settings, from .env.example`));
+      const r = statusOf(a, { tools });
       console.log(r.ready ? green(`✓ ${a.id} installed and ready`) : yellow(`✓ ${a.id} installed. Still needed:`));
       for (const f of r.fixes) console.log(`    · ${f.problem} ${dim("→")} ${f.fix}`);
     }
@@ -673,7 +453,7 @@ switch (cmd) {
       if (info.prefix && !info.prefix.some((p) => value.startsWith(p)))
         console.log(yellow(`! That doesn't look like a ${info.label} (those start with ${info.prefix.join(" or ")}). Saved anyway; if the agent can't sign in, set it again.`));
     }
-    for (const a of list) writeEnvValue(path.join(ROOT, a.dir), name, value);
+    for (const a of list) writeEnvValue(agentPath(a), name, value);
     const where = list.map((a) => a.id).join(", ");
     console.log(green(sub === "set" ? `✓ ${keyLabel(name)} saved for ${where}` : `✓ ${name} emptied for ${where}`));
     const skipped = sub === "set" && !ids.length ? REGISTRY.filter((a) => keyRole(a, name) === "login" && !list.includes(a)) : [];
@@ -700,59 +480,35 @@ switch (cmd) {
     const a = agent(rest[0] ?? "");
     if (!a.web) die(`${a.id} has no web UI`);
     console.log(dim(`${a.web.url}`));
-    spawn(a.web.command, { cwd: path.join(ROOT, a.dir), shell: true, stdio: "inherit" }).on("close", (code) => process.exit(code ?? 0));
+    spawn(a.web.command, { cwd: agentPath(a), shell: true, stdio: "inherit" }).on("close", (code) => process.exit(code ?? 0));
     break;
   }
   case "pending":
   case "answer": {
     // Plain file protocol (same as dev-agent's `pending`/`answer`), so it also works in the Cowork VM.
     // Same folder as the agent: DEVAGENT_ASK_DIR, else <DEVAGENT_HOME>/ask, else workspace/dev/ask.
-    const dev = agent("dev");
-    const env = agentEnv(dev);
-    const ask = env.DEVAGENT_ASK_DIR ? path.resolve(ROOT, dev.dir, env.DEVAGENT_ASK_DIR) : path.join(env.DEVAGENT_HOME ? path.resolve(ROOT, dev.dir, env.DEVAGENT_HOME) : path.join(workspaceDir({ env }), "dev"), "ask");
-    const open = existsSync(ask)
-      ? readdirSync(ask)
-          .filter((f) => f.endsWith(".pending.json"))
-          .map((f) => readJson(path.join(ask, f)))
-          .filter((x) => x && !existsSync(path.join(ask, `${x.id}.answer.json`)))
-          .sort((a, b) => String(a.createdAt).localeCompare(String(b.createdAt)))
-      : [];
+    agent("dev");
+    const ask = askDir();
     if (cmd === "pending") {
-      console.log(JSON.stringify(open, null, 2));
+      console.log(JSON.stringify(listPending(ask), null, 2));
       break;
     }
-    const id = rest[0];
-    const item = id && open.find((x) => x.id === id || x.id.startsWith(id));
-    if (!item) die(`No open question with id ${id ?? "(none)"}. See: node scripts/agents.mjs pending`);
     const opt = (name) => {
       const i = argv.indexOf(name);
       return i >= 0 ? argv[i + 1] : undefined;
     };
-    let payload;
-    if (item.kind === "approval") {
-      const decision = opt("--decision");
-      const feedback = opt("--feedback");
-      if (!["approve", "revise", "cancel"].includes(decision ?? "")) die("Plan approval: --decision approve | revise | cancel (with --feedback for revise)");
-      if (decision === "revise" && !feedback?.trim()) die("--decision revise needs --feedback");
-      payload = { decision, feedback };
-    } else {
-      let answers;
-      try {
-        answers = JSON.parse(opt("--json") ?? "");
-      } catch {
-        die(`Questions: --json '{"<questionId>": "<answer>", …}' (ids: ${item.questions.map((q) => q.id).join(", ")})`);
-      }
-      const missing = item.questions.filter((q) => !(q.id in answers)).map((q) => q.id);
-      if (missing.length) die(`Missing answers for: ${missing.join(", ")}. Use "" to skip a question.`);
-      for (const q of item.questions)
-        if (q.secretEnv && typeof answers[q.id] === "string" && answers[q.id] && answers[q.id] !== "__in_secrets_file__")
-          die(`Don't pass secret values through answers. Have ${q.secretEnv}=… added to ${item.secretsFile}, then answer "__in_secrets_file__".`);
-      payload = { answers };
+    let answers;
+    try {
+      answers = JSON.parse(opt("--json") ?? "");
+    } catch {
+      /* writeAnswer says what questions expect */
     }
-    const file = path.join(ask, `${item.id}.answer.json`);
-    writeFileSync(`${file}.tmp`, JSON.stringify(payload, null, 2));
-    renameSync(`${file}.tmp`, file);
-    console.log(green(`✓ Answered ${item.id} (${item.kind}, ${item.scope})`));
+    try {
+      const item = writeAnswer(rest[0], { decision: opt("--decision"), feedback: opt("--feedback"), answers }, ask);
+      console.log(green(`✓ Answered ${item.id} (${item.kind}, ${item.scope})`));
+    } catch (e) {
+      die(e.message);
+    }
     break;
   }
   default:

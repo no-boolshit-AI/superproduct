@@ -114,6 +114,8 @@ node scripts/agents.mjs run <agent> [args]  # = cd agents/<dir> && <command> [ar
 node scripts/agents.mjs web <agent>         # start an agent's web UI
 node scripts/agents.mjs pending | answer <id> …   # dev-agent relay (see below)
 
+node scripts/dashboard.mjs [--open]              # the user's dashboard on http://127.0.0.1:4646 (status, results, setup)
+
 node scripts/workspace.mjs show                  # where the workspace is, what's in it, anything left in the old layout
 node scripts/workspace.mjs init                  # create it (README, .gitignore, briefs/, its own git repository)
 node scripts/workspace.mjs migrate [--dry-run]   # move the old layout's product, briefs and results into it
@@ -143,6 +145,11 @@ You run the agents directly, natively.
   - Several independent runs can go in parallel. Cap it at about 3 Chromium agents at once (about 1 GB RAM each;
     an explainer counts as one).
 - Web UIs (`node scripts/agents.mjs web <agent>`) are for the user. You use the CLIs.
+- **The dashboard** (`node scripts/dashboard.mjs --open`, start it in the background) is the user's view of the kit:
+  each agent's readiness, everything the agents made (videos, PDFs and pages playable in place), the product folder,
+  and the dev-agent's questions. Its setup screens let the user paste keys into the agents' `.env` files themselves,
+  install agents and change settings. Offer it when the user wants to see results, set up keys, or is new to the kit;
+  keys typed there never reach the chat. It reads the same files you do, so it never needs updating by hand.
 
 ### Cowork (Claude desktop app with this folder connected)
 
@@ -348,7 +355,8 @@ few minutes. Details are in the dev skill.
 - **Concurrency.**
   - One dev-agent run per repo at a time.
   - `landing-page --replace` overwrites a site, so confirm before reusing a slug.
-  - Agents with web UIs use fixed ports (4747 collage, 4848 deck, 4949 dev, 5050 explainer, 8787 landing API).
+  - Agents with web UIs use fixed ports (4747 collage, 4848 deck, 4949 dev, 5050 explainer, 8787 landing API); the
+    dashboard uses 4646 and previews landing pages on 4647.
 
 ## Adding or changing an agent
 
@@ -368,3 +376,5 @@ few minutes. Details are in the dev skill.
 3. Write `skills/<id>/SKILL.md`, with a description that says when to use it.
 4. Add a row to the table above, to `README.md`, and to "How the agents use it" in `templates/product/README.md` (and
    the workspace's `product/README.md`).
+5. The dashboard picks it up from `agents.json`. For a plain-words name, tagline and example request, add it to
+   `AGENTS` in `dashboard/public/js/app.js`, and give it a mascot in `dashboard/public/js/ui.js` (`PALETTES`, `BODIES`).

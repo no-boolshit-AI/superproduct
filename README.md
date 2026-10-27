@@ -155,6 +155,8 @@ node scripts/agents.mjs test all        # zero-cost self-tests against a mock Cl
 node scripts/agents.mjs status          # installed? keys set (names only)? Chromium? Docker? FFmpeg?
 ```
 
+Or let the [dashboard](#the-dashboard) walk you through it: `node scripts/dashboard.mjs --open`.
+
 ### Set up your product
 
 ```bash
@@ -194,7 +196,29 @@ To try the agents before your own product is ready, point them at the fictional 
 Every agent also runs by hand from its folder; its README lists the commands, for example
 `cd agents/deck-agent && npm run deck -- --file ../../workspace/briefs/2026-10-07-board.md`.
 
+## The dashboard
+
+```bash
+node scripts/dashboard.mjs --open       # http://127.0.0.1:4646 (npm run dashboard)
+```
+
+A page in your browser for everything the agents do, read live from the workspace:
+
+- **Home**: what's ready, what's being worked on, and which agent has a question (a storyboard to approve, the dev
+  agent's questions and plans, which you can answer right there); your product's key documents and your connections.
+- **Work**: every run with its status, spend and thumbnail. Open one to watch the video, page through the PDF, browse
+  the slides, try the landing page at desktop and phone width, read the caption, and copy a revision request for Claude.
+- **Files**: every file the agents made, by type, in a viewer.
+- **Agents** and **Knowledge**: each agent's readiness, keys and settings; the product folder, verified and draft.
+- **Setup**: a first-run walk-through. Paste keys once and choose which agents get them (they go into each agent's
+  `.env` and are never shown again), install agents, run the free self-tests, and change budgets and models.
+
+It has no dependencies, listens on this computer only (127.0.0.1), and refuses changes that don't come from the page
+itself. It doesn't run agents: you ask Claude for work, and it shows up here.
+
 ## Keys
+
+The dashboard's setup screen writes these for you; by hand:
 
 | Agent | Claude | Other |
 |---|---|---|
@@ -225,11 +249,15 @@ terminal, and follows the run through its output files. `status`, `outputs`, the
 ├─ skills/               one skill per agent, plus product, campaign (multi-agent work) and setup (installs, keys)
 ├─ lib/product.mjs       product folder loader: find, validate, tokens to colours and fonts, compiled context
 ├─ lib/workspace.mjs     where the workspace is and what goes where (+ workspace-migrate.mjs from the old layout)
+├─ lib/agents.mjs        registry, readiness, results and the dev-agent relay (shared by the CLI and the dashboard)
+├─ lib/env-file.mjs      an agent's settings from its .env.example; changes to its .env
+├─ dashboard/            the dashboard: its server (server.mjs, runs.mjs) and the page (public/)
 ├─ lib/fixtures/acme/    fictional example product, used by the tests
 ├─ schemas/              JSON Schema for product.json
 ├─ scripts/agents.mjs    setup · init · list · status · outputs · install · keys · test · run · web · pending · answer
 ├─ scripts/product.mjs   init · show · check · context · tokens · index · fetch
 ├─ scripts/workspace.mjs show · init · migrate
+├─ scripts/dashboard.mjs the dashboard on http://127.0.0.1:4646
 ├─ templates/product/    blank product folder and its spec
 ├─ templates/workspace/  what a new workspace starts with (README, .gitignore, briefs/)
 └─ workspace/            your product, briefs and results (created by init; git-ignored, its own repository)
