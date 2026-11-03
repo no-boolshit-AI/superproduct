@@ -54,7 +54,7 @@ Start from what they want to make, not from the list of keys.
 | To make | Needs | Optional |
 |---|---|---|
 | carousels, decks, explainer videos, landing pages | nothing, if Claude Code is logged in | OpenAI (pictures); ElevenLabs (video narration, music, sound effects) |
-| collage posts | a Claude API key and an OpenAI key | |
+| collage posts | an OpenAI key (Claude: nothing, if Claude Code is logged in) | |
 | features in a GitHub repository (dev) | a Claude subscription token (`claude setup-token`) or a Claude API key, and Docker | a GitHub token, or the GitHub CLI login |
 
 - **A Claude API key is billed per use**, separately from any Claude subscription. Agents that use the Claude Code

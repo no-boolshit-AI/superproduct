@@ -3,7 +3,7 @@ import { parseArgs } from "node:util";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { checkKeys, defaults, type JobOptions } from "./config.js";
-import { runJob } from "./agent.js";
+import { describeAuth, runJob } from "./agent.js";
 import { PALETTE_NAMES } from "./palettes.js";
 import { closeBrowser } from "./tools/render.js";
 import type { JobEvent } from "./events.js";
@@ -94,6 +94,7 @@ if (missing.length) {
 
 const dim = (s: string) => `\x1b[2m${s}\x1b[0m`;
 const bold = (s: string) => `\x1b[1m${s}\x1b[0m`;
+console.log(dim(`Claude auth: ${describeAuth()}`));
 if (!values.revise) console.log(dim(o.product ? `Product: ${o.product} · palette ${o.palette} · masthead "${o.brand}"${o.brandFonts ? " · brand fonts" : ""}` : `No product folder · palette ${o.palette} · masthead "${o.brand}"`));
 
 function log(e: JobEvent) {

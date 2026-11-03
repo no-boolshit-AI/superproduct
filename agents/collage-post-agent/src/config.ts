@@ -55,10 +55,9 @@ export function defaults(): JobOptions {
   };
 }
 
+/** Keys the agent can't run without. Claude needs none: without a key or token it uses this machine's Claude Code login. */
 export function checkKeys(): string[] {
   const missing: string[] = [];
   if (!process.env.OPENAI_API_KEY) missing.push("OPENAI_API_KEY");
-  if (!process.env.ANTHROPIC_API_KEY && !process.env.CLAUDE_CODE_USE_BEDROCK && !process.env.CLAUDE_CODE_USE_VERTEX)
-    missing.push("ANTHROPIC_API_KEY");
   return missing;
 }

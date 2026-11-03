@@ -223,7 +223,7 @@ The dashboard's setup screen writes these for you; by hand:
 | Agent | Claude | Other |
 |---|---|---|
 | carousel, deck, landing-page | the Claude Code login on your computer, or `ANTHROPIC_API_KEY` | `OPENAI_API_KEY` for images (carousel, deck; optional) |
-| collage-post | `ANTHROPIC_API_KEY` | `OPENAI_API_KEY` |
+| collage-post | the Claude Code login on your computer, or `ANTHROPIC_API_KEY` | `OPENAI_API_KEY` |
 | dev | `ANTHROPIC_API_KEY` or `CLAUDE_CODE_OAUTH_TOKEN` (from `claude setup-token`) | `GITHUB_TOKEN`, Docker |
 | explainer | the Claude Code login on your computer, or `ANTHROPIC_API_KEY` | `OPENAI_API_KEY` for pictures; `ELEVENLABS_API_KEY` for narration, music and sound effects, or `HEYGEN_API_KEY` for narration (all optional) |
 

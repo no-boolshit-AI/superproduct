@@ -20,7 +20,8 @@ beat `PALETTE` and `BRAND_NAME` in `.env`; flags beat everything. `--product non
 
 ## Readiness
 - Check with `node scripts/agents.mjs status collage-post`.
-- It needs both `ANTHROPIC_API_KEY` and `OPENAI_API_KEY` in its `.env`. Its CLI doesn't use the subscription login.
+- It needs `OPENAI_API_KEY` in its `.env`. Claude runs on the Claude Code login on this computer, like carousel and
+  deck, unless `CLAUDE_CODE_OAUTH_TOKEN` or `ANTHROPIC_API_KEY` is set (the run prints which one it uses).
 
 ## Brief
 The brief is a topic plus an angle (the agent writes the copy), or finished copy (used verbatim, only split across

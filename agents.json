@@ -137,8 +137,8 @@
       "web": { "command": "npm run web", "url": "http://localhost:4747" },
       "install": ["npm install"],
       "test": "npm test",
-      "claudeAuth": "key",
-      "env": { "required": ["ANTHROPIC_API_KEY", "OPENAI_API_KEY"], "optional": ["WIKIMEDIA_CONTACT"] },
+      "claudeAuth": "login-or-key",
+      "env": { "required": ["OPENAI_API_KEY"], "optional": ["WIKIMEDIA_CONTACT"] },
       "needs": ["chromium"],
       "outputs": { "dir": "out/collage-post", "env": "OUTPUT_DIR", "depth": 1, "record": "job.json", "files": ["png", "caption.md", "index.html"] },
       "skill": "skills/collage-post/SKILL.md"

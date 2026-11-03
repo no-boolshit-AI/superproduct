@@ -227,11 +227,23 @@ function promptProduct(o: JobOptions): { name: string; context: string; serif?: 
   return { name: p.name, context: productContext(p), serif: fonts?.serif, sans: fonts?.sans };
 }
 
-/** Environment for the Claude Code subprocess, minus variables that would tie it to a parent Claude session. */
-function agentEnv(): Record<string, string | undefined> {
+/**
+ * Environment for the Claude Code subprocess, minus variables that would tie it to a parent Claude session. Auth
+ * precedence (same as the CLI): ANTHROPIC_API_KEY → CLAUDE_CODE_OAUTH_TOKEN (subscription token from
+ * `claude setup-token`) → this machine's Claude Code login. Empty values are removed so a blank line in .env doesn't
+ * shadow the subscription login.
+ */
+export function agentEnv(): Record<string, string | undefined> {
   const env: Record<string, string | undefined> = { ...process.env, CLAUDE_AGENT_SDK_CLIENT_APP: "collage-post-agent/0.1.0" };
+  for (const k of ["ANTHROPIC_API_KEY", "ANTHROPIC_AUTH_TOKEN", "CLAUDE_CODE_OAUTH_TOKEN"]) if (!env[k]?.trim()) delete env[k];
   for (const k of ["CLAUDE_CODE_SESSION_ID", "CLAUDECODE", "CLAUDE_CODE_ENTRYPOINT"]) delete env[k];
   return env;
+}
+
+export function describeAuth(): string {
+  if (process.env.ANTHROPIC_API_KEY?.trim()) return "Anthropic API key (ANTHROPIC_API_KEY)";
+  if (process.env.CLAUDE_CODE_OAUTH_TOKEN?.trim()) return "Claude subscription (CLAUDE_CODE_OAUTH_TOKEN)";
+  return "Claude subscription via this machine's Claude Code login";
 }
 
 async function countGenerated(jobDir: string): Promise<number> {

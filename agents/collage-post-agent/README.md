@@ -25,7 +25,7 @@ Requires Node 20.12+.
 
 ```bash
 npm install                 # also downloads Chromium for the PNG export
-cp .env.example .env        # add ANTHROPIC_API_KEY and OPENAI_API_KEY
+cp .env.example .env        # add OPENAI_API_KEY; Claude uses your Claude Code login (or a token or API key, see .env.example)
 npm test                    # optional: zero-cost smoke test (mock Claude + OpenAI APIs, real SDK, Chromium, export)
 ```
 
